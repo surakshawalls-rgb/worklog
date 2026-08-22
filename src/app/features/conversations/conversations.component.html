@@ -1,0 +1,77 @@
+<div class="app-layout">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-brand">
+      <svg width="28" height="28" viewBox="0 0 64 64" fill="none">
+        <rect width="64" height="64" rx="14" fill="#2563EB"/>
+        <path d="M14 20h36M14 32h28M14 44h22" stroke="white" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="52" cy="44" r="8" fill="#22C55E"/>
+        <path d="M49 44l2 2 4-4" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <span class="header-title">SyncPoint</span>
+    </div>
+    <a routerLink="/profile" class="header-avatar" title="Profile">
+      {{ initials(currentUser()?.displayName || '?') }}
+    </a>
+  </header>
+
+  <!-- Content -->
+  <main class="main-content">
+    @if (isLoading()) {
+      <div class="center-state">
+        <div class="spinner"></div>
+        <p>Loading chats…</p>
+      </div>
+    } @else if (conversations().length === 0) {
+      <div class="center-state empty">
+        <ion-icon name="chatbubble-ellipses-outline" class="empty-icon"></ion-icon>
+        <h3>No conversations yet</h3>
+        <p>Find people to chat with</p>
+        <a routerLink="/people" class="btn-start">Find People</a>
+      </div>
+    } @else {
+      <div class="conv-list">
+        @for (conv of conversations(); track conv.conversationId) {
+          <button class="conv-item" (click)="openChat(conv.conversationId, conv.otherDisplayName, conv.otherUserId)">
+            <div class="conv-avatar">{{ initials(conv.otherDisplayName) }}</div>
+            <div class="conv-body">
+              <div class="conv-top">
+                <span class="conv-name">{{ conv.otherDisplayName }}</span>
+                <span class="conv-time">{{ formatTime(conv.lastMessageAt) }}</span>
+              </div>
+              <div class="conv-bottom">
+                <span class="conv-preview">{{ conv.lastMessage || 'Start chatting…' }}</span>
+                @if (conv.unreadCount > 0) {
+                  <span class="unread-badge">{{ conv.unreadCount > 99 ? '99+' : conv.unreadCount }}</span>
+                }
+              </div>
+            </div>
+          </button>
+        }
+      </div>
+    }
+  </main>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <a routerLink="/chats" class="nav-item active">
+      <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+      <span>Chats</span>
+    </a>
+    <a routerLink="/people" class="nav-item">
+      <span class="nav-icon-wrap">
+        <ion-icon name="people-outline"></ion-icon>
+        @if (pendingCount() > 0) {
+          <span class="nav-badge">{{ pendingCount() }}</span>
+        }
+      </span>
+      <span>People</span>
+    </a>
+    <a routerLink="/profile" class="nav-item">
+      <ion-icon name="person-circle-outline"></ion-icon>
+      <span>Profile</span>
+    </a>
+  </nav>
+
+</div>

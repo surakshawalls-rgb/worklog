@@ -1,0 +1,187 @@
+<div class="chat-layout" (click)="closeContext()">
+  <!-- Header -->
+  <header class="chat-header">
+    <button class="back-btn" (click)="goBack()" title="Back">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+    <div class="header-peer">
+      <div class="peer-avatar">{{ otherDisplayName().charAt(0).toUpperCase() }}</div>
+      <div class="peer-info">
+        <span class="peer-name">{{ otherDisplayName() }}</span>
+        <span class="peer-status">Online</span>
+      </div>
+    </div>
+    @if (otherUserId()) {
+      <div class="call-actions">
+        <button class="call-btn voice" (click)="startVoiceCall()" title="Voice call">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.77 8.93a16 16 0 0 0 6.29 6.29l1.08-1.08a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+        </button>
+        <button class="call-btn video" (click)="startVideoCall()" title="Video call">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="7" width="13" height="10" rx="2" ry="2"/>
+            <polygon points="16 10 21 7 21 17 16 14"/>
+          </svg>
+        </button>
+      </div>
+    } @else {
+      <div style="width:88px"></div>
+    }
+  </header>
+
+  <!-- Messages -->
+  <div class="message-list" #messageListRef>
+    @if (isLoading()) {
+      <div class="state-container">
+        <div class="loading-spinner"></div>
+        <p class="state-text">Loading messages…</p>
+      </div>
+    } @else if (messages().length === 0) {
+      <div class="state-container">
+        <div class="empty-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
+        <p class="state-text">No messages yet. Say hello! 👋</p>
+      </div>
+    } @else {
+      @for (msg of messages(); track msg.id) {
+        <div class="message-row" [class.own]="isOwnMessage(msg.senderId)">
+          @if (!isOwnMessage(msg.senderId)) {
+            <div class="avatar">{{ msg.senderName.charAt(0) | uppercase }}</div>
+          }
+          <div class="bubble-group">
+            @if (!isOwnMessage(msg.senderId)) {
+              <span class="sender-name">{{ msg.senderName }}</span>
+            }
+
+            <!-- Reaction + Reply context popup -->
+            @if (activeContextId() === msg.id) {
+              <div class="context-popup" [class.own-popup]="isOwnMessage(msg.senderId)">
+                @for (emoji of QUICK_REACTIONS; track emoji) {
+                  <button class="ctx-emoji" [class.active]="hasMyReaction(msg, emoji)"
+                    (click)="pickReaction(msg, emoji, $event)" type="button">{{ emoji }}</button>
+                }
+                <button class="ctx-reply-btn" (click)="setReply(msg, $event)" type="button" title="Reply">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
+                  </svg>
+                  Reply
+                </button>
+              </div>
+            }
+
+            <div class="bubble" [class.own-bubble]="isOwnMessage(msg.senderId)"
+                 [class.image-bubble]="msg.messageType === 'image'"
+                 (click)="toggleContext(msg.id, $event)">
+
+              <!-- Reply quote inside bubble -->
+              @if (msg.replyTo) {
+                <div class="reply-quote" [class.own-quote]="isOwnMessage(msg.senderId)">
+                  <span class="reply-quote-name">{{ msg.replyTo.senderName }}</span>
+                  <span class="reply-quote-text">{{ msg.replyTo.text.length > 70 ? (msg.replyTo.text | slice:0:70) + '…' : msg.replyTo.text }}</span>
+                </div>
+              }
+
+              @if (msg.messageType === 'image') {
+                <img [src]="msg.message" class="bubble-img" (click)="openImage(msg.message)" alt="Image" loading="lazy"/>
+              } @else {
+                <p class="bubble-text">{{ msg.message }}</p>
+              }
+              <span class="bubble-time">{{ formatTime(msg.createdAt) }}</span>
+            </div>
+
+            <!-- Reactions bar -->
+            @if (msg.reactions && msg.reactions.length > 0) {
+              <div class="reactions-bar" [class.own-reactions]="isOwnMessage(msg.senderId)">
+                @for (r of msg.reactions; track r.emoji) {
+                  <button class="reaction-chip" [class.my-reaction]="hasMyReaction(msg, r.emoji)"
+                    (click)="pickReaction(msg, r.emoji, $event)" type="button">
+                    {{ r.emoji }}{{ r.userIds.length > 1 ? ' ' + r.userIds.length : '' }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Emoji Picker -->
+  @if (showEmojiPicker()) {
+    <div class="emoji-overlay" (click)="closeEmojiPicker()"></div>
+    <div class="emoji-picker">
+      <div class="emoji-grid">
+        @for (emoji of emojis; track emoji) {
+          <button class="emoji-btn" (click)="appendEmoji(emoji)" type="button">{{ emoji }}</button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Upload indicator -->
+  @if (uploadingImage()) {
+    <div class="upload-indicator">
+      <div class="upload-spinner"></div>
+      Uploading image…
+    </div>
+  }
+
+  <!-- Input Area -->
+  <div class="input-area">
+
+    <!-- Reply preview bar -->
+    @if (replyingTo()) {
+      <div class="reply-preview">
+        <div class="reply-preview-content">
+          <span class="reply-preview-name">↩ {{ replyingTo()!.senderName }}</span>
+          <span class="reply-preview-text">{{ replyingTo()!.messageType === 'image' ? '[Image]' : replyingTo()!.message }}</span>
+        </div>
+        <button class="reply-close-btn" (click)="clearReply()" type="button" title="Cancel reply">✕</button>
+      </div>
+    }
+
+    <div class="input-box">
+      <!-- Emoji button -->
+      <button type="button" class="tool-btn" (click)="toggleEmojiPicker(); $event.stopPropagation()" title="Emoji" [class.active]="showEmojiPicker()">
+        😊
+      </button>
+
+      <!-- Image button -->
+      <button type="button" class="tool-btn" (click)="triggerImagePicker()" title="Send image" [disabled]="uploadingImage()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+      </button>
+
+      <!-- Hidden file input -->
+      <input #imageInput type="file" accept="image/jpeg,image/png,image/gif,image/webp"
+        style="display:none" (change)="onImageSelected($event)"/>
+
+      <textarea
+        #messageInput
+        class="message-textarea"
+        placeholder="Message… (Enter to send)"
+        [value]="messageText()"
+        (input)="messageText.set($any($event.target).value)"
+        (keydown)="onKeyDown($event)"
+        rows="1"
+        maxlength="4000"
+      ></textarea>
+
+      <button class="send-btn" (click)="onSend()" [disabled]="!messageText().trim()" title="Send">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+

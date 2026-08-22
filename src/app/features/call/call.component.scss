@@ -1,0 +1,132 @@
+:host { display: block; height: 100dvh; }
+
+.call-screen {
+  height: 100dvh;
+  background: linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 80px 24px 60px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.remote-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  background: #0b1220;
+}
+
+.local-video {
+  position: absolute;
+  top: 22px;
+  right: 16px;
+  width: 122px;
+  height: 168px;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  background: #111827;
+  z-index: 2;
+}
+
+/* ─── Body ─── */
+.call-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  z-index: 1;
+}
+
+.peer-avatar {
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 44px; font-weight: 700; color: #fff;
+  box-shadow: 0 0 0 8px rgba(99, 102, 241, 0.2);
+  animation: pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0.2); }
+  50%       { box-shadow: 0 0 0 18px rgba(99, 102, 241, 0.08); }
+}
+
+.peer-name {
+  font-size: 26px; font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.call-status {
+  font-size: 14px; color: #94a3b8;
+  letter-spacing: 0.5px;
+  background: rgba(15, 23, 42, 0.52);
+  padding: 6px 12px;
+  border-radius: 999px;
+
+  &.timer {
+    font-size: 18px; font-weight: 600;
+    color: #a5b4fc; letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ─── Controls ─── */
+.call-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 1;
+}
+
+.ctrl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none; cursor: pointer;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  width: 72px; height: 72px; border-radius: 50%;
+  font-size: 12px; transition: background 0.2s, transform 0.15s;
+
+  &:active { transform: scale(0.93); }
+
+  svg {
+    display: block;
+  }
+
+  .ctrl-label {
+    display: none; /* hidden inside circle, shown via title */
+  }
+}
+
+.mute-btn.active {
+  background: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+}
+
+.cam-btn.active {
+  background: rgba(234, 179, 8, 0.25);
+  color: #facc15;
+}
+
+.end-btn {
+  background: #ef4444;
+  color: #fff;
+
+  &:hover { background: #dc2626; }
+}
+
+.ended-msg {
+  font-size: 18px; color: #94a3b8;
+  letter-spacing: 0.5px;
+}

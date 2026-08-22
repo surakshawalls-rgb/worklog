@@ -1,16 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Router, RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AttendanceRecord, AttendanceService, AttendanceType, Employee, Payment, SessionUser, UserOption } from './services/attendance.service';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
 export class App implements OnInit {
   private readonly attendance = inject(AttendanceService);
+  private readonly router = inject(Router);
   readonly session = signal<SessionUser | null>(this.attendance.getSession());
   readonly employees = signal<Employee[]>([]);
   readonly users = signal<UserOption[]>([]);
@@ -43,6 +45,7 @@ export class App implements OnInit {
   readonly loginUsername = signal('');
   readonly loginPassword = signal('');
   readonly newEmployee = signal({ name: '', employee_code: '', mobile: '', default_daily_rate: 500, joining_date: this.today(), user_id: null as number | null, login_username: '', login_password: '' });
+  isCommunicationRoute(): boolean { return this.router.url.startsWith('/chats') || this.router.url.startsWith('/chat/') || this.router.url.startsWith('/people') || this.router.url.startsWith('/call/'); }
 
   readonly monthLabel = computed(() => this.month().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }));
   readonly selectedRecord = computed(() => this.records().find(record => record.attendance_date === this.selectedDay()) ?? null);
@@ -54,6 +57,11 @@ export class App implements OnInit {
     return this.users().filter(user => !linkedUserIds.has(user.id));
   });
   readonly currentRecords = computed(() => this.records().filter(record => record.employee_id === this.currentEmployee()?.id));
+  readonly monthRecords = computed(() => this.currentRecords().filter(record => record.attendance_date.startsWith(`${this.month().getFullYear()}-${String(this.month().getMonth() + 1).padStart(2, '0')}`)));
+  readonly monthWorkingDays = computed(() => this.monthRecords().filter(record => record.approval_status === 'approved' && record.attendance_type !== 'leave').length);
+  readonly monthPaidDays = computed(() => this.monthRecords().filter(record => record.approval_status === 'approved' && record.earned_amount > 0 && record.outstanding_amount === 0).length);
+  readonly monthUnpaidDays = computed(() => this.monthRecords().filter(record => record.approval_status === 'approved' && record.earned_amount > 0 && record.outstanding_amount > 0).length);
+  readonly monthLeaves = computed(() => this.monthRecords().filter(record => record.approval_status === 'approved' && record.attendance_type === 'leave').length);
   readonly pendingRecords = computed(() => this.records().filter(record => record.approval_status === 'pending'));
   readonly totalEarned = computed(() => this.currentRecords().filter(record => record.approval_status === 'approved').reduce((sum, record) => sum + Number(record.earned_amount), 0));
   readonly totalPaid = computed(() => this.currentRecords().reduce((sum, record) => sum + Number(record.paid_amount), 0));
@@ -68,6 +76,7 @@ export class App implements OnInit {
   async refresh(): Promise<void> { await this.run(async () => { this.employees.set(await this.attendance.loadEmployees()); this.users.set(await this.attendance.loadUsers()); this.records.set(await this.attendance.loadAllAttendance()); const employee = this.currentEmployee(); if (employee) { this.selectedEmployee.set(employee); this.payments.set(await this.attendance.loadPayments(employee.id)); } }); }
   async login(): Promise<void> { await this.run(async () => { const result = await this.attendance.login(this.loginUsername(), this.loginPassword()); if (result.error || !result.user) throw new Error(result.error); this.session.set(result.user); await this.refresh(); }); }
   logout(): void { this.attendance.logout(); this.session.set(null); }
+  openCommunication(): void { this.router.navigate(['/chats']); }
   selectEmployee(employee: Employee): void { this.selectedEmployee.set(employee); void this.loadEmployeePayments(employee); }
   async loadEmployeePayments(employee: Employee): Promise<void> { try { this.payments.set(await this.attendance.loadPayments(employee.id)); } catch (error) { this.error.set(this.readError(error)); } }
   previousMonth(): void { this.month.update(value => new Date(value.getFullYear(), value.getMonth() - 1, 1)); }
@@ -92,7 +101,7 @@ export class App implements OnInit {
   formatType(type: AttendanceType): string { return type.replace('_', ' ').replace(/\b\w/g, letter => letter.toUpperCase()); }
   toNumber(value: number | string): number { return Number(value); }
   currency(value: number): string { return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value || 0); }
-  recordFor(date: string): AttendanceRecord | undefined { return this.currentRecords().find(record => record.attendance_date === date); }
+  recordFor(date: string): AttendanceRecord | undefined { return this.monthRecords().find(record => record.attendance_date === date); }
   dayClass(date: string): string { const record = this.recordFor(date); if (!record) return 'future'; if (record.approval_status === 'pending') return 'pending'; if (record.approval_status === 'denied') return 'denied'; if (record.outstanding_amount === 0 && record.earned_amount > 0) return 'paid'; if (record.paid_amount > 0) return 'partial'; if (record.attendance_type === 'half_day') return 'half'; if (record.attendance_type === 'leave') return 'leave'; return 'unpaid'; }
   closeModal(): void { this.modal.set(null); }
   private today(): string { return new Date().toISOString().slice(0, 10); }

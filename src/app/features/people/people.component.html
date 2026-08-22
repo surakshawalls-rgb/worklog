@@ -1,0 +1,159 @@
+<div class="app-layout">
+
+  <!-- Header -->
+  <header class="app-header">
+    <a routerLink="/chats" class="back-btn"><ion-icon name="arrow-back-outline"></ion-icon></a>
+    <h1 class="header-title">People</h1>
+    <div style="width:36px"></div>
+  </header>
+
+  <!-- Search bar (always visible) -->
+  <div class="search-bar">
+    <ion-icon name="search-outline" class="search-icon"></ion-icon>
+    <input
+      type="search"
+      class="search-input"
+      placeholder="Search by username or name…"
+      [value]="searchQuery()"
+      (input)="onSearchInput($any($event.target).value)"
+      autocomplete="off"
+    />
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab() === 'search'" (click)="setTab('search')">Search</button>
+    <button class="tab-btn" [class.active]="activeTab() === 'requests'" (click)="setTab('requests')">
+      Requests
+      @if (pendingCount() > 0) { <span class="tab-badge">{{ pendingCount() }}</span> }
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'contacts'" (click)="setTab('contacts')">Contacts</button>
+  </div>
+
+  <!-- Content -->
+  <main class="main-content">
+
+    <!-- SEARCH TAB -->
+    @if (activeTab() === 'search') {
+      @if (isSearching()) {
+        <div class="center-state"><ion-spinner name="crescent"></ion-spinner></div>
+      } @else if (searchResults().length === 0 && searchQuery().trim()) {
+        <div class="center-state"><p>No users found for "{{ searchQuery() }}"</p></div>
+      } @else if (searchResults().length === 0) {
+        <div class="center-state">
+          <ion-icon name="search-outline" class="empty-icon"></ion-icon>
+          <p>Type a name or username to find people</p>
+        </div>
+      } @else {
+        <div class="user-list">
+          @for (u of searchResults(); track u.id) {
+            <div class="user-item">
+              <div class="user-avatar">{{ initials(u.displayName) }}</div>
+              <div class="user-info">
+                <span class="user-name">{{ u.displayName }}</span>
+                <span class="user-handle">&#64;{{ u.username }}</span>
+              </div>
+              <div class="user-actions">
+                @if (u.friendshipStatus === 'accepted') {
+                  <button class="action-btn msg" (click)="openChat(u.id, u.displayName)">
+                    <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+                  </button>
+                } @else if (u.friendshipStatus === 'pending') {
+                  <span class="status-chip pending">Pending</span>
+                } @else if (u.friendshipStatus === 'blocked') {
+                  <span class="status-chip blocked">Blocked</span>
+                } @else {
+                  <button class="action-btn add" (click)="sendRequest(u.id)" [disabled]="actionLoading() === u.id">
+                    @if (actionLoading() === u.id) { <ion-spinner name="crescent" style="width:16px;height:16px"></ion-spinner> }
+                    @else { <ion-icon name="person-add-outline"></ion-icon> }
+                  </button>
+                  <button class="action-btn msg" (click)="openChat(u.id, u.displayName)">
+                    <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+
+    <!-- REQUESTS TAB -->
+    @if (activeTab() === 'requests') {
+      @if (pendingRequests().length === 0) {
+        <div class="center-state">
+          <ion-icon name="people-outline" class="empty-icon"></ion-icon>
+          <p>No pending friend requests</p>
+        </div>
+      } @else {
+        <div class="user-list">
+          @for (req of pendingRequests(); track req.friendshipId) {
+            <div class="user-item">
+              <div class="user-avatar">{{ initials(req.displayName) }}</div>
+              <div class="user-info">
+                <span class="user-name">{{ req.displayName }}</span>
+                <span class="user-handle">&#64;{{ req.username }}</span>
+              </div>
+              <div class="user-actions">
+                <button class="action-btn accept" (click)="acceptRequest(req.friendshipId)" [disabled]="actionLoading() === req.friendshipId">
+                  @if (actionLoading() === req.friendshipId) { <ion-spinner name="crescent" style="width:16px;height:16px"></ion-spinner> }
+                  @else { <ion-icon name="checkmark-outline"></ion-icon> }
+                </button>
+                <button class="action-btn decline" (click)="declineRequest(req.friendshipId)" [disabled]="actionLoading() === req.friendshipId">
+                  <ion-icon name="close-outline"></ion-icon>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+
+    <!-- CONTACTS TAB -->
+    @if (activeTab() === 'contacts') {
+      @if (contacts().length === 0) {
+        <div class="center-state">
+          <ion-icon name="people-outline" class="empty-icon"></ion-icon>
+          <p>No contacts yet. Send friend requests to connect!</p>
+        </div>
+      } @else {
+        <div class="user-list">
+          @for (c of contacts(); track c.friendshipId) {
+            <div class="user-item">
+              <div class="user-avatar">{{ initials(c.displayName) }}</div>
+              <div class="user-info">
+                <span class="user-name">{{ c.displayName }}</span>
+                <span class="user-handle">&#64;{{ c.username }}</span>
+              </div>
+              <div class="user-actions">
+                <button class="action-btn msg" (click)="openChat(c.contactId, c.displayName)">
+                  <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </main>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <a routerLink="/chats" class="nav-item">
+      <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+      <span>Chats</span>
+    </a>
+    <a routerLink="/people" class="nav-item active">
+      <span class="nav-icon-wrap">
+        <ion-icon name="people-outline"></ion-icon>
+        @if (pendingCount() > 0) { <span class="nav-badge">{{ pendingCount() }}</span> }
+      </span>
+      <span>People</span>
+    </a>
+    <a routerLink="/profile" class="nav-item">
+      <ion-icon name="person-circle-outline"></ion-icon>
+      <span>Profile</span>
+    </a>
+  </nav>
+
+</div>
