@@ -2,7 +2,7 @@
 
   <!-- Header -->
   <header class="app-header">
-    <a routerLink="/chats" class="back-btn"><ion-icon name="arrow-back-outline"></ion-icon></a>
+    <a routerLink="/" class="back-btn"><ion-icon name="arrow-back-outline"></ion-icon></a>
     <h1 class="header-title">People</h1>
     <div style="width:36px"></div>
   </header>
@@ -54,7 +54,7 @@
                 <span class="user-handle">&#64;{{ u.username }}</span>
               </div>
               <div class="user-actions">
-                @if (u.friendshipStatus === 'accepted') {
+                @if (u.friendshipStatus === 'accepted' || isEmployeeContact(u.id)) {
                   <button class="action-btn msg" (click)="openChat(u.id, u.displayName)">
                     <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
                   </button>

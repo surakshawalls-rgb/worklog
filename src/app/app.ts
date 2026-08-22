@@ -45,7 +45,7 @@ export class App implements OnInit {
   readonly loginUsername = signal('');
   readonly loginPassword = signal('');
   readonly newEmployee = signal({ name: '', employee_code: '', mobile: '', default_daily_rate: 500, joining_date: this.today(), user_id: null as number | null, login_username: '', login_password: '' });
-  isCommunicationRoute(): boolean { return this.router.url.startsWith('/chats') || this.router.url.startsWith('/chat/') || this.router.url.startsWith('/people') || this.router.url.startsWith('/call/'); }
+  isCommunicationRoute(): boolean { return this.router.url.startsWith('/chats') || this.router.url.startsWith('/chat/') || this.router.url.startsWith('/people') || this.router.url.startsWith('/profile') || this.router.url.startsWith('/call/'); }
 
   readonly monthLabel = computed(() => this.month().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }));
   readonly selectedRecord = computed(() => this.records().find(record => record.attendance_date === this.selectedDay()) ?? null);
@@ -58,7 +58,7 @@ export class App implements OnInit {
   });
   readonly currentRecords = computed(() => this.records().filter(record => record.employee_id === this.currentEmployee()?.id));
   readonly monthRecords = computed(() => this.currentRecords().filter(record => record.attendance_date.startsWith(`${this.month().getFullYear()}-${String(this.month().getMonth() + 1).padStart(2, '0')}`)));
-  readonly monthWorkingDays = computed(() => this.monthRecords().filter(record => record.approval_status === 'approved' && record.attendance_type !== 'leave').length);
+  readonly monthWorkingDays = computed(() => this.monthRecords().filter(record => record.approval_status === 'approved').length);
   readonly monthPaidDays = computed(() => this.monthRecords().filter(record => record.approval_status === 'approved' && record.earned_amount > 0 && record.outstanding_amount === 0).length);
   readonly monthUnpaidDays = computed(() => this.monthRecords().filter(record => record.approval_status === 'approved' && record.earned_amount > 0 && record.outstanding_amount > 0).length);
   readonly monthLeaves = computed(() => this.monthRecords().filter(record => record.approval_status === 'approved' && record.attendance_type === 'leave').length);

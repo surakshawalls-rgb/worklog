@@ -108,7 +108,7 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   isOwnMessage(senderId: number): boolean { return this.currentUser()?.id === senderId; }
   formatTime(ts: string): string { return formatTime(ts); }
-  goBack(): void { this.router.navigate(['/chats']); }
+  goBack(): void { this.router.navigate(['/']); }
 
   toggleEmojiPicker(): void { this.showEmojiPicker.update(v => !v); }
   closeEmojiPicker(): void  { this.showEmojiPicker.set(false); }

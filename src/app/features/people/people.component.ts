@@ -85,6 +85,10 @@ export class PeopleComponent implements OnInit, OnDestroy {
     this.actionLoading.set(null);
   }
 
+  isEmployeeContact(userId: number): boolean {
+    return this.contacts().some(contact => contact.contactId === userId);
+  }
+
   async acceptRequest(friendshipId: number): Promise<void> {
     const user = this.currentUser();
     if (!user) return;
