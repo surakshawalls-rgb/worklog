@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS public.attendance_records (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   employee_id BIGINT NOT NULL REFERENCES public.attendance_employees(id) ON DELETE CASCADE,
   attendance_date DATE NOT NULL,
-  attendance_type TEXT NOT NULL CHECK (attendance_type IN ('full_day', 'half_day', 'leave')),
+  attendance_type TEXT NOT NULL CHECK (attendance_type IN ('full_day', 'half_day', 'leave', 'custom')),
   daily_rate NUMERIC(12,2) NOT NULL CHECK (daily_rate >= 0),
   earned_amount NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (earned_amount >= 0),
   approval_status TEXT NOT NULL DEFAULT 'pending' CHECK (approval_status IN ('pending', 'approved', 'denied')),
