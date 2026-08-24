@@ -6,7 +6,7 @@ import { AttendanceService } from '../../services/attendance.service';
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   template: `
     <div class="profile-page">
       <header class="profile-header"><button class="back-button" (click)="goBack()">&#8592;</button><h1>Profile</h1><span></span></header>
