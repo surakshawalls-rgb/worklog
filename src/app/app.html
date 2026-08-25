@@ -66,3 +66,17 @@
     </section>
   </div>
 }
+<!-- Mark can be clicked before a calendar is instantiated. -->
+@if (modal() === 'admin-attendance' && !(tab() === 'overview' && selectedEmployee())) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <section class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-heading"><div><p class="eyebrow">ADMIN ENTRY</p><h2>Mark attendance</h2></div><button class="icon-button" (click)="closeModal()">×</button></div>
+      <p class="muted">Marking for {{ adminAttendanceEmployee()?.name }}. The entry will remain pending until approved.</p>
+      <label>Date<input type="date" [ngModel]="adminAttendanceDate()" (ngModelChange)="adminAttendanceDate.set($event)" /></label>
+      <div class="choice-grid">@for (choice of [{value:'full_day', label:'Full day', note:'Earns daily rate'}, {value:'half_day', label:'Half day', note:'Earns half rate'}, {value:'leave', label:'Leave', note:'No earnings'}, {value:'custom', label:'Custom wage', note:'Enter any amount'}]; track choice.value) {<button [class.selected]="adminAttendanceType() === choice.value" (click)="setAdminAttendanceType($any(choice.value))"><b>{{ choice.label }}</b><small>{{ choice.note }}</small></button>}</div>
+      @if (adminAttendanceType() === 'custom') {<label>Custom wage<input type="number" min="1" [ngModel]="customWage()" (ngModelChange)="customWage.set(+$event)" placeholder="Enter amount" /></label>}
+      <label>Note<textarea [ngModel]="adminAttendanceNote()" (ngModelChange)="adminAttendanceNote.set($event)" rows="3"></textarea></label>
+      <button class="primary wide" (click)="submitAdminAttendance()">Save attendance</button>
+    </section>
+  </div>
+}
