@@ -29,8 +29,37 @@
     @if (message()) { <div class="alert success page-alert">{{ message() }}</div> }
     @if (error()) { <div class="alert error page-alert">{{ error() }}</div> }
     @if (session()?.role === 'employee') {
-      <main class="page employee-page"><section class="page-heading"><div><p class="eyebrow">MY WORK LOG</p><h1>{{ currentEmployee()?.name || session()?.name }}</h1><p class="muted">Employee ID: {{ currentEmployee()?.employee_code || 'Not linked yet' }}</p></div><button class="outline" (click)="refresh()">Refresh</button></section>
-        @if (currentEmployee()) { <section class="stats-grid"><article class="stat"><span>Full days</span><strong>{{ fullDays() }}</strong><small>Approved</small></article><article class="stat"><span>Half days</span><strong>{{ halfDays() }}</strong><small>Approved</small></article><article class="stat"><span>Leave</span><strong>{{ leaves() }}</strong><small>Approved</small></article><article class="stat"><span>Pending</span><strong>{{ pending() }}</strong><small>Awaiting review</small></article></section><section class="money-strip"><div><span>Total earned</span><b>{{ currency(totalEarned()) }}</b></div><div><span>Total paid</span><b>{{ currency(totalPaid()) }}</b></div><div class="money-due"><span>Outstanding</span><b>{{ currency(outstanding()) }}</b></div></section><ng-container *ngTemplateOutlet="calendar"></ng-container> } @else { <section class="empty-state"><h2>Your employee profile is not linked</h2><p>Ask an admin to add your employee profile with the same user account.</p></section> }
+      <main class="page employee-page">
+        @if (currentEmployee()) { 
+          <section class="calendar-section">
+            <div class="employee-header">
+              <div><p class="eyebrow">ATTENDANCE CALENDAR</p><h2>{{ currentEmployee()?.name }}</h2><p class="muted">{{ currentEmployee()?.employee_code }} · Joined {{ currentEmployee()?.joining_date | date:'d MMM yyyy' }} · {{ currentEmployee()?.mobile || 'No mobile' }}</p></div>
+              <button class="outline" (click)="refresh()">Refresh</button>
+            </div>
+            <div class="month-stats">
+              <span><b>{{ monthWorkingDays() }}</b>Working days</span>
+              <span><b>{{ monthPaidDays() }}</b>Paid days</span>
+              <span><b>{{ monthUnpaidDays() }}</b>Unpaid days</span>
+              <span><b>{{ monthLeaves() }}</b>Leave</span>
+            </div>
+            <ng-container *ngTemplateOutlet="calendar"></ng-container>
+            <div class="action-bar">
+              <button class="outline" (click)="openRangeAttendance()">Mark missed attendance</button>
+            </div>
+          </section>
+          <section class="payment-section">
+            <div class="panel-title"><div><p class="eyebrow">PAYMENT HISTORY</p><h2>Your payments</h2></div></div>
+            @if (payments().length > 0) {
+              @for (payment of payments(); track payment.id) {
+                <div class="payment-compact"><span>{{ payment.payment_date | date:'d MMM yyyy' }}</span><b>{{ currency(payment.amount) }}</b><span>{{ payment.payment_method }}</span><span class="status" [class.reversed]="payment.status === 'reversed'">{{ payment.status }}</span></div>
+              }
+            } @else {
+              <p class="muted">No payments recorded yet.</p>
+            }
+          </section>
+        } @else { 
+          <section class="empty-state"><h2>Your employee profile is not linked</h2><p>Ask an admin to add your employee profile with the same user account.</p></section> 
+        }
       </main>
     } @else {
       <main class="page admin-page"><section class="page-heading"><div><p class="eyebrow">ADMIN CONSOLE</p><h1>Good work starts with a clear day.</h1><p class="muted">Review attendance and keep every rupee accountable.</p></div><div class="admin-actions"><button class="outline" (click)="modal.set('admin-tools')">Attendance tools</button><button class="primary" (click)="modal.set('employee')">Add employee</button></div></section>
@@ -133,14 +162,6 @@
       <button class="primary wide" [disabled]="bulkEmployeeIds().length === 0" (click)="submitBulkAttendance()">Mark {{ bulkEmployeeIds().length }} employees</button>
     </section>
   </div>
-}
-@if (!isCommunicationRoute() && session()?.role === 'employee' && currentEmployee()) {
-  <section class="employee-report employee-history">
-    <div class="report-heading"><div><p class="eyebrow">ATTENDANCE HISTORY</p><h2>{{ currentEmployee()?.name }}</h2></div><div class="month-controls"><button class="outline" (click)="previousMonth()" aria-label="Previous month">‹</button><span class="report-month">{{ monthLabel() }}</span><button class="outline" (click)="nextMonth()" aria-label="Next month">›</button></div></div>
-    <div class="report-stats"><span><b>{{ monthWorkingDays() }}</b>Working days</span><span><b>{{ monthPaidDays() }}</b>Paid days</span><span><b>{{ monthUnpaidDays() }}</b>Unpaid days</span><span><b>{{ monthLeaves() }}</b>Leave</span></div>
-    <div class="attendance-log">@for (record of monthRecords(); track record.id) {<div class="log-row"><span>{{ record.attendance_date | date:'d MMM' }}</span><b>{{ formatType(record.attendance_type) }}</b><span title="Marked by {{ record.submitted_by_name }}">{{ record.submitted_by_name || 'Admin' }}</span><span>{{ record.note || 'No note added' }}</span><em>{{ record.approval_status }}</em><button class="log-edit-btn" title="Edit this record" (click)="openCorrection(record)">✎</button></div>} @empty {<p class="muted">No attendance entries in this month.</p>}</div>
-    <div class="employee-ledger"><p class="eyebrow">PAYMENT HISTORY</p>@for (payment of payments(); track payment.id) {<div class="history-row"><span>{{ payment.payment_date | date:'d MMM yyyy' }}</span><b>{{ currency(payment.amount) }}</b><span>{{ payment.payment_method }}</span><span class="status" [class.reversed]="payment.status === 'reversed'">{{ payment.status }}</span></div>} @empty {<p class="muted">No payments recorded yet.</p>}</div>
-  </section>
 }
 @if (modal() === 'range-attendance') {
   <div class="modal-backdrop" (click)="closeModal()">
