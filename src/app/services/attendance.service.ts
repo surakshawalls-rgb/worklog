@@ -12,6 +12,7 @@ export interface UserOption { id: number; username: string; display_name: string
 export interface Employee { id: number; user_id: number | null; employee_code: string; name: string; mobile: string | null; default_daily_rate: number; joining_date: string; status: 'active' | 'inactive'; }
 export interface AttendanceRecord { id: number; employee_id: number; attendance_date: string; attendance_type: AttendanceType; daily_rate: number; earned_amount: number; approval_status: ApprovalStatus; note: string | null; approved_by: number | null; approved_by_name: string | null; paid_amount: number; outstanding_amount: number; created_at?: string; }
 export interface Payment { id: number; employee_id: number; amount: number; payment_date: string; payment_method: string; note: string | null; status: PaymentStatus; created_by: number | null; created_at: string; }
+export interface DailyAnnouncement { id: number; message: string; published_at: string; expires_at: string; posted_by: number | null; }
 
 @Injectable({ providedIn: 'root' })
 export class AttendanceService {
@@ -114,7 +115,7 @@ export class AttendanceService {
     if (error) throw new Error(error.code === '23505' ? 'Attendance already submitted for this date.' : error.message);
   }
   async updateApproval(id: number, status: 'approved' | 'denied', adminId: number): Promise<void> {
-    const { error } = await this.client.from('attendance_records').update({ approval_status: status, approved_by: adminId, approved_at: new Date().toISOString() }).eq('id', id).eq('approval_status', 'pending');
+    const { error } = await this.client.rpc('update_attendance_approval', { p_attendance_id: id, p_status: status, p_admin_id: adminId });
     if (error) throw error;
   }
   async correctAttendance(id: number, type: AttendanceType, adminId: number, note: string, customWage = 0): Promise<void> {
@@ -124,10 +125,17 @@ export class AttendanceService {
     if (type === 'custom' && customWage <= 0) throw new Error('Enter a custom wage greater than zero.');
     const { error } = await this.client.from('attendance_records').update({ attendance_type: type, earned_amount: earned, approval_status: 'approved', note: note.trim() || null, approved_by: adminId, approved_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', id);
     if (error) throw error;
+    const { error: reconciliationError } = await this.client.rpc('reconcile_attendance_employee', { p_employee_id: record.employee_id });
+    if (reconciliationError) throw reconciliationError;
   }
   async processPayment(employeeId: number, amount: number, date: string, method: string, note: string, adminId: number): Promise<void> {
     const { error } = await this.client.rpc('process_attendance_payment', { p_employee_id: employeeId, p_amount: amount, p_payment_date: date, p_payment_method: method, p_note: note || null, p_created_by: adminId });
-    if (error) throw new Error(error.message.includes('PAYMENT_EXCEEDS_OUTSTANDING') ? 'Payment cannot exceed current outstanding amount.' : error.message);
+    if (error) throw new Error(error.message);
+  }
+  async loadAllPayments(): Promise<Payment[]> {
+    const { data, error } = await this.client.from('attendance_payments').select('*').order('payment_date', { ascending: false });
+    if (error) throw error;
+    return (data || []) as Payment[];
   }
   async loadPayments(employeeId: number): Promise<Payment[]> {
     const { data, error } = await this.client.from('attendance_payments').select('*').eq('employee_id', employeeId).order('payment_date', { ascending: false });
@@ -137,6 +145,29 @@ export class AttendanceService {
   async reversePayment(paymentId: number, adminId: number): Promise<void> {
     const { error } = await this.client.rpc('reverse_attendance_payment', { p_payment_id: paymentId, p_reversed_by: adminId });
     if (error) throw error;
+  }
+  async submitBulkAttendance(employeeIds: number[], date: string, type: AttendanceType, note: string, customWage: number, adminId: number): Promise<number> {
+    const { data, error } = await this.client.rpc('submit_bulk_attendance', { p_employee_ids: employeeIds, p_attendance_date: date, p_attendance_type: type, p_note: note || null, p_custom_wage: customWage || 0, p_submitted_by: adminId });
+    if (error) throw new Error(error.message.includes('BULK_ATTENDANCE_ALREADY_EXISTS') ? 'At least one selected employee already has attendance for this date. Nothing was saved.' : error.message);
+    return Number(data);
+  }
+  async submitAttendanceRange(employeeIds: number[], startDate: string, endDate: string, type: AttendanceType, note: string, customWage: number, userId: number): Promise<number> {
+    const { data, error } = await this.client.rpc('submit_attendance_range', { p_employee_ids: employeeIds, p_start_date: startDate, p_end_date: endDate, p_attendance_type: type, p_note: note || null, p_custom_wage: customWage || 0, p_submitted_by: userId });
+    if (error) throw new Error(error.message.includes('ATTENDANCE_ALREADY_EXISTS_IN_RANGE') ? 'Attendance already exists for at least one selected day. Nothing was saved.' : error.message);
+    return Number(data);
+  }
+  async loadActiveAnnouncement(): Promise<DailyAnnouncement | null> {
+    const { data, error } = await this.client.from('daily_announcements').select('*').gt('expires_at', new Date().toISOString()).order('published_at', { ascending: false }).limit(1);
+    if (error) {
+      // Allows the app to keep working until migration 017 is applied.
+      if (error.code === '42P01') return null;
+      throw error;
+    }
+    return (data?.[0] ?? null) as DailyAnnouncement | null;
+  }
+  async publishDailyAnnouncement(message: string, adminId: number): Promise<void> {
+    const { error } = await this.client.rpc('publish_daily_announcement', { p_message: message, p_posted_by: adminId });
+    if (error) throw new Error(error.message);
   }
   private mapAttendanceRows(rows: unknown[] | null): AttendanceRecord[] {
     return (rows || []).map(row => {

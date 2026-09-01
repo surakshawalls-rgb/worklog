@@ -19,6 +19,13 @@
 } @else {
   <div class="app-shell">
     <header class="topbar"><div class="brand"><span class="brand-mark small">SH</span><span><b>SURAKSHA HUB</b><small>Attendance &amp; wages</small></span></div><div class="user-menu"><button class="text-button top-action" (click)="openCommunication()">Chat &amp; calls</button><span>{{ session()?.name }}</span><span class="role-chip">{{ session()?.role }}</span><button class="text-button top-action" (click)="modal.set('password')">Password</button><button class="icon-button" (click)="logout()" aria-label="Sign out">↪</button></div></header>
+    @if (announcement() || session()?.role === 'admin') {
+      <section class="daily-plan-banner" [class.empty-plan]="!announcement()">
+        <div><p class="eyebrow">TODAY'S WORK PLAN</p><p>{{ announcement()?.message || 'No work plan has been posted for today.' }}</p></div>
+        @if (session()?.role === 'admin') { <button class="outline plan-edit" (click)="openAnnouncementEditor()">{{ announcement() ? 'Update plan' : 'Post plan' }}</button> }
+      </section>
+    }
+    @if (!isCommunicationRoute() && session()?.role === 'employee') { <div class="attendance-shortcut"><button class="outline" (click)="openRangeAttendance()">Mark missed attendance</button></div> }
     @if (message()) { <div class="alert success page-alert">{{ message() }}</div> }
     @if (error()) { <div class="alert error page-alert">{{ error() }}</div> }
     @if (session()?.role === 'employee') {
@@ -26,7 +33,7 @@
         @if (currentEmployee()) { <section class="stats-grid"><article class="stat"><span>Full days</span><strong>{{ fullDays() }}</strong><small>Approved</small></article><article class="stat"><span>Half days</span><strong>{{ halfDays() }}</strong><small>Approved</small></article><article class="stat"><span>Leave</span><strong>{{ leaves() }}</strong><small>Approved</small></article><article class="stat"><span>Pending</span><strong>{{ pending() }}</strong><small>Awaiting review</small></article></section><section class="money-strip"><div><span>Total earned</span><b>{{ currency(totalEarned()) }}</b></div><div><span>Total paid</span><b>{{ currency(totalPaid()) }}</b></div><div class="money-due"><span>Outstanding</span><b>{{ currency(outstanding()) }}</b></div></section><ng-container *ngTemplateOutlet="calendar"></ng-container> } @else { <section class="empty-state"><h2>Your employee profile is not linked</h2><p>Ask an admin to add your employee profile with the same user account.</p></section> }
       </main>
     } @else {
-      <main class="page admin-page"><section class="page-heading"><div><p class="eyebrow">ADMIN CONSOLE</p><h1>Good work starts with a clear day.</h1><p class="muted">Review attendance and keep every rupee accountable.</p></div><button class="primary" (click)="modal.set('employee')">＋ Add employee</button></section>
+      <main class="page admin-page"><section class="page-heading"><div><p class="eyebrow">ADMIN CONSOLE</p><h1>Good work starts with a clear day.</h1><p class="muted">Review attendance and keep every rupee accountable.</p></div><div class="admin-actions"><button class="outline" (click)="modal.set('admin-tools')">Attendance tools</button><button class="primary" (click)="modal.set('employee')">Add employee</button></div></section>
         <nav class="tabs"><button [class.active]="tab() === 'overview'" (click)="tab.set('overview')">Overview</button><button [class.active]="tab() === 'approval'" (click)="tab.set('approval')">Approval <span>{{ pendingRecords().length }}</span></button><button [class.active]="tab() === 'payments'" (click)="tab.set('payments')">Payments</button></nav>
         @if (tab() === 'overview') { <section class="stats-grid admin-stats"><article class="stat"><span>Employees</span><strong>{{ employees().length }}</strong><small>Active profiles</small></article><article class="stat"><span>Pending approval</span><strong>{{ pendingRecords().length }}</strong><small>Needs review</small></article><article class="stat"><span>Approved days</span><strong>{{ records().filter(r => r.approval_status === 'approved').length }}</strong><small>All employees</small></article><article class="stat"><span>Outstanding</span><strong>{{ currency(records().filter(r => r.approval_status === 'approved').reduce((total, r) => total + toNumber(r.outstanding_amount), 0)) }}</strong><small>Across all profiles</small></article></section><section class="panel"><div class="panel-title"><div><p class="eyebrow">PEOPLE</p><h2>Employee balances</h2></div><button class="outline" (click)="refresh()">Refresh</button></div><div class="employee-list">@for (employee of employees(); track employee.id) {<div class="employee-row"><button class="employee-main" (click)="selectEmployee(employee); tab.set('overview')"><span class="avatar">{{ employee.name.slice(0, 1) }}</span><span class="employee-name"><b>{{ employee.name }}</b><small>{{ employee.employee_code }} · ₹{{ employee.default_daily_rate }}/day</small></span><span class="row-total">{{ currency(records().filter(r => r.employee_id === employee.id).reduce((total, r) => total + toNumber(r.outstanding_amount), 0)) }}<small>outstanding</small></span><span>›</span></button><button class="mark-button" (click)="openAdminAttendance(employee)">Mark</button><button class="share-button" (click)="shareCredentials(employee)">Share login</button><button class="delete-button" (click)="removeEmployee(employee)" aria-label="Delete employee">Delete</button></div>} @empty {<p class="muted">No employees yet. Add the first profile to begin.</p>}</div></section>@if (selectedEmployee()) {<ng-container *ngTemplateOutlet="calendar"></ng-container>}}
         @else if (tab() === 'approval') { <section class="panel"><div class="panel-title"><div><p class="eyebrow">INBOX</p><h2>Attendance awaiting approval</h2></div><button class="outline" (click)="refresh()">Refresh</button></div>@for (record of pendingRecords(); track record.id) {<div class="approval-row"><div class="date-block"><b>{{ record.attendance_date | date:'d MMM' }}</b><small>{{ record.attendance_type.replace('_', ' ') }}</small></div><div class="approval-detail"><b>{{ employees().find(e => e.id === record.employee_id)?.name || 'Employee' }}</b><span>{{ record.note || 'No note added' }}</span></div><button class="approve" (click)="decide(record, 'approved')">Approve</button><button class="deny" (click)="decide(record, 'denied')">Deny</button></div>} @empty {<div class="empty-state compact"><h2>All caught up</h2><p>There are no attendance records waiting for review.</p></div>}</section> }
@@ -36,14 +43,14 @@
             @for (employee of employees(); track employee.id) {
               <div class="payment-row selectable-row" role="button" tabindex="0" (click)="selectEmployee(employee)" (keydown.enter)="selectEmployee(employee)">
                 <div class="avatar">{{ employee.name.slice(0, 1) }}</div><div class="employee-name"><b>{{ employee.name }}</b><small>{{ employee.employee_code }}</small></div>
-                <span>{{ currency(records().filter(r => r.employee_id === employee.id).reduce((total, r) => total + toNumber(r.earned_amount), 0)) }}<small>earned</small></span><span>{{ currency(records().filter(r => r.employee_id === employee.id).reduce((total, r) => total + toNumber(r.paid_amount), 0)) }}<small>paid</small></span><span class="due-value">{{ currency(records().filter(r => r.employee_id === employee.id).reduce((total, r) => total + toNumber(r.outstanding_amount), 0)) }}<small>due</small></span>
-                <button class="primary small-button" [disabled]="records().filter(r => r.employee_id === employee.id).reduce((total, r) => total + toNumber(r.outstanding_amount), 0) === 0" (click)="$event.stopPropagation(); openPayment(employee)">Pay</button>
+                <span>{{ currency(employeeEarned(employee.id)) }}<small>earned</small></span><span>{{ currency(employeePaid(employee.id)) }}<small>paid</small></span><span class="due-value" [class.advance-value]="employeeBalance(employee.id) < 0">{{ currency(employeeBalance(employee.id)) }}<small>{{ employeeBalance(employee.id) < 0 ? 'advance' : 'due' }}</small></span>
+                <button class="primary small-button" (click)="$event.stopPropagation(); openPayment(employee)">Pay / advance</button>
               </div>
             } @empty { <p class="muted">Add an employee to start processing wages.</p> }
           </section>
           @if (selectedEmployee()) {
             <section class="panel history-panel">
-              <section class="employee-report payment-detail"><div class="report-heading"><div><p class="eyebrow">EMPLOYEE DETAIL</p><h2>{{ selectedEmployee()?.name }}</h2><p class="muted">{{ selectedEmployee()?.employee_code }} · Joined {{ selectedEmployee()?.joining_date | date:'d MMM yyyy' }} · {{ selectedEmployee()?.mobile || 'No mobile' }}</p></div><span class="report-month">{{ monthLabel() }}</span></div><div class="report-stats"><span><b>{{ monthWorkingDays() }}</b>Working days</span><span><b>{{ monthPaidDays() }}</b>Paid days</span><span><b>{{ monthUnpaidDays() }}</b>Unpaid days</span><span><b>{{ monthLeaves() }}</b>Leave</span></div></section>
+              <section class="employee-report payment-detail"><div class="report-heading"><div><p class="eyebrow">EMPLOYEE DETAIL</p><h2>{{ selectedEmployee()?.name }}</h2><p class="muted">{{ selectedEmployee()?.employee_code }} · Joined {{ selectedEmployee()?.joining_date | date:'d MMM yyyy' }} · {{ selectedEmployee()?.mobile || 'No mobile' }}</p></div><div class="month-controls"><button class="outline" (click)="previousMonth()" aria-label="Previous month">‹</button><span class="report-month">{{ monthLabel() }}</span><button class="outline" (click)="nextMonth()" aria-label="Next month">›</button></div></div><div class="report-stats"><span><b>{{ monthWorkingDays() }}</b>Working days</span><span><b>{{ monthPaidDays() }}</b>Paid days</span><span><b>{{ monthUnpaidDays() }}</b>Unpaid days</span><span><b>{{ monthLeaves() }}</b>Leave</span></div></section>
               <div class="panel-title"><div><p class="eyebrow">LEDGER</p><h2>{{ selectedEmployee()?.name }} payment history</h2></div></div>
               @for (payment of payments(); track payment.id) {<div class="history-row"><span>{{ payment.payment_date | date:'d MMM yyyy' }}</span><b>{{ currency(payment.amount) }}</b><span>{{ payment.payment_method }}</span><span class="status" [class.reversed]="payment.status === 'reversed'">{{ payment.status }}</span><button class="text-button" [disabled]="payment.status === 'reversed'" (click)="reverse(payment)">Reverse</button></div>} @empty {<p class="muted">No payments recorded for this employee.</p>}
             </section>
@@ -54,7 +61,7 @@
   </div>
 }
 
-@if (session()?.role === 'admin' && selectedEmployee() && tab() !== 'payments') {<section class="employee-report"><div class="report-heading"><div><p class="eyebrow">EMPLOYEE DETAIL</p><h2>{{ selectedEmployee()?.name }}</h2><p class="muted">{{ selectedEmployee()?.employee_code }} · Joined {{ selectedEmployee()?.joining_date | date:'d MMM yyyy' }} · {{ selectedEmployee()?.mobile || 'No mobile' }}</p></div><span class="report-month">{{ monthLabel() }}</span></div><div class="report-stats"><span><b>{{ monthWorkingDays() }}</b>Working days</span><span><b>{{ monthPaidDays() }}</b>Paid days</span><span><b>{{ monthUnpaidDays() }}</b>Unpaid days</span><span><b>{{ monthLeaves() }}</b>Leave</span></div><div class="attendance-log">@for (record of monthRecords(); track record.id) {<div class="log-row"><span>{{ record.attendance_date | date:'d MMM' }}</span><b>{{ formatType(record.attendance_type) }}</b><span>{{ record.created_at ? (record.created_at | date:'shortTime') : 'Time unavailable' }}</span><span>{{ record.note || 'No note added' }}</span><em>{{ record.approval_status }}</em></div>} @empty {<p class="muted">No attendance entries in this month.</p>}</div></section>}
+@if (session()?.role === 'admin' && selectedEmployee() && tab() !== 'payments') {<section class="employee-report"><div class="report-heading"><div><p class="eyebrow">EMPLOYEE DETAIL</p><h2>{{ selectedEmployee()?.name }}</h2><p class="muted">{{ selectedEmployee()?.employee_code }} · Joined {{ selectedEmployee()?.joining_date | date:'d MMM yyyy' }} · {{ selectedEmployee()?.mobile || 'No mobile' }}</p></div><div class="month-controls"><button class="outline" (click)="previousMonth()" aria-label="Previous month">‹</button><span class="report-month">{{ monthLabel() }}</span><button class="outline" (click)="nextMonth()" aria-label="Next month">›</button></div></div><div class="report-stats"><span><b>{{ monthWorkingDays() }}</b>Working days</span><span><b>{{ monthPaidDays() }}</b>Paid days</span><span><b>{{ monthUnpaidDays() }}</b>Unpaid days</span><span><b>{{ monthLeaves() }}</b>Leave</span></div><div class="attendance-log">@for (record of monthRecords(); track record.id) {<div class="log-row"><span>{{ record.attendance_date | date:'d MMM' }}</span><b>{{ formatType(record.attendance_type) }}</b><span>{{ record.created_at ? (record.created_at | date:'shortTime') : 'Time unavailable' }}</span><span>{{ record.note || 'No note added' }}</span><em>{{ record.approval_status }}</em></div>} @empty {<p class="muted">No attendance entries in this month.</p>}</div></section>}
 
 <ng-template #calendar><section class="panel calendar-panel">
 @if (modal()) { <div class="modal-backdrop" (click)="closeModal()"><section class="modal" (click)="$event.stopPropagation()">
@@ -95,6 +102,64 @@
       @if (adminAttendanceType() === 'custom') {<label>Custom wage<input type="number" min="1" [ngModel]="customWage()" (ngModelChange)="customWage.set(+$event)" placeholder="Enter amount" /></label>}
       <label>Note<textarea [ngModel]="adminAttendanceNote()" (ngModelChange)="adminAttendanceNote.set($event)" rows="3"></textarea></label>
       <button class="primary wide" (click)="submitAdminAttendance()">Save attendance</button>
+    </section>
+  </div>
+}
+@if (modal() === 'announcement') {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <section class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-heading"><div><p class="eyebrow">DAILY WORK PLAN</p><h2>Tell the team about today</h2></div><button class="icon-button" (click)="closeModal()">×</button></div>
+      <p class="muted">This banner is shown to everyone after login and automatically disappears at 8:00 PM India time.</p>
+      <label>Today's plan<textarea [ngModel]="announcementText()" (ngModelChange)="announcementText.set($event)" rows="6" placeholder="Example: Pathak and Vishnu will work at the plant. Ajay, Atul and Sanjay will work at the Hyderabad site."></textarea></label>
+      <button class="primary wide" (click)="saveAnnouncement()">Post today's plan</button>
+    </section>
+  </div>
+}
+@if (modal() === 'bulk-attendance') {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <section class="modal bulk-modal" (click)="$event.stopPropagation()">
+      <div class="modal-heading"><div><p class="eyebrow">BULK ATTENDANCE</p><h2>Mark a team at once</h2></div><button class="icon-button" (click)="closeModal()">×</button></div>
+      <p class="muted">All selected employees receive the same entry. If any selected employee already has an entry for that date, nothing is saved.</p>
+      <label>Date<input type="date" [ngModel]="bulkAttendanceDate()" (ngModelChange)="bulkAttendanceDate.set($event)" /></label>
+      <div class="choice-grid">@for (choice of [{value:'full_day', label:'Full day', note:'Earns daily rate'}, {value:'half_day', label:'Half day', note:'Earns half rate'}, {value:'leave', label:'Leave', note:'No earnings'}, {value:'custom', label:'Custom wage', note:'Enter any amount'}]; track choice.value) {<button [class.selected]="bulkAttendanceType() === choice.value" (click)="setBulkAttendanceType($any(choice.value))"><b>{{ choice.label }}</b><small>{{ choice.note }}</small></button>}</div>
+      @if (bulkAttendanceType() === 'custom') {<label>Custom wage<input type="number" min="1" [ngModel]="customWage()" (ngModelChange)="customWage.set(+$event)" placeholder="Enter amount" /></label>}
+      <label>Note<textarea [ngModel]="bulkAttendanceNote()" (ngModelChange)="bulkAttendanceNote.set($event)" rows="2" placeholder="Site or shift details"></textarea></label>
+      <div class="bulk-selection"><div><b>Select employees</b><small>{{ bulkEmployeeIds().length }} selected</small></div>@for (employee of employees(); track employee.id) {<label class="employee-check"><input type="checkbox" [checked]="bulkEmployeeIds().includes(employee.id)" (change)="toggleBulkEmployee(employee.id)" /><span>{{ employee.name }} <small>{{ employee.employee_code }}</small></span></label>}</div>
+      <button class="primary wide" [disabled]="bulkEmployeeIds().length === 0" (click)="submitBulkAttendance()">Mark {{ bulkEmployeeIds().length }} employees</button>
+    </section>
+  </div>
+}
+@if (!isCommunicationRoute() && session()?.role === 'employee' && currentEmployee()) {
+  <section class="employee-report employee-history">
+    <div class="report-heading"><div><p class="eyebrow">ATTENDANCE HISTORY</p><h2>{{ currentEmployee()?.name }}</h2></div><div class="month-controls"><button class="outline" (click)="previousMonth()" aria-label="Previous month">‹</button><span class="report-month">{{ monthLabel() }}</span><button class="outline" (click)="nextMonth()" aria-label="Next month">›</button></div></div>
+    <div class="report-stats"><span><b>{{ monthWorkingDays() }}</b>Working days</span><span><b>{{ monthPaidDays() }}</b>Paid days</span><span><b>{{ monthUnpaidDays() }}</b>Unpaid days</span><span><b>{{ monthLeaves() }}</b>Leave</span></div>
+    <div class="attendance-log">@for (record of monthRecords(); track record.id) {<div class="log-row"><span>{{ record.attendance_date | date:'d MMM' }}</span><b>{{ formatType(record.attendance_type) }}</b><span>{{ record.created_at ? (record.created_at | date:'shortTime') : 'Time unavailable' }}</span><span>{{ record.note || 'No note added' }}</span><em>{{ record.approval_status }}</em></div>} @empty {<p class="muted">No attendance entries in this month.</p>}</div>
+    <div class="employee-ledger"><p class="eyebrow">PAYMENT HISTORY</p>@for (payment of payments(); track payment.id) {<div class="history-row"><span>{{ payment.payment_date | date:'d MMM yyyy' }}</span><b>{{ currency(payment.amount) }}</b><span>{{ payment.payment_method }}</span><span class="status" [class.reversed]="payment.status === 'reversed'">{{ payment.status }}</span></div>} @empty {<p class="muted">No payments recorded yet.</p>}</div>
+  </section>
+}
+@if (modal() === 'range-attendance') {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <section class="modal bulk-modal" (click)="$event.stopPropagation()">
+      <div class="modal-heading"><div><p class="eyebrow">MISSED ATTENDANCE</p><h2>Mark a date range</h2></div><button class="icon-button" (click)="closeModal()">×</button></div>
+      <p class="muted">Use this when attendance was missed on an earlier date. Entries remain pending until approved.</p>
+      <div class="form-row"><label>From<input type="date" [ngModel]="rangeStartDate()" (ngModelChange)="rangeStartDate.set($event)" /></label><label>To<input type="date" [ngModel]="rangeEndDate()" (ngModelChange)="rangeEndDate.set($event)" /></label></div>
+      <div class="choice-grid">@for (choice of [{value:'full_day', label:'Full day', note:'Earns daily rate'}, {value:'half_day', label:'Half day', note:'Earns half rate'}, {value:'leave', label:'Leave', note:'No earnings'}, {value:'custom', label:'Custom wage', note:'Enter any amount'}]; track choice.value) {<button [class.selected]="rangeAttendanceType() === choice.value" (click)="setRangeAttendanceType($any(choice.value))"><b>{{ choice.label }}</b><small>{{ choice.note }}</small></button>}</div>
+      @if (rangeAttendanceType() === 'custom') {<label>Custom wage<input type="number" min="1" [ngModel]="customWage()" (ngModelChange)="customWage.set(+$event)" placeholder="Enter amount" /></label>}
+      <label>Note<textarea [ngModel]="rangeAttendanceNote()" (ngModelChange)="rangeAttendanceNote.set($event)" rows="2" placeholder="Reason for late entry"></textarea></label>
+      @if (session()?.role === 'admin') {<div class="bulk-selection"><div><b>Select employees</b><small>{{ rangeEmployeeIds().length }} selected</small></div>@for (employee of employees(); track employee.id) {<label class="employee-check"><input type="checkbox" [checked]="rangeEmployeeIds().includes(employee.id)" (change)="toggleRangeEmployee(employee.id)" /><span>{{ employee.name }} <small>{{ employee.employee_code }}</small></span></label>}</div>}
+      <button class="primary wide" [disabled]="rangeEmployeeIds().length === 0" (click)="submitRangeAttendance()">Submit missed attendance</button>
+    </section>
+  </div>
+}
+@if (modal() === 'admin-tools') {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <section class="modal admin-tools-modal" (click)="$event.stopPropagation()">
+      <div class="modal-heading"><div><p class="eyebrow">ADMIN ACTIONS</p><h2>Attendance tools</h2></div><button class="icon-button" (click)="closeModal()">×</button></div>
+      <p class="muted">Choose the task you want to complete.</p>
+      <div class="admin-tool-grid">
+        <button (click)="openBulkAttendance()"><b>Bulk mark</b><small>Mark one date for several employees</small></button>
+        <button (click)="openRangeAttendance()"><b>Mark date range</b><small>Submit missed attendance across past dates</small></button>
+      </div>
     </section>
   </div>
 }
