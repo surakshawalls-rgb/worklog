@@ -52,7 +52,7 @@
             <section class="panel history-panel">
               <section class="employee-report payment-detail"><div class="report-heading"><div><p class="eyebrow">EMPLOYEE DETAIL</p><h2>{{ selectedEmployee()?.name }}</h2><p class="muted">{{ selectedEmployee()?.employee_code }} · Joined {{ selectedEmployee()?.joining_date | date:'d MMM yyyy' }} · {{ selectedEmployee()?.mobile || 'No mobile' }}</p></div><div class="month-controls"><button class="outline" (click)="previousMonth()" aria-label="Previous month">‹</button><span class="report-month">{{ monthLabel() }}</span><button class="outline" (click)="nextMonth()" aria-label="Next month">›</button></div></div><div class="report-stats"><span><b>{{ monthWorkingDays() }}</b>Working days</span><span><b>{{ monthPaidDays() }}</b>Paid days</span><span><b>{{ monthUnpaidDays() }}</b>Unpaid days</span><span><b>{{ monthLeaves() }}</b>Leave</span></div></section>
               <div class="panel-title"><div><p class="eyebrow">LEDGER</p><h2>{{ selectedEmployee()?.name }} payment history</h2></div></div>
-              @for (payment of payments(); track payment.id) {<div class="history-row"><span>{{ payment.payment_date | date:'d MMM yyyy' }}</span><b>{{ currency(payment.amount) }}</b><span>{{ payment.payment_method }}</span><span class="status" [class.reversed]="payment.status === 'reversed'">{{ payment.status }}</span><button class="text-button" [disabled]="payment.status === 'reversed'" (click)="reverse(payment)">Reverse</button></div>} @empty {<p class="muted">No payments recorded for this employee.</p>}
+              @for (payment of payments(); track payment.id) {<div class="history-row"><span>{{ payment.payment_date | date:'d MMM yyyy' }}</span><b>{{ currency(payment.amount) }}</b><span>{{ payment.payment_method }}</span><span class="status" [class.reversed]="payment.status === 'reversed'">{{ payment.status }}</span><button class="text-button" [disabled]="payment.status === 'reversed'" (click)="openPaymentEdit(payment)">Edit</button><button class="text-button" [disabled]="payment.status === 'reversed'" (click)="reverse(payment)">Reverse</button></div>} @empty {<p class="muted">No payments recorded for this employee.</p>}
             </section>
           }
         }
@@ -133,7 +133,7 @@
   <section class="employee-report employee-history">
     <div class="report-heading"><div><p class="eyebrow">ATTENDANCE HISTORY</p><h2>{{ currentEmployee()?.name }}</h2></div><div class="month-controls"><button class="outline" (click)="previousMonth()" aria-label="Previous month">‹</button><span class="report-month">{{ monthLabel() }}</span><button class="outline" (click)="nextMonth()" aria-label="Next month">›</button></div></div>
     <div class="report-stats"><span><b>{{ monthWorkingDays() }}</b>Working days</span><span><b>{{ monthPaidDays() }}</b>Paid days</span><span><b>{{ monthUnpaidDays() }}</b>Unpaid days</span><span><b>{{ monthLeaves() }}</b>Leave</span></div>
-    <div class="attendance-log">@for (record of monthRecords(); track record.id) {<div class="log-row"><span>{{ record.attendance_date | date:'d MMM' }}</span><b>{{ formatType(record.attendance_type) }}</b><span title="Marked by {{ record.submitted_by_name }}">{{ record.submitted_by_name || 'Admin' }}</span><span>{{ record.note || 'No note added' }}</span><em>{{ record.approval_status }}</em></div>} @empty {<p class="muted">No attendance entries in this month.</p>}</div>
+    <div class="attendance-log">@for (record of monthRecords(); track record.id) {<div class="log-row"><span>{{ record.attendance_date | date:'d MMM' }}</span><b>{{ formatType(record.attendance_type) }}</b><span title="Marked by {{ record.submitted_by_name }}">{{ record.submitted_by_name || 'Admin' }}</span><span>{{ record.note || 'No note added' }}</span><em>{{ record.approval_status }}</em><button class="log-edit-btn" title="Edit this record" (click)="openCorrection(record)">✎</button></div>} @empty {<p class="muted">No attendance entries in this month.</p>}</div>
     <div class="employee-ledger"><p class="eyebrow">PAYMENT HISTORY</p>@for (payment of payments(); track payment.id) {<div class="history-row"><span>{{ payment.payment_date | date:'d MMM yyyy' }}</span><b>{{ currency(payment.amount) }}</b><span>{{ payment.payment_method }}</span><span class="status" [class.reversed]="payment.status === 'reversed'">{{ payment.status }}</span></div>} @empty {<p class="muted">No payments recorded yet.</p>}</div>
   </section>
 }
@@ -148,6 +148,18 @@
       <label>Note<textarea [ngModel]="rangeAttendanceNote()" (ngModelChange)="rangeAttendanceNote.set($event)" rows="2" placeholder="Reason for late entry"></textarea></label>
       @if (session()?.role === 'admin') {<div class="bulk-selection"><div><b>Select employees</b><small>{{ rangeEmployeeIds().length }} selected</small></div>@for (employee of employees(); track employee.id) {<label class="employee-check"><input type="checkbox" [checked]="rangeEmployeeIds().includes(employee.id)" (change)="toggleRangeEmployee(employee.id)" /><span>{{ employee.name }} <small>{{ employee.employee_code }}</small></span></label>}</div>}
       <button class="primary wide" [disabled]="rangeEmployeeIds().length === 0" (click)="submitRangeAttendance()">Submit missed attendance</button>
+    </section>
+  </div>
+}
+@if (modal() === 'edit-payment') {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <section class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-heading"><div><p class="eyebrow">EDIT PAYMENT</p><h2>Update payment details</h2></div><button class="icon-button" (click)="closeModal()">×</button></div>
+      <p class="muted">Modify this payment record. Changes will be saved to the history.</p>
+      <label>Amount<input type="number" min="1" [ngModel]="editPaymentAmount()" (ngModelChange)="editPaymentAmount.set(+$event)" /></label>
+      <div class="form-row"><label>Payment date<input type="date" [ngModel]="editPaymentDate()" (ngModelChange)="editPaymentDate.set($event)" /></label><label>Method<select [ngModel]="editPaymentMethod()" (ngModelChange)="editPaymentMethod.set($event)"><option value="cash">Cash</option><option value="bank_transfer">Bank transfer</option><option value="upi">UPI</option><option value="other">Other</option></select></label></div>
+      <label>Note<textarea [ngModel]="editPaymentNote()" (ngModelChange)="editPaymentNote.set($event)" rows="2" placeholder="Update notes if needed"></textarea></label>
+      <button class="primary wide" (click)="savePaymentEdit()">Save changes</button>
     </section>
   </div>
 }

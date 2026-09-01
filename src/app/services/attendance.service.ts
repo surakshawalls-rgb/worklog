@@ -146,6 +146,10 @@ export class AttendanceService {
     const { error } = await this.client.rpc('reverse_attendance_payment', { p_payment_id: paymentId, p_reversed_by: adminId });
     if (error) throw error;
   }
+  async updatePayment(paymentId: number, amount: number, date: string, method: string, note: string, adminId: number): Promise<void> {
+    const { error } = await this.client.from('attendance_payments').update({ amount, payment_date: date, payment_method: method, note: note.trim() || null, updated_at: new Date().toISOString() }).eq('id', paymentId);
+    if (error) throw new Error(error.message);
+  }
   async submitBulkAttendance(employeeIds: number[], date: string, type: AttendanceType, note: string, customWage: number, adminId: number): Promise<number> {
     const { data, error } = await this.client.rpc('submit_bulk_attendance', { p_employee_ids: employeeIds, p_attendance_date: date, p_attendance_type: type, p_note: note || null, p_custom_wage: customWage || 0, p_submitted_by: adminId });
     if (error) throw new Error(error.message.includes('BULK_ATTENDANCE_ALREADY_EXISTS') ? 'At least one selected employee already has attendance for this date. Nothing was saved.' : error.message);

@@ -26,7 +26,7 @@ export class App implements OnInit {
   readonly tab = signal<'overview' | 'approval' | 'payments'>('overview');
   readonly selectedEmployee = signal<Employee | null>(null);
   readonly month = signal(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
-  readonly modal = signal<'attendance' | 'day' | 'payment' | 'employee' | 'admin-attendance' | 'bulk-attendance' | 'range-attendance' | 'admin-tools' | 'password' | 'announcement' | null>(null);
+  readonly modal = signal<'attendance' | 'day' | 'payment' | 'employee' | 'admin-attendance' | 'bulk-attendance' | 'range-attendance' | 'admin-tools' | 'password' | 'announcement' | 'edit-payment' | null>(null);
   readonly selectedDay = signal<string | null>(null);
   readonly paymentTarget = signal<Employee | null>(null);
   readonly paymentAmount = signal(0);
@@ -51,6 +51,11 @@ export class App implements OnInit {
   readonly rangeAttendanceType = signal<AttendanceType>('full_day');
   readonly rangeAttendanceNote = signal('Submitted after the work date');
   readonly correctingRecord = signal<AttendanceRecord | null>(null);
+  readonly editingPayment = signal<Payment | null>(null);
+  readonly editPaymentAmount = signal(0);
+  readonly editPaymentNote = signal('');
+  readonly editPaymentMethod = signal('cash');
+  readonly editPaymentDate = signal(this.today());
   readonly passwordCurrent = signal('');
   readonly passwordNew = signal('');
   readonly forgotUsername = signal('');
@@ -109,7 +114,9 @@ export class App implements OnInit {
   setRangeAttendanceType(type: AttendanceType): void { this.rangeAttendanceType.set(type); if (type !== 'custom') this.customWage.set(0); }
   async submitRangeAttendance(): Promise<void> { const user = this.session(); if (!user || this.rangeEmployeeIds().length === 0) { this.error.set('Select at least one employee.'); return; } await this.run(async () => { const count = await this.attendance.submitAttendanceRange(this.rangeEmployeeIds(), this.rangeStartDate(), this.rangeEndDate(), this.rangeAttendanceType(), this.rangeAttendanceNote(), this.customWage(), user.id); this.closeModal(); await this.refresh(); this.message.set(`${count} missed attendance entries submitted for approval.`); }); }
   async submitAdminAttendance(): Promise<void> { const employee = this.adminAttendanceEmployee(); const user = this.session(); if (!employee || !user) return; await this.run(async () => { const correction = this.correctingRecord(); if (correction) await this.attendance.correctAttendance(correction.id, this.adminAttendanceType(), user.id, this.adminAttendanceNote(), this.customWage()); else await this.attendance.submitAttendance(employee.id, user.id, this.adminAttendanceDate(), this.adminAttendanceType(), this.adminAttendanceNote(), this.customWage()); this.closeModal(); await this.refresh(); this.message.set(correction ? 'Attendance corrected and approved.' : `Attendance marked for ${employee.name}. It is pending approval.`); }); }
-  openCorrection(record: AttendanceRecord): void { this.correctingRecord.set(record); this.adminAttendanceEmployee.set(this.employees().find(employee => employee.id === record.employee_id) ?? null); this.adminAttendanceType.set(record.attendance_type); this.adminAttendanceNote.set(record.note || 'Corrected by admin'); this.modal.set('admin-attendance'); }
+  openCorrection(record: AttendanceRecord): void { this.correctingRecord.set(record); this.adminAttendanceEmployee.set(this.employees().find(employee => employee.id === record.employee_id) ?? null); this.adminAttendanceType.set(record.attendance_type); this.adminAttendanceNote.set(record.note || 'Edited by admin'); this.modal.set('admin-attendance'); }
+  openPaymentEdit(payment: Payment): void { this.editingPayment.set(payment); this.editPaymentAmount.set(payment.amount); this.editPaymentDate.set(payment.payment_date); this.editPaymentMethod.set(payment.payment_method); this.editPaymentNote.set(payment.note || ''); this.modal.set('edit-payment'); }
+  async savePaymentEdit(): Promise<void> { const user = this.session(); const payment = this.editingPayment(); if (!user || !payment || this.editPaymentAmount() <= 0) { this.error.set('Payment amount must be greater than zero.'); return; } if (!confirm(`Update payment to ${this.currency(this.editPaymentAmount())}?`)) return; await this.run(async () => { await this.attendance.updatePayment(payment.id, this.editPaymentAmount(), this.editPaymentDate(), this.editPaymentMethod(), this.editPaymentNote(), user.id); this.closeModal(); await this.refresh(); this.message.set('Payment updated successfully.'); }); }
   async decide(record: AttendanceRecord, status: 'approved' | 'denied'): Promise<void> { const user = this.session(); if (!user || !confirm(`${status === 'approved' ? 'Approve' : 'Deny'} this attendance record?`)) return; await this.run(async () => { await this.attendance.updateApproval(record.id, status, user.id); await this.refresh(); this.message.set(`Attendance ${status} successfully.`); }); }
   openPayment(employee: Employee): void { this.selectedEmployee.set(employee); this.paymentTarget.set(employee); this.paymentAmount.set(0); this.paymentDate.set(this.today()); this.paymentNote.set(''); this.modal.set('payment'); void this.loadEmployeePayments(employee); }
   async confirmPayment(): Promise<void> { const employee = this.paymentTarget(); const user = this.session(); if (!employee || !user || this.paymentAmount() <= 0) { this.error.set('Payment amount must be greater than zero.'); return; } if (!confirm(`Process ${this.currency(this.paymentAmount())} for ${employee.name}?`)) return; await this.run(async () => { await this.attendance.processPayment(employee.id, this.paymentAmount(), this.paymentDate(), this.paymentMethod(), this.paymentNote(), user.id); this.closeModal(); await this.refresh(); this.message.set('Payment processed successfully using FIFO allocation.'); }); }
