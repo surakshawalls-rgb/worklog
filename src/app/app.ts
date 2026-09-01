@@ -128,6 +128,7 @@ export class App implements OnInit {
   async forgotPassword(): Promise<void> { await this.run(async () => { await this.attendance.resetPassword(this.forgotUsername(), this.passwordNew()); this.closeModal(); this.forgotUsername.set(''); this.passwordNew.set(''); this.message.set('Password reset successfully.'); }); }
   async removeEmployee(employee: Employee): Promise<void> { if (!confirm(`Delete ${employee.name} (${employee.employee_code})? This is only allowed when no attendance or payment history exists.`)) return; await this.run(async () => { await this.attendance.deleteEmployee(employee.id); if (this.selectedEmployee()?.id === employee.id) this.selectedEmployee.set(null); await this.refresh(); this.message.set('Employee profile deleted.'); }); }
   formatType(type: AttendanceType): string { return type.replace('_', ' ').replace(/\b\w/g, letter => letter.toUpperCase()); }
+  getAttendanceTypeLabel(date: string): string { const record = this.recordFor(date); return record ? record.attendance_type.replace('_', ' ') : '—'; }
   toNumber(value: number | string): number { return Number(value); }
   currency(value: number): string { return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value || 0); }
   employeeEarned(employeeId: number | undefined): number { return this.records().filter(record => record.employee_id === employeeId && record.approval_status === 'approved').reduce((total, record) => total + Number(record.earned_amount), 0); }
