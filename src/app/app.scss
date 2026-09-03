@@ -1,67 +1,391 @@
+/* =========================================================
+   SURAKSHA HUB — Responsive UI / UX stylesheet
+   Desktop + tablet + mobile
+   ========================================================= */
 
-:host { display: block; min-height: 100vh; }
-.app-shell { min-height: 100vh; background: #f5f7f5; color: #16251e; }
-.topbar { height: 72px; padding: 0 5vw; display: flex; justify-content: space-between; align-items: center; background: #102c23; color: #f6f4ed; }
-.brand, .user-menu, .panel-title, .page-heading, .month-controls, .form-row, .history-row, .payment-row, .approval-row { display: flex; align-items: center; }
-.brand { gap: 12px; } .brand b, .brand small { display: block; } .brand b { letter-spacing: .12em; font-size: 13px; } .brand small { color: #a9c3b4; font-size: 11px; margin-top: 3px; }
-.brand-mark { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 14px; background: #d8a947; color: #102c23; font-weight: 900; letter-spacing: -.08em; } .brand-mark.small { width: 35px; height: 35px; border-radius: 10px; font-size: 12px; }
-.user-menu { gap: 13px; font-size: 13px; } .role-chip { border: 1px solid #789282; color: #d4e3d9; padding: 5px 9px; border-radius: 20px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
-.page { max-width: 1180px; margin: 0 auto; padding: 46px 5vw 80px; } .page-heading { justify-content: space-between; gap: 24px; margin-bottom: 30px; } h1, h2, p { margin: 0; } h1 { font-family: Georgia, serif; font-size: clamp(30px, 4vw, 48px); font-weight: 500; letter-spacing: -.04em; } h2 { font-family: Georgia, serif; font-size: 25px; font-weight: 500; } .muted { color: #66756c; line-height: 1.55; } .eyebrow { color: #a4761d; font-size: 10px; font-weight: 800; letter-spacing: .16em; margin-bottom: 8px; }
-button, input, select, textarea { font: inherit; } button { cursor: pointer; } button:disabled { opacity: .45; cursor: not-allowed; }
-.primary, .outline, .approve, .deny, .icon-button, .text-button { border: 0; border-radius: 8px; padding: 12px 17px; font-weight: 700; font-size: 13px; } .primary { background: #d8a947; color: #102c23; } .primary:hover { background: #edc46d; } .outline { background: transparent; border: 1px solid #cad6ce; color: #285642; } .wide { width: 100%; } .small-button { padding: 8px 12px; } .icon-button { padding: 7px 11px; background: transparent; color: inherit; font-size: 20px; } .topbar .icon-button { color: #e4eee7; } .text-button { background: transparent; color: #9a6420; padding: 5px; }
-.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; } .stat { background: #fff; border: 1px solid #e1e8e1; border-radius: 10px; padding: 19px; min-height: 94px; } .stat span, .stat small { display: block; color: #6b7b72; font-size: 12px; } .stat strong { display: block; font-size: 28px; margin: 7px 0 3px; font-weight: 600; color: #1d4635; }
-.money-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #cbd8cf; border-radius: 10px; overflow: hidden; margin-bottom: 26px; } .money-strip div { background: #e8f0e9; padding: 17px 20px; } .money-strip span, .money-strip b { display: block; } .money-strip span { color: #5d7065; font-size: 12px; } .money-strip b { margin-top: 7px; font-size: 21px; color: #1a4935; } .money-due { background: #fbf0d8 !important; } .money-due b, .due-value { color: #a56e15 !important; }
-.panel { background: #fff; border: 1px solid #e0e8e1; border-radius: 10px; padding: 24px; margin-top: 22px; } .panel-title { justify-content: space-between; gap: 15px; margin-bottom: 21px; } .panel-title .eyebrow { margin-bottom: 4px; }
-.employee-report { background: #fff; border: 1px solid #e0e8e1; border-radius: 10px; padding: 24px; margin-top: 22px; } .report-heading { display: flex; justify-content: space-between; gap: 15px; align-items: flex-start; } .report-month { color: #a4761d; font-size: 12px; font-weight: 800; } .report-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 20px 0; } .report-stats span { background: #f3f7f3; padding: 12px; color: #6b7b72; font-size: 11px; } .report-stats b { display: block; color: #1d5039; font-size: 20px; margin-bottom: 3px; } .attendance-log { border-top: 1px solid #e6ece7; } .log-row { display: grid; grid-template-columns: 80px 110px 110px 1fr 75px 40px; gap: 10px; align-items: center; border-bottom: 1px solid #edf1ed; padding: 12px 0; font-size: 12px; } .log-row span:nth-child(3), .log-row span:nth-child(4) { color: #68776d; } .log-row em { color: #287046; font-size: 10px; font-style: normal; text-transform: capitalize; } .log-edit-btn { background: transparent; border: 0; color: #9a6420; padding: 4px 6px; font-size: 14px; cursor: pointer; border-radius: 4px; transition: all 0.2s; } .log-edit-btn:hover { background: #fbf1d8; color: #7a4f1c; } .log-edit-btn:active { transform: scale(0.95); }
-.calendar-section { background: #fff; border: 1px solid #e0e8e1; border-radius: 10px; padding: 24px; margin-top: 22px; }
-.employee-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; margin-bottom: 20px; }
-.month-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
-.month-stats span { background: #f3f7f3; padding: 12px; color: #6b7b72; font-size: 11px; border-radius: 6px; }
-.month-stats b { display: block; color: #1d5039; font-size: 20px; margin-bottom: 3px; font-weight: 600; }
-.action-bar { display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end; }
-.payment-section { background: #fff; border: 1px solid #e0e8e1; border-radius: 10px; padding: 24px; margin-top: 22px; }
-.payment-compact { display: flex; gap: 20px; align-items: center; border-top: 1px solid #edf1ed; padding: 13px 0; font-size: 13px; }
-.payment-compact span:first-child { min-width: 100px; color: #6d7e73; }
-.payment-compact b { min-width: 75px; font-weight: 700; }
-.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 20px 0; }
-.calendar-header { text-align: center; color: #7a887f; font-size: 11px; font-weight: 800; padding: 8px 0; text-transform: uppercase; letter-spacing: 0.5px; }
-.calendar-cell { display: flex; flex-direction: column; justify-content: flex-start; align-items: center; text-align: center; min-height: 85px; border: 1px solid #e5ebe6; border-radius: 8px; background: #f8faf8; padding: 10px 6px; color: #1e3227; cursor: pointer; transition: all 0.2s; font-size: 13px; }
-.calendar-cell:hover { border-color: #8baa96; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); background: #fafbfa; }
-.calendar-cell.empty { cursor: default; background: transparent; border: 0; }
-.calendar-cell strong { display: block; font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-.calendar-cell small { display: block; font-size: 10px; margin-top: 4px; color: #597064; font-weight: 500; }
-.calendar-cell.paid { background: #b9dcd0; }
-.calendar-cell.unpaid { background: #c7ebcd; }
-.calendar-cell.partial { background: #d8c5ee; }
-.calendar-cell.pending { background: #f4c994; }
-.calendar-cell.half { background: #f1dc88; }
-.calendar-cell.leave { background: #efa5a0; }
-.calendar-cell.denied { background: #e5736d; border-color: #c94d47; color: #651f1c; }
-.calendar-cell.denied small { color: #651f1c; font-weight: 700; }
-.calendar-cell.future { opacity: 0.5; }
+:host {
+  display: block;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
 
-.tabs { display: flex; gap: 5px; border-bottom: 1px solid #dbe5dd; margin-bottom: 22px; } .tabs button { background: transparent; color: #697970; padding: 12px 16px; border: 0; border-bottom: 2px solid transparent; font-size: 13px; } .tabs button.active { color: #1d5039; border-bottom-color: #d8a947; font-weight: 800; } .tabs span { background: #f2d591; border-radius: 20px; padding: 2px 6px; margin-left: 3px; font-size: 10px; }
-.employee-list, .approval-row, .payment-row, .history-row { width: 100%; } .employee-row { width: 100%; display: flex; gap: 8px; align-items: center; text-align: left; border: 0; border-top: 1px solid #edf1ed; background: transparent; padding: 8px 0; color: inherit; } .employee-row:hover { background: #f7faf7; } .employee-main { flex: 1; display: flex; gap: 12px; align-items: center; text-align: left; border: 0; background: transparent; color: inherit; padding: 6px 0; } .avatar { flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #d9e9dd; color: #276044; font-weight: 800; } .employee-name { flex: 1; min-width: 0; } .employee-name b, .employee-name small, .row-total small, .payment-row small { display: block; } .employee-name small, .row-total small, .payment-row small { color: #7a887f; font-size: 11px; margin-top: 4px; } .row-total { text-align: right; font-weight: 700; } .delete-button, .mark-button { border-radius: 7px; padding: 7px 9px; font-size: 11px; } .delete-button { border: 1px solid #efd0cd; background: #fff8f7; color: #a23d39; } .mark-button { border: 1px solid #c6dace; background: #eff8f0; color: #286044; }
-.share-button { border: 1px solid #d4dbe8; border-radius: 7px; background: #f6f8fc; color: #3f5d8b; padding: 7px 9px; font-size: 11px; }
-.approval-row { gap: 15px; border-top: 1px solid #edf1ed; padding: 15px 0; } .date-block { min-width: 72px; } .date-block b, .date-block small, .approval-detail b, .approval-detail span { display: block; } .date-block small, .approval-detail span { color: #77857c; font-size: 11px; margin-top: 4px; } .approval-detail { flex: 1; } .approve { background: #d7ebdc; color: #21593a; } .deny { background: #f9e1df; color: #a23d39; }
-.payment-row { gap: 14px; border-top: 1px solid #edf1ed; padding: 15px 0; } .payment-row > span { min-width: 70px; font-weight: 700; font-size: 13px; } .payment-row .employee-name { margin-right: auto; } .history-row { gap: 20px; border-top: 1px solid #edf1ed; padding: 13px 0; font-size: 13px; display: flex; align-items: center; flex-wrap: wrap; } .history-row span:first-child { min-width: 100px; color: #6d7e73; } .history-row b { min-width: 75px; } .history-row button { padding: 6px 10px; font-size: 11px; border-radius: 6px; border: 1px solid #cad6ce; background: #f5f8f5; color: #456154; transition: all 0.2s; } .history-row button:hover { background: #e8f0e9; border-color: #9ab59e; } .history-row button:disabled { opacity: 0.4; cursor: not-allowed; } .status { color: #287046; text-transform: capitalize; } .status.reversed { color: #9a4c48; }
-.empty-state { background: #fff; border: 1px dashed #c8d6cc; padding: 50px 24px; border-radius: 10px; text-align: center; } .empty-state h2 { margin-bottom: 8px; } .empty-state.compact { border: 0; padding: 35px 15px; }
-.login-shell { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at top right, #dcebdc, transparent 40%), #f5f7f5; } .login-card { max-width: 430px; width: 100%; background: #fff; border: 1px solid #dce6de; border-radius: 14px; padding: 42px; box-shadow: 0 20px 60px #244b3214; } .login-card h1 { margin-bottom: 10px; } .login-card form { margin-top: 28px; } .login-card .brand-mark { margin-bottom: 24px; } .login-note { color: #718076; font-size: 11px; line-height: 1.5; margin-top: 18px; } code { background: #eff4ef; padding: 2px 4px; }
-label { display: block; color: #456154; font-size: 12px; font-weight: 700; margin: 13px 0; } input, select, textarea { display: block; width: 100%; box-sizing: border-box; border: 1px solid #cedbd1; border-radius: 7px; padding: 12px; margin-top: 7px; color: #1c3124; background: #fbfdfb; outline: none; } input:focus, select:focus, textarea:focus { border-color: #789f83; box-shadow: 0 0 0 3px #bcdac52e; } .field-help { display: block; margin-top: 6px; color: #7a887f; font-size: 10px; font-weight: 400; line-height: 1.4; }
-.login-divider { display: flex; align-items: center; gap: 10px; margin: 22px 0 8px; color: #a4761d; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; } .login-divider::before, .login-divider::after { content: ''; height: 1px; flex: 1; background: #dce6dd; }
-.alert { padding: 11px 15px; border-radius: 7px; font-size: 13px; } .page-alert { max-width: 1180px; margin: 20px auto -20px; } .success { background: #d9edde; color: #22623b; } .error { background: #f7dedb; color: #963a37; }
-.modal-backdrop { position: fixed; inset: 0; background: #0e271db8; display: grid; place-items: center; padding: 20px; z-index: 5; } .modal { background: #fff; border-radius: 12px; width: min(560px, 100%); max-height: 90vh; overflow-y: auto; padding: 28px; box-shadow: 0 24px 70px #102c2360; } .modal-heading { display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px; } .choice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 20px 0; } .choice-grid button { text-align: left; background: #f5f8f5; border: 1px solid #dce6dd; border-radius: 8px; padding: 13px; color: #244c35; } .choice-grid button.selected { border-color: #a4761d; background: #fbf1d8; } .choice-grid b, .choice-grid small { display: block; } .choice-grid small { color: #78867c; font-size: 10px; margin-top: 5px; } .detail-list { border-top: 1px solid #e6ece7; margin-top: 18px; } .detail-list div, .payment-summary span { display: flex; justify-content: space-between; gap: 20px; padding: 12px 0; border-bottom: 1px solid #e6ece7; font-size: 13px; } .detail-list span, .payment-summary span { color: #708077; } .modal-note { margin-top: 15px; color: #68766d; font-size: 13px; } .payment-summary { background: #f3f7f3; padding: 5px 14px; border-radius: 8px; margin: 20px 0; } .form-row { gap: 12px; align-items: start; } .form-row > label { width: 100%; }
-.approved-by { color: #287046; font-size: 12px; font-weight: 700; margin-top: 12px; }
-@media (max-width: 700px) { .topbar { padding: 0 18px; } .user-menu > span:first-child { display: none; } .page { padding: 30px 17px 60px; } .page-heading { align-items: start; } .stats-grid, .report-stats { grid-template-columns: repeat(2, 1fr); } .stat { padding: 15px; } .stat strong { font-size: 24px; } .money-strip { grid-template-columns: 1fr; gap: 1px; } .calendar-grid { gap: 3px; } .day-cell { min-height: 54px; padding: 5px; } .day-cell small { font-size: 9px; } .panel, .employee-report { padding: 17px; } .payment-row { flex-wrap: wrap; } .payment-row .employee-name { min-width: calc(100% - 52px); } .payment-row > span { min-width: 30%; } .approval-row { flex-wrap: wrap; } .approval-detail { min-width: calc(100% - 90px); } .approval-row button { flex: 1; } .history-row { gap: 9px; flex-wrap: wrap; } .history-row span:first-child { min-width: 90px; } .choice-grid { grid-template-columns: 1fr; } .form-row { display: block; } .log-row { grid-template-columns: 60px 1fr 70px; } .log-row span:nth-child(4) { grid-column: 1 / -1; } .login-card { padding: 30px 23px; } }
-.selectable-row { cursor: pointer; border-radius: 7px; } .selectable-row:hover, .selectable-row:focus-visible { background: #f3f7f3; outline: 2px solid #d8a947; outline-offset: 2px; } .payment-detail { margin: 0 0 22px; }
-:host > .employee-report { width: calc(100% - 10vw); max-width: 1180px; box-sizing: border-box; margin: 22px auto; }
-@media (max-width: 700px) { :host > .employee-report { width: calc(100% - 34px); } }
-.daily-plan-banner { max-width: 1180px; margin: 20px auto -4px; padding: 18px 22px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 22px; background: #173f2f; color: #f8f5eb; border-radius: 10px; box-shadow: 0 9px 22px #102c231a; } .daily-plan-banner .eyebrow { color: #e4bd69; margin-bottom: 5px; } .daily-plan-banner p:last-child { white-space: pre-line; line-height: 1.5; font-size: 14px; } .daily-plan-banner.empty-plan { background: #eef5ef; color: #315443; border: 1px dashed #aabfad; box-shadow: none; } .plan-edit { flex: 0 0 auto; background: #f8f5eb; border: 0; color: #1b4935; } .empty-plan .plan-edit { background: #d8a947; color: #102c23; }
-@media (max-width: 700px) { .daily-plan-banner { width: calc(100% - 34px); margin: 15px auto -6px; padding: 15px; align-items: flex-start; } .daily-plan-banner p:last-child { font-size: 13px; } .plan-edit { padding: 9px 10px; font-size: 11px; } }
-.admin-actions { display: flex; gap: 9px; align-items: center; } .advance-value, .advance-value small { color: #7651a3 !important; } .bulk-modal { width: min(680px, 100%); } .bulk-selection { border-top: 1px solid #e4ebe5; margin: 18px 0; padding-top: 14px; } .bulk-selection > div { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; } .bulk-selection > div small { color: #718076; } .employee-check { display: flex; align-items: center; gap: 10px; padding: 9px 3px; margin: 0; border-top: 1px solid #edf1ed; cursor: pointer; } .employee-check input { width: auto; margin: 0; } .employee-check small { color: #718076; }
-.month-controls { gap: 8px; } .month-controls .outline { padding: 5px 10px; font-size: 17px; line-height: 1; } .employee-ledger { border-top: 1px solid #e6ece7; margin-top: 24px; padding-top: 18px; }
-.attendance-shortcut { max-width: 1180px; width: calc(100% - 10vw); margin: 13px auto -12px; display: flex; justify-content: flex-end; } @media (max-width: 700px) { .attendance-shortcut { width: calc(100% - 34px); margin-top: 10px; } }
-.admin-tools-modal { width: min(640px, 100%); } .admin-tool-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 20px; } .admin-tool-grid button { text-align: left; padding: 18px; border: 1px solid #dce6dd; border-radius: 9px; background: #f7faf7; color: #244c35; } .admin-tool-grid button:hover { background: #eef6ef; border-color: #86a993; } .admin-tool-grid b, .admin-tool-grid small { display: block; } .admin-tool-grid small { margin-top: 6px; color: #718076; font-size: 11px; line-height: 1.35; } @media (max-width: 700px) { .topbar { height: auto; min-height: 64px; padding: 10px 18px; gap: 10px; } .brand { min-width: 0; } .brand small { display: none; } .user-menu { margin-left: auto; gap: 6px; } .user-menu .top-action:first-child { display: none; } .admin-tool-grid { grid-template-columns: 1fr; } .admin-actions { width: 100%; } .admin-actions .primary, .admin-actions .outline { flex: 1; } .month-stats { grid-template-columns: repeat(2, 1fr); } .employee-header { flex-direction: column; align-items: stretch; } .action-bar { flex-direction: column; } .action-bar button { width: 100%; } .payment-compact { flex-wrap: wrap; gap: 8px; } .payment-compact span:first-child { min-width: auto; } .calendar-grid { gap: 4px; } .calendar-cell { min-height: 70px; padding: 8px 4px; font-size: 12px; } .calendar-cell strong { font-size: 18px; margin-bottom: 2px; } .calendar-cell small { font-size: 9px; margin-top: 2px; } .log-row { grid-template-columns: 50px 1fr 28px; } .log-row span:nth-child(2), .log-row span:nth-child(3), .log-row span:nth-child(4), .log-row em { display: none; } .log-row .log-edit-btn { margin-left: auto; } .history-row { flex-wrap: wrap; gap: 8px; } .history-row button { flex: 1; min-width: 70px; padding: 6px 8px; font-size: 11px; } .approval-row { flex-direction: column; align-items: stretch; } .approval-row .date-block { min-width: auto; } .approval-row .approval-detail { min-width: auto; } .approval-row button { padding: 10px; } .modal { width: min(90vw, 500px); padding: 20px; } .modal-heading button { padding: 4px; font-size: 24px; } label { margin: 10px 0 5px; } input, select, textarea { padding: 10px; font-size: 16px; } .primary, .outline { padding: 10px 14px; font-size: 14px; width: 100%; } .text-button { padding: 6px 8px; font-size: 12px; } }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.app-shell {
+  min-height: 100vh;
+  background: #f5f7f5;
+  color: #16251e;
+  overflow-x: hidden;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   TOP BAR
+   ========================================================= */
+
+.topbar {
+  min-height: 72px;
+  padding: 0 clamp(18px, 5vw, 72px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  background: #102c23;
+  color: #f6f4ed;
+}
+
+.brand,
+.user-menu,
+.panel-title,
+.page-heading,
+.month-controls,
+.form-row,
+.history-row,
+.payment-row,
+.approval-row {
+  display: flex;
+  align-items: center;
+}
+
+.brand {
+  gap: 12px;
+  min-width: 0;
+}
+
+.brand > span:last-child {
+  min-width: 0;
+}
+
+.brand b,
+.brand small {
+  display: block;
+}
+
+.brand b {
+  letter-spacing: .12em;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.brand small {
+  color: #a9c3b4;
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+.brand-mark {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #d8a947;
+  color: #102c23;
+  font-weight: 900;
+  letter-spacing: -.08em;
+}
+
+.brand-mark.small {
+  width: 35px;
+  height: 35px;
+  flex-basis: 35px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.user-menu {
+  gap: 13px;
+  font-size: 13px;
+  min-width: 0;
+}
+
+.user-menu > span:not(.role-chip) {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role-chip {
+  border: 1px solid #789282;
+  color: #d4e3d9;
+  padding: 5px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   PAGE / TYPOGRAPHY
+   ========================================================= */
+
+.page {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 46px 0 80px;
+}
+
+.page-heading {
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-family: Georgia, serif;
+  font-size: clamp(30px, 4vw, 48px);
+  font-weight: 500;
+  letter-spacing: -.04em;
+  line-height: 1.08;
+}
+
+h2 {
+  font-family: Georgia, serif;
+  font-size: 25px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.muted {
+  color: #66756c;
+  line-height: 1.55;
+}
+
+.eyebrow {
+  color: #a4761d;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  margin-bottom: 8px;
+}
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+.primary,
+.outline,
+.approve,
+.deny,
+.icon-button,
+.text-button {
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  transition:
+    background-color .18s ease,
+    border-color .18s ease,
+    color .18s ease,
+    transform .18s ease,
+    box-shadow .18s ease;
+}
+
+.primary,
+.outline,
+.approve,
+.deny {
+  min-height: 42px;
+  padding: 10px 16px;
+}
+
+.primary {
+  border: 1px solid #d8a947;
+  background: #d8a947;
+  color: #102c23;
+}
+
+.primary:hover {
+  background: #edc46d;
+  border-color: #edc46d;
+}
+
+.outline {
+  background: #fff;
+  border: 1px solid #cad6ce;
+  color: #285642;
+}
+
+.outline:hover {
+  background: #f3f7f3;
+  border-color: #8eaa97;
+}
+
+.wide {
+  width: 100%;
+}
+
+.small-button {
+  min-height: 36px;
+  padding: 8px 12px;
+}
+
+.icon-button {
+  width: 42px;
+  height: 42px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 22px;
+  line-height: 1;
+  border-radius: 10px;
+}
+
+.icon-button:hover {
+  background: rgba(255,255,255,.08);
+}
+
+.topbar .icon-button {
+  color: #e4eee7;
+}
+
+.text-button {
+  border: 0;
+  background: transparent;
+  color: #9a6420;
+  padding: 7px 6px;
+}
+
+.text-button:hover {
+  color: #704b17;
+  background: #fbf1d8;
+}
+
+/* =========================================================
+   DASHBOARD STATS / MONEY
+   ========================================================= */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.stat {
+  background: #fff;
+  border: 1px solid #e1e8e1;
+  border-radius: 10px;
+  padding: 19px;
+  min-height: 94px;
+}
+
+.stat span,
+.stat small {
+  display: block;
+  color: #6b7b72;
+  font-size: 12px;
+}
+
+.stat strong {
+  display: block;
+  font-size: 28px;
+  margin: 7px 0 3px;
+  font-weight: 600;
+  color: #1d4635;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.money-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: #cbd8cf;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 26px;
+}
+
+.money-strip div {
+  background: #e8f0e9;
+  padding: 17px 20px;
+}
+
+.money-strip span,
+.money-strip b {
+  display: block;
+}
+
+.money-strip span {
+  color: #5d7065;
+  font-size: 12px;
+}
+
+.money-strip b {
+  margin-top: 7px;
+  font-size: 21px;
+  color: #1a4935;
+}
+
+.money-due {
+  background: #fbf0d8 !important;
+}
+
+.money-due b,
+.due-value {
+  color: #a56e15 !important;
+}
+
+/* =========================================================
+   PANELS
+   ========================================================= */
+
+.panel,
+.employee-report,
+.calendar-section,
+.payment-section {
+  background: #fff;
+  border: 1px solid #e0e8e1;
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 22px;
+}
+
+.panel-title {
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 21px;
+}
+
+.panel-title .eyebrow {
+  margin-bottom: 4px;
+}
+
+/* =========================================================
+   EMPLOYEE / CALENDAR HEADER
+   ========================================================= */
 
 .calendar-employee-header {
   display: flex;
@@ -73,6 +397,10 @@ label { display: block; color: #456154; font-size: 12px; font-weight: 700; margi
   border-bottom: 1px solid #e5ebe6;
 }
 
+.employee-detail-heading {
+  min-width: 0;
+}
+
 .employee-detail-heading h2 {
   margin: 0;
 }
@@ -80,49 +408,204 @@ label { display: block; color: #456154; font-size: 12px; font-weight: 700; margi
 .employee-detail-heading .muted {
   margin-top: 6px;
   font-size: 12px;
+  overflow-wrap: anywhere;
 }
 
-.calendar-summary {
-  margin-top: 0;
+.month-controls {
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
-@media (max-width: 700px) {
-  .calendar-employee-header {
-    flex-direction: column;
-  }
+.month-controls .outline {
+  width: 42px;
+  height: 42px;
+  min-height: 42px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  line-height: 1;
+}
 
-  .calendar-employee-header .month-controls {
-    width: 100%;
-    justify-content: space-between;
-  }
+.report-month {
+  color: #a4761d;
+  font-size: 12px;
+  font-weight: 800;
+  min-width: 100px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.report-heading,
+.employee-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+.employee-header {
+  margin-bottom: 20px;
+}
+
+.month-stats,
+.report-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 20px 0;
+}
+
+.month-stats span,
+.report-stats span {
+  background: #f3f7f3;
+  padding: 12px;
+  color: #6b7b72;
+  font-size: 11px;
+  border-radius: 7px;
+  min-width: 0;
+}
+
+.month-stats b,
+.report-stats b {
+  display: block;
+  color: #1d5039;
+  font-size: 20px;
+  margin-bottom: 3px;
+  font-weight: 600;
+}
+
+/* =========================================================
+   CALENDAR
+   ========================================================= */
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  margin: 20px 0;
+}
+
+.calendar-header {
+  text-align: center;
+  color: #7a887f;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 8px 0;
+  text-transform: uppercase;
+  letter-spacing: .5px;
 }
 
 .calendar-cell {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 85px;
+  border: 1px solid #e5ebe6;
+  border-radius: 9px;
+  background: #f8faf8;
+  padding: 10px 6px;
+  color: #1e3227;
+  cursor: pointer;
+  transition:
+    border-color .18s ease,
+    transform .18s ease,
+    box-shadow .18s ease,
+    background-color .18s ease;
+  font-size: 13px;
+  overflow: hidden;
+}
+
+.calendar-cell:hover {
+  border-color: #8baa96;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,.08);
+  background: #fafbfa;
+}
+
+.calendar-cell:focus-visible {
+  outline: 3px solid rgba(216,169,71,.35);
+  outline-offset: 2px;
+}
+
+.calendar-cell.empty {
+  cursor: default;
+  background: transparent;
+  border: 0;
+}
+
+.calendar-cell strong {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  line-height: 1.1;
+}
+
+.calendar-cell small {
+  display: block;
+  max-width: 100%;
+  font-size: 10px;
+  margin-top: 4px;
+  color: #597064;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-cell.paid { background: #b9dcd0; }
+.calendar-cell.unpaid { background: #c7ebcd; }
+.calendar-cell.partial { background: #d8c5ee; }
+.calendar-cell.pending { background: #f4c994; }
+.calendar-cell.half { background: #f1dc88; }
+.calendar-cell.leave { background: #efa5a0; }
+
+.calendar-cell.denied {
+  background: #e5736d;
+  border-color: #c94d47;
+  color: #651f1c;
+}
+
+.calendar-cell.denied small {
+  color: #651f1c;
+  font-weight: 700;
+}
+
+.calendar-cell.future {
+  opacity: .5;
 }
 
 .calendar-edit-btn {
   position: absolute;
   top: 6px;
   right: 6px;
-  width: 23px;
-  height: 23px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
   padding: 0;
-  border: 1px solid rgba(39, 75, 56, 0.18);
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(39,75,56,.18);
+  border-radius: 7px;
+  background: rgba(255,255,255,.9);
   color: #8a5c18;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s, background 0.2s, transform 0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,.06);
+  transition: opacity .18s ease, background .18s ease, transform .18s ease;
 }
 
 .calendar-cell:hover .calendar-edit-btn,
-.calendar-edit-btn:focus {
+.calendar-edit-btn:focus,
+.calendar-edit-btn:focus-visible {
   opacity: 1;
 }
 
@@ -130,16 +613,2222 @@ label { display: block; color: #456154; font-size: 12px; font-weight: 700; margi
   background: #fff8e8;
   border-color: #d8a947;
   color: #7a5014;
-  transform: scale(1.08);
+  transform: scale(1.05);
+}
+
+/* =========================================================
+   ACTIONS / PAYMENTS / LOGS
+   ========================================================= */
+
+.action-bar {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+
+.payment-compact {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  border-top: 1px solid #edf1ed;
+  padding: 13px 0;
+  font-size: 13px;
+}
+
+.payment-compact span:first-child {
+  min-width: 100px;
+  color: #6d7e73;
+}
+
+.payment-compact b {
+  min-width: 75px;
+  font-weight: 700;
+}
+
+.attendance-log {
+  border-top: 1px solid #e6ece7;
+}
+
+.log-row {
+  display: grid;
+  grid-template-columns: 80px 110px 110px minmax(0, 1fr) 75px 40px;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid #edf1ed;
+  padding: 12px 0;
+  font-size: 12px;
+}
+
+.log-row span:nth-child(3),
+.log-row span:nth-child(4) {
+  color: #68776d;
+}
+
+.log-row em {
+  color: #287046;
+  font-size: 10px;
+  font-style: normal;
+  text-transform: capitalize;
+}
+
+.log-edit-btn {
+  background: transparent;
+  border: 0;
+  color: #9a6420;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 4px 6px;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 7px;
+}
+
+.log-edit-btn:hover {
+  background: #fbf1d8;
+  color: #7a4f1c;
+}
+
+.log-edit-btn:active {
+  transform: scale(.95);
+}
+
+/* =========================================================
+   TABS
+   ========================================================= */
+
+.tabs {
+  display: flex;
+  gap: 5px;
+  border-bottom: 1px solid #dbe5dd;
+  margin-bottom: 22px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tabs button {
+  flex: 0 0 auto;
+  background: transparent;
+  color: #697970;
+  padding: 12px 16px;
+  min-height: 46px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.tabs button.active {
+  color: #1d5039;
+  border-bottom-color: #d8a947;
+  font-weight: 800;
+}
+
+.tabs span {
+  background: #f2d591;
+  border-radius: 20px;
+  padding: 2px 6px;
+  margin-left: 3px;
+  font-size: 10px;
+}
+
+/* =========================================================
+   EMPLOYEE LIST
+   ========================================================= */
+
+.employee-list,
+.approval-row,
+.payment-row,
+.history-row {
+  width: 100%;
+}
+
+.employee-row {
+  width: 100%;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  text-align: left;
+  border: 0;
+  border-top: 1px solid #edf1ed;
+  background: transparent;
+  padding: 9px 0;
+  color: inherit;
+}
+
+.employee-row:hover {
+  background: #f7faf7;
+}
+
+.employee-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 6px 0;
+}
+
+.avatar {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #d9e9dd;
+  color: #276044;
+  font-weight: 800;
+}
+
+.employee-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.employee-name b,
+.employee-name small,
+.row-total small,
+.payment-row small {
+  display: block;
+}
+
+.employee-name b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.employee-name small,
+.row-total small,
+.payment-row small {
+  color: #7a887f;
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.row-total {
+  text-align: right;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+.delete-button,
+.mark-button,
+.share-button {
+  min-height: 36px;
+  border-radius: 7px;
+  padding: 7px 9px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.delete-button {
+  border: 1px solid #efd0cd;
+  background: #fff8f7;
+  color: #a23d39;
+}
+
+.mark-button {
+  border: 1px solid #c6dace;
+  background: #eff8f0;
+  color: #286044;
+}
+
+.share-button {
+  border: 1px solid #d4dbe8;
+  background: #f6f8fc;
+  color: #3f5d8b;
+}
+
+/* =========================================================
+   APPROVAL / PAYMENT LISTS
+   ========================================================= */
+
+.approval-row {
+  gap: 15px;
+  border-top: 1px solid #edf1ed;
+  padding: 15px 0;
+}
+
+.date-block {
+  min-width: 72px;
+}
+
+.date-block b,
+.date-block small,
+.approval-detail b,
+.approval-detail span {
+  display: block;
+}
+
+.date-block small,
+.approval-detail span {
+  color: #77857c;
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.approval-detail {
+  flex: 1;
+  min-width: 0;
+}
+
+.approve {
+  background: #d7ebdc;
+  color: #21593a;
+  border: 1px solid #c2ddc9;
+}
+
+.deny {
+  background: #f9e1df;
+  color: #a23d39;
+  border: 1px solid #efd0cd;
+}
+
+.payment-row {
+  gap: 14px;
+  border-top: 1px solid #edf1ed;
+  padding: 15px 0;
+}
+
+.payment-row > span {
+  min-width: 70px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.payment-row .employee-name {
+  margin-right: auto;
+}
+
+.history-row {
+  gap: 20px;
+  border-top: 1px solid #edf1ed;
+  padding: 13px 0;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.history-row span:first-child {
+  min-width: 100px;
+  color: #6d7e73;
+}
+
+.history-row b {
+  min-width: 75px;
+}
+
+.history-row button {
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 11px;
+  border-radius: 6px;
+  border: 1px solid #cad6ce;
+  background: #f5f8f5;
+  color: #456154;
+}
+
+.history-row button:hover {
+  background: #e8f0e9;
+  border-color: #9ab59e;
+}
+
+.history-row button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.status {
+  color: #287046;
+  text-transform: capitalize;
+}
+
+.status.reversed {
+  color: #9a4c48;
+}
+
+/* =========================================================
+   EMPTY / FORMS / ALERTS
+   ========================================================= */
+
+.empty-state {
+  background: #fff;
+  border: 1px dashed #c8d6cc;
+  padding: 50px 24px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.empty-state h2 {
+  margin-bottom: 8px;
+}
+
+.empty-state.compact {
+  border: 0;
+  padding: 35px 15px;
+}
+
+label {
+  display: block;
+  color: #456154;
+  font-size: 12px;
+  font-weight: 700;
+  margin: 13px 0;
+}
+
+input,
+select,
+textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cedbd1;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 7px;
+  color: #1c3124;
+  background: #fbfdfb;
+  outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #789f83;
+  box-shadow: 0 0 0 3px #bcdac52e;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 88px;
+}
+
+.field-help {
+  display: block;
+  margin-top: 6px;
+  color: #7a887f;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.form-row {
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.form-row > label {
+  flex: 1 1 0;
+  width: 100%;
+}
+
+.alert {
+  padding: 11px 15px;
+  border-radius: 7px;
+  font-size: 13px;
+}
+
+.page-alert {
+  width: min(1180px, calc(100% - 40px));
+  margin: 20px auto -20px;
+}
+
+.success {
+  background: #d9edde;
+  color: #22623b;
+}
+
+.error {
+  background: #f7dedb;
+  color: #963a37;
+}
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+
+.login-shell {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top right, #dcebdc, transparent 40%),
+    #f5f7f5;
+}
+
+.login-card {
+  max-width: 430px;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #dce6de;
+  border-radius: 14px;
+  padding: 42px;
+  box-shadow: 0 20px 60px #244b3214;
+}
+
+.login-card h1 {
+  margin-bottom: 10px;
+}
+
+.login-card form {
+  margin-top: 28px;
+}
+
+.login-card .brand-mark {
+  margin-bottom: 24px;
+}
+
+.login-reset {
+  display: block;
+  margin: 12px auto 0;
+}
+
+.login-note {
+  color: #718076;
+  font-size: 11px;
+  line-height: 1.5;
+  margin-top: 18px;
+}
+
+code {
+  background: #eff4ef;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 22px 0 8px;
+  color: #a4761d;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  height: 1px;
+  flex: 1;
+  background: #dce6dd;
+}
+
+/* =========================================================
+   MODALS
+   ========================================================= */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #0e271db8;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: 1000;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 14px;
+  width: min(560px, 100%);
+  max-height: min(90dvh, 760px);
+  overflow-y: auto;
+  padding: 28px;
+  box-shadow: 0 24px 70px #102c2360;
+  overscroll-behavior: contain;
+}
+
+.modal-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+  margin-bottom: 14px;
+}
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.choice-grid button {
+  min-height: 74px;
+  text-align: left;
+  background: #f5f8f5;
+  border: 1px solid #dce6dd;
+  border-radius: 9px;
+  padding: 13px;
+  color: #244c35;
+}
+
+.choice-grid button:hover {
+  border-color: #9ab59e;
+  background: #eef6ef;
+}
+
+.choice-grid button.selected {
+  border-color: #a4761d;
+  background: #fbf1d8;
+  box-shadow: 0 0 0 2px rgba(164,118,29,.08);
+}
+
+.choice-grid b,
+.choice-grid small {
+  display: block;
+}
+
+.choice-grid small {
+  color: #78867c;
+  font-size: 10px;
+  margin-top: 5px;
+  line-height: 1.35;
+}
+
+.detail-list {
+  border-top: 1px solid #e6ece7;
+  margin-top: 18px;
+}
+
+.detail-list div,
+.payment-summary span {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e6ece7;
+  font-size: 13px;
+}
+
+.detail-list span,
+.payment-summary span {
+  color: #708077;
+}
+
+.detail-list b,
+.payment-summary b {
+  color: #1d4635;
+  text-align: right;
+}
+
+.modal-note {
+  margin-top: 15px;
+  color: #68766d;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.payment-summary {
+  background: #f3f7f3;
+  padding: 5px 14px;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.approved-by {
+  color: #287046;
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 12px;
+}
+
+.admin-tools-modal,
+.bulk-modal {
+  width: min(680px, 100%);
+}
+
+.admin-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.admin-tool-grid button {
+  text-align: left;
+  min-height: 96px;
+  padding: 18px;
+  border: 1px solid #dce6dd;
+  border-radius: 9px;
+  background: #f7faf7;
+  color: #244c35;
+}
+
+.admin-tool-grid button:hover {
+  background: #eef6ef;
+  border-color: #86a993;
+}
+
+.admin-tool-grid b,
+.admin-tool-grid small {
+  display: block;
+}
+
+.admin-tool-grid small {
+  margin-top: 6px;
+  color: #718076;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+/* =========================================================
+   DAILY PLAN / SHORTCUTS / ADMIN TOOLS
+   ========================================================= */
+
+.daily-plan-banner {
+  width: min(1180px, calc(100% - 40px));
+  margin: 20px auto -4px;
+  padding: 18px 22px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  background: #173f2f;
+  color: #f8f5eb;
+  border-radius: 10px;
+  box-shadow: 0 9px 22px #102c231a;
+}
+
+.daily-plan-banner > div {
+  min-width: 0;
+}
+
+.daily-plan-banner .eyebrow {
+  color: #e4bd69;
+  margin-bottom: 5px;
+}
+
+.daily-plan-banner p:last-child {
+  white-space: pre-line;
+  line-height: 1.5;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.daily-plan-banner.empty-plan {
+  background: #eef5ef;
+  color: #315443;
+  border: 1px dashed #aabfad;
+  box-shadow: none;
+}
+
+.plan-edit {
+  flex: 0 0 auto;
+  background: #f8f5eb;
+  border: 0;
+  color: #1b4935;
+}
+
+.empty-plan .plan-edit {
+  background: #d8a947;
+  color: #102c23;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+
+.advance-value,
+.advance-value small {
+  color: #7651a3 !important;
+}
+
+.bulk-selection {
+  border-top: 1px solid #e4ebe5;
+  margin: 18px 0;
+  padding-top: 14px;
+}
+
+.bulk-selection > div {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.bulk-selection > div small {
+  color: #718076;
+}
+
+.employee-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 3px;
+  margin: 0;
+  border-top: 1px solid #edf1ed;
+  cursor: pointer;
+}
+
+.employee-check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.employee-check small {
+  color: #718076;
+  display: block;
+  margin-top: 2px;
+}
+
+.employee-ledger {
+  border-top: 1px solid #e6ece7;
+  margin-top: 24px;
+  padding-top: 18px;
+}
+
+.attendance-shortcut {
+  width: min(1180px, calc(100% - 40px));
+  margin: 13px auto -12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.selectable-row {
+  cursor: pointer;
+  border-radius: 7px;
+}
+
+.selectable-row:hover,
+.selectable-row:focus-visible {
+  background: #f3f7f3;
+  outline: 2px solid #d8a947;
+  outline-offset: 2px;
+}
+
+.payment-detail {
+  margin: 0 0 22px;
+}
+
+:host > .employee-report {
+  width: min(1180px, calc(100% - 40px));
+  box-sizing: border-box;
+  margin: 22px auto;
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .page {
+    width: min(100% - 32px, 760px);
+    padding-top: 32px;
+  }
+
+  .page-heading {
+    align-items: flex-start;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .employee-row {
+    flex-wrap: wrap;
+  }
+
+  .employee-main {
+    flex-basis: 100%;
+  }
+
+  .row-total {
+    margin-left: auto;
+  }
+
+  .calendar-grid {
+    gap: 5px;
+  }
+
+  .calendar-cell {
+    min-height: 72px;
+  }
+
+  .calendar-edit-btn {
+    opacity: 1;
+  }
+}
+
+/* =========================================================
+   MOBILE — PRIMARY RESPONSIVE LAYOUT
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .topbar {
+    min-height: 64px;
+    padding: 10px 16px;
+    gap: 10px;
+  }
+
+  .brand {
+    gap: 9px;
+    flex: 1 1 auto;
+  }
+
+  .brand-mark.small {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+
+  .brand b {
+    font-size: 11px;
+    letter-spacing: .09em;
+  }
+
+  .brand small,
+  .user-menu > span:not(.role-chip) {
+    display: none;
+  }
+
+  .user-menu {
+    margin-left: auto;
+    gap: 4px;
+    flex: 0 0 auto;
+  }
+
+  .user-menu .top-action:first-child {
+    display: none;
+  }
+
+  .user-menu .top-action {
+    display: none;
+  }
+
+  .role-chip {
+    padding: 5px 7px;
+    font-size: 9px;
+  }
+
+  .user-menu .icon-button {
+    width: 38px;
+    height: 38px;
+  }
+
+  .page {
+    width: calc(100% - 24px);
+    padding: 24px 0 48px;
+  }
+
+  .page-heading {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-size: 31px;
+    line-height: 1.08;
+  }
+
+  h2 {
+    font-size: 21px;
+  }
+
+  .muted {
+    font-size: 13px;
+  }
+
+  .admin-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-actions .primary,
+  .admin-actions .outline {
+    width: 100%;
+  }
+
+  .stats-grid,
+  .report-stats,
+  .month-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .stat {
+    min-height: 88px;
+    padding: 14px;
+  }
+
+  .stat strong {
+    font-size: 23px;
+  }
+
+  .money-strip {
+    grid-template-columns: 1fr;
+    gap: 1px;
+  }
+
+  .money-strip div {
+    padding: 14px 16px;
+  }
+
+  .panel,
+  .employee-report,
+  .calendar-section,
+  .payment-section {
+    padding: 15px;
+    border-radius: 11px;
+    margin-top: 16px;
+  }
+
+  .panel-title {
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .panel-title > .outline {
+    min-height: 38px;
+    padding: 8px 11px;
+    font-size: 12px;
+  }
+
+  /* Employee header becomes compact card-like stack */
+  .calendar-employee-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+  }
+
+  .employee-detail-heading h2 {
+    font-size: 22px;
+  }
+
+  .employee-detail-heading .muted {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .calendar-employee-header .month-controls {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .month-controls .outline {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    flex: 0 0 40px;
+    font-size: 21px;
+  }
+
+  .report-month {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+  }
+
+  .calendar-summary {
+    margin-top: 0;
+  }
+
+  .report-stats span {
+    padding: 10px;
+    min-height: 61px;
+  }
+
+  .report-stats b {
+    font-size: 18px;
+  }
+
+  /* Calendar optimized for narrow phones */
+  .calendar-grid {
+    gap: 4px;
+    margin: 15px 0;
+  }
+
+  .calendar-header {
+    padding: 5px 0;
+    font-size: 9px;
+    letter-spacing: .25px;
+  }
+
+  .calendar-cell {
+    min-height: 62px;
+    padding: 8px 3px 6px;
+    border-radius: 7px;
+    font-size: 11px;
+    transform: none !important;
+  }
+
+  .calendar-cell strong {
+    font-size: 17px;
+    margin-bottom: 2px;
+    line-height: 1;
+  }
+
+  .calendar-cell small {
+    font-size: 8px;
+    line-height: 1.15;
+    margin-top: 5px;
+    max-width: calc(100% - 4px);
+  }
+
+  .calendar-cell:hover {
+    box-shadow: none;
+  }
+
+  .calendar-edit-btn {
+    opacity: 1;
+    top: 3px;
+    right: 3px;
+    width: 21px;
+    height: 21px;
+    border-radius: 6px;
+    font-size: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+
+  .action-bar {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 15px;
+  }
+
+  .action-bar button {
+    width: 100%;
+  }
+
+  /* Employee rows */
+  .employee-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 10px 0;
+  }
+
+  .employee-main {
+    grid-column: 1 / -1;
+    width: 100%;
+    padding: 4px 0;
+    gap: 10px;
+  }
+
+  .employee-main > span:last-child {
+    display: none;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+
+  .row-total {
+    grid-column: 1;
+    text-align: left;
+    padding-left: 46px;
+    margin-top: -5px;
+  }
+
+  .mark-button,
+  .share-button,
+  .delete-button {
+    grid-row: 3;
+    min-height: 38px;
+  }
+
+  .mark-button {
+    grid-column: 1;
+  }
+
+  .share-button {
+    grid-column: 2;
+  }
+
+  .delete-button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  /* Payments */
+  .payment-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
+    padding: 14px 0;
+  }
+
+  .payment-row .employee-name {
+    margin: 0;
+  }
+
+  .payment-row > span:not(.due-value) {
+    min-width: 0;
+  }
+
+  .payment-row > span:nth-last-of-type(3),
+  .payment-row > span:nth-last-of-type(2),
+  .payment-row > span.due-value {
+    grid-column: 2;
+    padding-left: 0;
+  }
+
+  .payment-row .primary {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .payment-compact {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 5px 10px;
+    padding: 13px 0;
+  }
+
+  .payment-compact span:first-child {
+    min-width: 0;
+  }
+
+  .payment-compact b {
+    min-width: 0;
+    text-align: right;
+  }
+
+  .payment-compact span:nth-child(3) {
+    color: #6d7e73;
+  }
+
+  .payment-compact .status {
+    text-align: right;
+  }
+
+  /* Approval cards */
+  .approval-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 14px 0;
+  }
+
+  .date-block {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .approval-detail {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .approval-row .approve,
+  .approval-row .deny {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  /* History */
+  .history-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 10px;
+    padding: 13px 0;
+  }
+
+  .history-row span:first-child,
+  .history-row b {
+    min-width: 0;
+  }
+
+  .history-row span:nth-of-type(2),
+  .history-row .status {
+    text-align: right;
+  }
+
+  .history-row button {
+    min-height: 38px;
+  }
+
+  .history-row button:nth-last-child(2) {
+    grid-column: 1;
+  }
+
+  .history-row button:last-child {
+    grid-column: 2;
+  }
+
+  /* Tabs */
+  .tabs {
+    margin-bottom: 16px;
+    gap: 0;
+  }
+
+  .tabs button {
+    padding: 10px 13px;
+    min-height: 44px;
+    font-size: 12px;
+  }
+
+  /* Banner */
+  .daily-plan-banner {
+    width: calc(100% - 24px);
+    margin: 12px auto -2px;
+    padding: 14px;
+    align-items: flex-start;
+    gap: 10px;
+    border-radius: 10px;
+  }
+
+  .daily-plan-banner p:last-child {
+    font-size: 12px;
+  }
+
+  .plan-edit {
+    padding: 9px 10px;
+    min-height: 38px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .attendance-shortcut {
+    width: calc(100% - 24px);
+    margin-top: 10px;
+  }
+
+  .attendance-shortcut button {
+    width: 100%;
+  }
+
+  .page-alert {
+    width: calc(100% - 24px);
+    margin: 14px auto -2px;
+  }
+
+  /* Forms */
+  .form-row {
+    display: block;
+  }
+
+  .form-row > label {
+    width: 100%;
+  }
+
+  label {
+    margin: 10px 0;
+    font-size: 12px;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+    padding: 10px 11px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+
+  textarea {
+    min-height: 90px;
+  }
+
+  .primary,
+  .outline,
+  .approve,
+  .deny {
+    min-height: 44px;
+    padding: 10px 13px;
+    font-size: 13px;
+  }
+
+  .text-button {
+    min-height: 38px;
+    padding: 7px 9px;
+  }
+
+  /* Modals become mobile sheets */
+  .modal-backdrop {
+    padding: 10px;
+    place-items: end center;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 560px;
+    max-height: calc(100dvh - 20px);
+    border-radius: 16px 16px 10px 10px;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+  }
+
+  .modal-heading {
+    margin-bottom: 12px;
+  }
+
+  .modal-heading h2 {
+    font-size: 21px;
+  }
+
+  .modal-heading .icon-button {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    font-size: 25px;
+  }
+
+  .choice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 16px 0;
+  }
+
+  .choice-grid button {
+    min-height: 76px;
+    padding: 11px;
+  }
+
+  .choice-grid b {
+    font-size: 12px;
+  }
+
+  .choice-grid small {
+    font-size: 9px;
+  }
+
+  .detail-list div,
+  .payment-summary span {
+    gap: 12px;
+    padding: 11px 0;
+    font-size: 12px;
+  }
+
+  .admin-tool-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .admin-tool-grid button {
+    min-height: 82px;
+    padding: 14px;
+  }
+
+  .bulk-selection {
+    max-height: 35vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .login-shell {
+    min-height: 100dvh;
+    padding: 18px 14px;
+  }
+
+  .login-card {
+    padding: 28px 20px;
+    border-radius: 13px;
+  }
+
+  .login-card h1 {
+    font-size: 31px;
+  }
+
+  :host > .employee-report {
+    width: calc(100% - 24px);
+  }
+}
+
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 380px) {
+  .page {
+    width: calc(100% - 18px);
+  }
+
+  .calendar-grid {
+    gap: 3px;
+  }
+
+  .calendar-cell {
+    min-height: 57px;
+    padding: 7px 2px 5px;
+  }
+
+  .calendar-cell strong {
+    font-size: 16px;
+  }
+
+  .calendar-cell small {
+    font-size: 7px;
+  }
+
+  .calendar-edit-btn {
+    width: 19px;
+    height: 19px;
+    top: 2px;
+    right: 2px;
+    font-size: 9px;
+  }
+
+  .admin-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-stats span {
+    padding: 9px 8px;
+  }
+
+  .report-stats b {
+    font-size: 17px;
+  }
+}
+
+/* =========================================================
+   TOUCH / ACCESSIBILITY
+   ========================================================= */
+
+@media (hover: none) and (pointer: coarse) {
+  .calendar-cell:hover,
+  .employee-row:hover,
+  .selectable-row:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .calendar-edit-btn {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+
+/* =========================================================
+   FINAL MOBILE ACTION + CALENDAR ICON OVERRIDES
+   ========================================================= */
+
+/* Calendar edit control: compact, professional icon button */
+.calendar-edit-btn {
+  width: 30px;
+  height: 30px;
+  top: 6px;
+  right: 6px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(16, 44, 35, .14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .92);
+  color: #355b48;
+  box-shadow: 0 2px 7px rgba(16, 44, 35, .10);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.calendar-edit-icon,
+.action-icon {
+  width: 15px;
+  height: 15px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.calendar-edit-btn:hover,
+.calendar-edit-btn:focus-visible {
+  background: #fffaf0;
+  color: #8a5c18;
+  border-color: #d8a947;
+  box-shadow: 0 3px 10px rgba(16, 44, 35, .13);
+  transform: translateY(-1px);
+}
+
+.calendar-edit-btn:active {
+  transform: scale(.94);
+}
+
+/* Employee actions are kept together so mobile cannot accidentally hide them. */
+.employee-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+
+.employee-actions > button {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.employee-actions .action-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+}
+
+.employee-actions .mark-button {
+  border: 1px solid #c6dace;
+  background: #eff8f0;
+  color: #286044;
+}
+
+.employee-actions .share-button {
+  border: 1px solid #d4dbe8;
+  background: #f6f8fc;
+  color: #3f5d8b;
+}
+
+.employee-actions .delete-button {
+  border: 1px solid #efd0cd;
+  background: #fff8f7;
+  color: #a23d39;
 }
 
 @media (max-width: 700px) {
+  /*
+   * Important: the old mobile layout placed the three buttons as separate
+   * grid children and then overwrote their grid rows/columns. That is why
+   * Mark and Share could disappear. Keep them as one action row instead.
+   */
+  .employee-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+    padding: 12px 0;
+  }
+
+  .employee-main {
+    grid-column: 1;
+    width: 100%;
+  }
+
+  .row-total {
+    grid-column: 1;
+    padding-left: 46px;
+    margin-top: -4px;
+  }
+
+  .employee-actions {
+    grid-column: 1;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+    margin-top: 1px;
+  }
+
+  .employee-actions > button {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    padding: 8px 5px;
+    border-radius: 8px;
+    font-size: 11px;
+  }
+
+  .employee-actions .action-icon {
+    width: 14px;
+    height: 14px;
+    flex-basis: 14px;
+  }
+
+  /* Do not let the generic .delete-button mobile rule take over. */
+  .employee-actions .delete-button {
+    grid-column: auto;
+    width: 100%;
+  }
+
   .calendar-edit-btn {
     opacity: 1;
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
     top: 4px;
     right: 4px;
+    border-radius: 7px;
+  }
+
+  .calendar-edit-icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (max-width: 380px) {
+  .employee-actions {
+    gap: 5px;
+  }
+
+  .employee-actions > button {
+    min-height: 38px;
+    padding: 7px 3px;
+    gap: 4px;
     font-size: 10px;
+  }
+
+  .employee-actions .action-icon {
+    width: 13px;
+    height: 13px;
+    flex-basis: 13px;
+  }
+
+  .calendar-edit-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  .calendar-edit-icon {
+    width: 13px;
+    height: 13px;
+  }
+}
+/* =========================================================
+   SURAKSHA HUB — FINAL POLISH / RESPONSIVE OVERRIDES
+   Professional interaction, mobile-safe actions and
+   non-overlapping calendar edit controls.
+   ========================================================= */
+
+/* ---------- Global interaction polish ---------- */
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled) {
+  transition:
+    transform .16s cubic-bezier(.2,.8,.2,1),
+    box-shadow .2s ease,
+    background-color .2s ease,
+    border-color .2s ease,
+    color .2s ease,
+    opacity .2s ease;
+}
+
+button:not(:disabled):active {
+  transform: translateY(1px) scale(.985);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(216, 169, 71, .30);
+  outline-offset: 2px;
+}
+
+/* ---------- Cards / panels ---------- */
+
+.panel,
+.employee-report,
+.calendar-section,
+.payment-section,
+.stat,
+.login-card,
+.modal {
+  box-shadow:
+    0 1px 2px rgba(16, 44, 35, .025),
+    0 8px 26px rgba(16, 44, 35, .045);
+}
+
+.panel,
+.employee-report,
+.calendar-section,
+.payment-section,
+.stat {
+  transition:
+    box-shadow .22s ease,
+    border-color .22s ease;
+}
+
+.panel:hover,
+.employee-report:hover,
+.calendar-section:hover,
+.payment-section:hover {
+  border-color: #d5e0d7;
+  box-shadow:
+    0 2px 4px rgba(16, 44, 35, .03),
+    0 12px 30px rgba(16, 44, 35, .055);
+}
+
+/* ---------- Primary buttons ---------- */
+
+.primary {
+  box-shadow: 0 3px 9px rgba(164, 118, 29, .14);
+}
+
+.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(164, 118, 29, .20);
+}
+
+.outline:hover,
+.approve:hover,
+.deny:hover {
+  transform: translateY(-1px);
+}
+
+/* ---------- Calendar ---------- */
+
+.calendar-cell {
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    transform .18s cubic-bezier(.2,.8,.2,1),
+    box-shadow .2s ease,
+    border-color .2s ease,
+    filter .2s ease;
+}
+
+/*
+ * Reserve a dedicated top-right area for the edit button.
+ * This is the important fix: dates such as 15 can never sit underneath
+ * the pencil icon.
+ */
+.calendar-cell > strong {
+  width: 100%;
+  padding-right: 34px;
+  min-height: 22px;
+  line-height: 1.1;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+/* Subtle highlight inside each active calendar cell. */
+.calendar-cell:not(.empty)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,.20),
+      transparent 42%
+    );
+  opacity: .65;
+  z-index: 0;
+}
+
+.calendar-cell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.calendar-cell:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 7px 17px rgba(16, 44, 35, .10),
+    0 0 0 1px rgba(255,255,255,.25) inset;
+  filter: saturate(1.02);
+}
+
+/* Empty calendar cells should stay completely quiet. */
+.calendar-cell.empty::after {
+  display: none;
+}
+
+/* ---------- Calendar edit icon ---------- */
+
+.calendar-edit-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 5;
+
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+  margin: 0;
+
+  border: 1px solid rgba(16, 44, 35, .15);
+  border-radius: 8px;
+
+  background: rgba(255, 255, 255, .94);
+  color: #355b48;
+
+  box-shadow:
+    0 2px 7px rgba(16, 44, 35, .11),
+    0 1px 0 rgba(255,255,255,.8) inset;
+
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+
+  opacity: 0;
+  cursor: pointer;
+
+  transition:
+    opacity .16s ease,
+    transform .16s cubic-bezier(.2,.8,.2,1),
+    background-color .18s ease,
+    border-color .18s ease,
+    color .18s ease,
+    box-shadow .18s ease;
+}
+
+.calendar-cell:hover .calendar-edit-btn,
+.calendar-edit-btn:focus-visible,
+.calendar-edit-btn:focus {
+  opacity: 1;
+}
+
+.calendar-edit-btn:hover {
+  background: #fffaf0;
+  color: #8a5c18;
+  border-color: #d8a947;
+  box-shadow:
+    0 4px 11px rgba(16, 44, 35, .14),
+    0 1px 0 rgba(255,255,255,.9) inset;
+  transform: translateY(-1px) scale(1.04);
+}
+
+.calendar-edit-btn:active {
+  transform: scale(.92);
+}
+
+.calendar-edit-icon {
+  width: 14px;
+  height: 14px;
+
+  display: block;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  pointer-events: none;
+}
+
+/* ---------- Employee actions ---------- */
+
+.employee-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.employee-actions > button {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  box-shadow: 0 1px 2px rgba(16, 44, 35, .035);
+}
+
+.employee-actions > button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(16, 44, 35, .08);
+}
+
+.employee-actions .action-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  display: block;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  pointer-events: none;
+}
+
+.employee-actions .mark-button:hover {
+  background: #e5f4e8;
+  border-color: #a8c8b0;
+}
+
+.employee-actions .share-button:hover {
+  background: #edf2fb;
+  border-color: #b9c7dd;
+}
+
+.employee-actions .delete-button:hover {
+  background: #fff0ee;
+  border-color: #e5b9b5;
+}
+
+/* ---------- Employee rows: desktop/tablet ---------- */
+
+.employee-row {
+  border-radius: 9px;
+  padding-left: 8px;
+  padding-right: 8px;
+  margin: 0 -8px;
+  transition:
+    background-color .18s ease,
+    box-shadow .18s ease;
+}
+
+.employee-row:hover {
+  background: #f7faf7;
+  box-shadow: 0 3px 12px rgba(16, 44, 35, .035);
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 700px) {
+
+  .employee-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+
+    margin: 0;
+    padding: 12px 0;
+
+    border-radius: 0;
+  }
+
+  .employee-main {
+    grid-column: 1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .row-total {
+    grid-column: 1;
+    padding-left: 46px;
+    margin-top: -3px;
+  }
+
+  /*
+   * All three employee actions stay in one controlled row.
+   * This prevents the old grid-column rules from hiding Mark/Share.
+   */
+  .employee-actions {
+    grid-column: 1;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+    margin-top: 2px;
+  }
+
+  .employee-actions > button {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+
+    padding: 8px 5px;
+    border-radius: 9px;
+
+    font-size: 11px;
+    line-height: 1.1;
+  }
+
+  .employee-actions .action-icon {
+    width: 14px;
+    height: 14px;
+    flex-basis: 14px;
+  }
+
+  .employee-actions .delete-button {
+    grid-column: auto;
+    width: 100%;
+  }
+
+  /*
+   * Calendar:
+   * - date gets its own reserved space
+   * - pencil remains visible on touch devices
+   * - button never covers the date
+   */
+  .calendar-cell {
+    min-height: 62px;
+    padding: 8px 3px 6px;
+  }
+
+  .calendar-cell > strong {
+    padding-right: 28px;
+    min-height: 18px;
+    font-size: 17px;
+  }
+
+  .calendar-edit-btn {
+    opacity: 1;
+    top: 4px;
+    right: 4px;
+
+    width: 25px;
+    height: 25px;
+    min-width: 25px;
+    min-height: 25px;
+
+    border-radius: 7px;
+  }
+
+  .calendar-edit-icon {
+    width: 13px;
+    height: 13px;
+  }
+
+  .calendar-cell:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .calendar-cell:active {
+    transform: scale(.985);
+  }
+
+  /* Improve small mobile cards. */
+  .stat,
+  .month-stats span,
+  .report-stats span {
+    box-shadow: 0 1px 3px rgba(16, 44, 35, .025);
+  }
+
+  /* Prevent buttons from becoming cramped beside long headings. */
+  .panel-title,
+  .report-heading,
+  .employee-header {
+    min-width: 0;
+  }
+
+  /* More comfortable mobile touch targets. */
+  .tabs button,
+  .icon-button,
+  .month-controls .outline {
+    min-height: 42px;
+  }
+}
+
+/* ---------- Small phones ---------- */
+
+@media (max-width: 380px) {
+
+  .employee-actions {
+    gap: 5px;
+  }
+
+  .employee-actions > button {
+    min-height: 38px;
+    padding: 7px 3px;
+    gap: 4px;
+    border-radius: 8px;
+    font-size: 10px;
+  }
+
+  .employee-actions .action-icon {
+    width: 13px;
+    height: 13px;
+    flex-basis: 13px;
+  }
+
+  .calendar-cell {
+    min-height: 57px;
+    padding: 7px 2px 5px;
+  }
+
+  .calendar-cell > strong {
+    padding-right: 25px;
+    font-size: 16px;
+  }
+
+  .calendar-edit-btn {
+    width: 23px;
+    height: 23px;
+    min-width: 23px;
+    min-height: 23px;
+    top: 3px;
+    right: 3px;
+    border-radius: 6px;
+  }
+
+  .calendar-edit-icon {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* ---------- Touch devices ---------- */
+
+@media (hover: none) and (pointer: coarse) {
+
+  .calendar-edit-btn {
+    opacity: 1;
+  }
+
+  .calendar-cell:hover,
+  .employee-row:hover {
+    transform: none;
+  }
+
+  .employee-actions > button:active {
+    transform: scale(.97);
+  }
+}
+
+/* ---------- Motion safety ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
