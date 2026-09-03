@@ -62,3 +62,84 @@ label { display: block; color: #456154; font-size: 12px; font-weight: 700; margi
 .month-controls { gap: 8px; } .month-controls .outline { padding: 5px 10px; font-size: 17px; line-height: 1; } .employee-ledger { border-top: 1px solid #e6ece7; margin-top: 24px; padding-top: 18px; }
 .attendance-shortcut { max-width: 1180px; width: calc(100% - 10vw); margin: 13px auto -12px; display: flex; justify-content: flex-end; } @media (max-width: 700px) { .attendance-shortcut { width: calc(100% - 34px); margin-top: 10px; } }
 .admin-tools-modal { width: min(640px, 100%); } .admin-tool-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 20px; } .admin-tool-grid button { text-align: left; padding: 18px; border: 1px solid #dce6dd; border-radius: 9px; background: #f7faf7; color: #244c35; } .admin-tool-grid button:hover { background: #eef6ef; border-color: #86a993; } .admin-tool-grid b, .admin-tool-grid small { display: block; } .admin-tool-grid small { margin-top: 6px; color: #718076; font-size: 11px; line-height: 1.35; } @media (max-width: 700px) { .topbar { height: auto; min-height: 64px; padding: 10px 18px; gap: 10px; } .brand { min-width: 0; } .brand small { display: none; } .user-menu { margin-left: auto; gap: 6px; } .user-menu .top-action:first-child { display: none; } .admin-tool-grid { grid-template-columns: 1fr; } .admin-actions { width: 100%; } .admin-actions .primary, .admin-actions .outline { flex: 1; } .month-stats { grid-template-columns: repeat(2, 1fr); } .employee-header { flex-direction: column; align-items: stretch; } .action-bar { flex-direction: column; } .action-bar button { width: 100%; } .payment-compact { flex-wrap: wrap; gap: 8px; } .payment-compact span:first-child { min-width: auto; } .calendar-grid { gap: 4px; } .calendar-cell { min-height: 70px; padding: 8px 4px; font-size: 12px; } .calendar-cell strong { font-size: 18px; margin-bottom: 2px; } .calendar-cell small { font-size: 9px; margin-top: 2px; } .log-row { grid-template-columns: 50px 1fr 28px; } .log-row span:nth-child(2), .log-row span:nth-child(3), .log-row span:nth-child(4), .log-row em { display: none; } .log-row .log-edit-btn { margin-left: auto; } .history-row { flex-wrap: wrap; gap: 8px; } .history-row button { flex: 1; min-width: 70px; padding: 6px 8px; font-size: 11px; } .approval-row { flex-direction: column; align-items: stretch; } .approval-row .date-block { min-width: auto; } .approval-row .approval-detail { min-width: auto; } .approval-row button { padding: 10px; } .modal { width: min(90vw, 500px); padding: 20px; } .modal-heading button { padding: 4px; font-size: 24px; } label { margin: 10px 0 5px; } input, select, textarea { padding: 10px; font-size: 16px; } .primary, .outline { padding: 10px 14px; font-size: 14px; width: 100%; } .text-button { padding: 6px 8px; font-size: 12px; } }
+
+.calendar-employee-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e5ebe6;
+}
+
+.employee-detail-heading h2 {
+  margin: 0;
+}
+
+.employee-detail-heading .muted {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.calendar-summary {
+  margin-top: 0;
+}
+
+@media (max-width: 700px) {
+  .calendar-employee-header {
+    flex-direction: column;
+  }
+
+  .calendar-employee-header .month-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+.calendar-cell {
+  position: relative;
+}
+
+.calendar-edit-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 23px;
+  height: 23px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(39, 75, 56, 0.18);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #8a5c18;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s, transform 0.2s;
+}
+
+.calendar-cell:hover .calendar-edit-btn,
+.calendar-edit-btn:focus {
+  opacity: 1;
+}
+
+.calendar-edit-btn:hover {
+  background: #fff8e8;
+  border-color: #d8a947;
+  color: #7a5014;
+  transform: scale(1.08);
+}
+
+@media (max-width: 700px) {
+  .calendar-edit-btn {
+    opacity: 1;
+    width: 20px;
+    height: 20px;
+    top: 4px;
+    right: 4px;
+    font-size: 10px;
+  }
+}
