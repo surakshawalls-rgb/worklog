@@ -2321,547 +2321,85 @@ code {
     height: 13px;
   }
 }
-/* =========================================================
-   SURAKSHA HUB — FINAL POLISH / RESPONSIVE OVERRIDES
-   Professional interaction, mobile-safe actions and
-   non-overlapping calendar edit controls.
-   ========================================================= */
-
-/* ---------- Global interaction polish ---------- */
-
-button,
-a,
-input,
-select,
-textarea {
-  -webkit-tap-highlight-color: transparent;
-}
-
-button:not(:disabled) {
-  transition:
-    transform .16s cubic-bezier(.2,.8,.2,1),
-    box-shadow .2s ease,
-    background-color .2s ease,
-    border-color .2s ease,
-    color .2s ease,
-    opacity .2s ease;
-}
-
-button:not(:disabled):active {
-  transform: translateY(1px) scale(.985);
-}
-
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 3px solid rgba(216, 169, 71, .30);
-  outline-offset: 2px;
-}
-
-/* ---------- Cards / panels ---------- */
-
-.panel,
-.employee-report,
-.calendar-section,
-.payment-section,
-.stat,
-.login-card,
-.modal {
-  box-shadow:
-    0 1px 2px rgba(16, 44, 35, .025),
-    0 8px 26px rgba(16, 44, 35, .045);
-}
-
-.panel,
-.employee-report,
-.calendar-section,
-.payment-section,
-.stat {
-  transition:
-    box-shadow .22s ease,
-    border-color .22s ease;
-}
-
-.panel:hover,
-.employee-report:hover,
-.calendar-section:hover,
-.payment-section:hover {
-  border-color: #d5e0d7;
-  box-shadow:
-    0 2px 4px rgba(16, 44, 35, .03),
-    0 12px 30px rgba(16, 44, 35, .055);
-}
-
-/* ---------- Primary buttons ---------- */
-
-.primary {
-  box-shadow: 0 3px 9px rgba(164, 118, 29, .14);
-}
-
-.primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(164, 118, 29, .20);
-}
-
-.outline:hover,
-.approve:hover,
-.deny:hover {
-  transform: translateY(-1px);
-}
-
-/* ---------- Calendar ---------- */
-
-.calendar-cell {
-  isolation: isolate;
-  overflow: hidden;
-  transition:
-    transform .18s cubic-bezier(.2,.8,.2,1),
-    box-shadow .2s ease,
-    border-color .2s ease,
-    filter .2s ease;
-}
-
-/*
- * Reserve a dedicated top-right area for the edit button.
- * This is the important fix: dates such as 15 can never sit underneath
- * the pencil icon.
- */
-.calendar-cell > strong {
-  width: 100%;
-  padding-right: 34px;
-  min-height: 22px;
-  line-height: 1.1;
-  text-align: center;
-  position: relative;
-  z-index: 1;
-}
-
-/* Subtle highlight inside each active calendar cell. */
-.calendar-cell:not(.empty)::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255,255,255,.20),
-      transparent 42%
-    );
-  opacity: .65;
-  z-index: 0;
-}
-
-.calendar-cell > * {
-  position: relative;
-  z-index: 1;
-}
-
-.calendar-cell:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 7px 17px rgba(16, 44, 35, .10),
-    0 0 0 1px rgba(255,255,255,.25) inset;
-  filter: saturate(1.02);
-}
-
-/* Empty calendar cells should stay completely quiet. */
-.calendar-cell.empty::after {
-  display: none;
-}
-
-/* ---------- Calendar edit icon ---------- */
-
-.calendar-edit-btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  z-index: 5;
-
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  min-height: 28px;
-
-  display: grid;
-  place-items: center;
-
-  padding: 0;
-  margin: 0;
-
-  border: 1px solid rgba(16, 44, 35, .15);
-  border-radius: 8px;
-
-  background: rgba(255, 255, 255, .94);
-  color: #355b48;
-
-  box-shadow:
-    0 2px 7px rgba(16, 44, 35, .11),
-    0 1px 0 rgba(255,255,255,.8) inset;
-
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-
-  opacity: 0;
-  cursor: pointer;
-
-  transition:
-    opacity .16s ease,
-    transform .16s cubic-bezier(.2,.8,.2,1),
-    background-color .18s ease,
-    border-color .18s ease,
-    color .18s ease,
-    box-shadow .18s ease;
-}
-
-.calendar-cell:hover .calendar-edit-btn,
-.calendar-edit-btn:focus-visible,
-.calendar-edit-btn:focus {
-  opacity: 1;
-}
-
-.calendar-edit-btn:hover {
-  background: #fffaf0;
-  color: #8a5c18;
-  border-color: #d8a947;
-  box-shadow:
-    0 4px 11px rgba(16, 44, 35, .14),
-    0 1px 0 rgba(255,255,255,.9) inset;
-  transform: translateY(-1px) scale(1.04);
-}
-
-.calendar-edit-btn:active {
-  transform: scale(.92);
-}
-
-.calendar-edit-icon {
-  width: 14px;
-  height: 14px;
-
-  display: block;
-
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-
-  pointer-events: none;
-}
-
-/* ---------- Employee actions ---------- */
-
-.employee-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 7px;
-  flex: 0 0 auto;
-  min-width: 0;
-}
-
-.employee-actions > button {
-  min-height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  white-space: nowrap;
-  flex: 0 0 auto;
-  box-shadow: 0 1px 2px rgba(16, 44, 35, .035);
-}
-
-.employee-actions > button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(16, 44, 35, .08);
-}
-
-.employee-actions .action-icon {
-  width: 14px;
-  height: 14px;
-  flex: 0 0 14px;
-  display: block;
-
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-
-  pointer-events: none;
-}
-
-.employee-actions .mark-button:hover {
-  background: #e5f4e8;
-  border-color: #a8c8b0;
-}
-
-.employee-actions .share-button:hover {
-  background: #edf2fb;
-  border-color: #b9c7dd;
-}
-
-.employee-actions .delete-button:hover {
-  background: #fff0ee;
-  border-color: #e5b9b5;
-}
-
-/* ---------- Employee rows: desktop/tablet ---------- */
-
-.employee-row {
-  border-radius: 9px;
-  padding-left: 8px;
-  padding-right: 8px;
-  margin: 0 -8px;
-  transition:
-    background-color .18s ease,
-    box-shadow .18s ease;
-}
-
-.employee-row:hover {
-  background: #f7faf7;
-  box-shadow: 0 3px 12px rgba(16, 44, 35, .035);
-}
-
-/* ---------- Mobile ---------- */
-
-@media (max-width: 700px) {
-
-  .employee-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
-
-    margin: 0;
-    padding: 12px 0;
-
-    border-radius: 0;
-  }
-
-  .employee-main {
-    grid-column: 1;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .row-total {
-    grid-column: 1;
-    padding-left: 46px;
-    margin-top: -3px;
-  }
-
-  /*
-   * All three employee actions stay in one controlled row.
-   * This prevents the old grid-column rules from hiding Mark/Share.
-   */
-  .employee-actions {
-    grid-column: 1;
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 7px;
-    margin-top: 2px;
-  }
-
-  .employee-actions > button {
-    width: 100%;
-    min-width: 0;
-    min-height: 40px;
-
-    padding: 8px 5px;
-    border-radius: 9px;
-
-    font-size: 11px;
-    line-height: 1.1;
-  }
-
-  .employee-actions .action-icon {
-    width: 14px;
-    height: 14px;
-    flex-basis: 14px;
-  }
-
-  .employee-actions .delete-button {
-    grid-column: auto;
-    width: 100%;
-  }
-
-  /*
-   * Calendar:
-   * - date gets its own reserved space
-   * - pencil remains visible on touch devices
-   * - button never covers the date
-   */
-  .calendar-cell {
-    min-height: 62px;
-    padding: 8px 3px 6px;
-  }
-
-  .calendar-cell > strong {
-    padding-right: 28px;
-    min-height: 18px;
-    font-size: 17px;
-  }
-
-  .calendar-edit-btn {
-    opacity: 1;
-    top: 4px;
-    right: 4px;
-
-    width: 25px;
-    height: 25px;
-    min-width: 25px;
-    min-height: 25px;
-
-    border-radius: 7px;
-  }
-
-  .calendar-edit-icon {
-    width: 13px;
-    height: 13px;
-  }
-
-  .calendar-cell:hover {
-    transform: none;
-    box-shadow: none;
-  }
-
-  .calendar-cell:active {
-    transform: scale(.985);
-  }
-
-  /* Improve small mobile cards. */
-  .stat,
-  .month-stats span,
-  .report-stats span {
-    box-shadow: 0 1px 3px rgba(16, 44, 35, .025);
-  }
-
-  /* Prevent buttons from becoming cramped beside long headings. */
-  .panel-title,
-  .report-heading,
-  .employee-header {
-    min-width: 0;
-  }
-
-  /* More comfortable mobile touch targets. */
-  .tabs button,
-  .icon-button,
-  .month-controls .outline {
-    min-height: 42px;
-  }
-}
-
-/* ---------- Small phones ---------- */
-
-@media (max-width: 380px) {
-
-  .employee-actions {
-    gap: 5px;
-  }
-
-  .employee-actions > button {
-    min-height: 38px;
-    padding: 7px 3px;
-    gap: 4px;
-    border-radius: 8px;
-    font-size: 10px;
-  }
-
-  .employee-actions .action-icon {
-    width: 13px;
-    height: 13px;
-    flex-basis: 13px;
-  }
-
-  .calendar-cell {
-    min-height: 57px;
-    padding: 7px 2px 5px;
-  }
-
-  .calendar-cell > strong {
-    padding-right: 25px;
-    font-size: 16px;
-  }
-
-  .calendar-edit-btn {
-    width: 23px;
-    height: 23px;
-    min-width: 23px;
-    min-height: 23px;
-    top: 3px;
-    right: 3px;
-    border-radius: 6px;
-  }
-
-  .calendar-edit-icon {
-    width: 12px;
-    height: 12px;
-  }
-}
-
-/* ---------- Touch devices ---------- */
-
-@media (hover: none) and (pointer: coarse) {
-
-  .calendar-edit-btn {
-    opacity: 1;
-  }
-
-  .calendar-cell:hover,
-  .employee-row:hover {
-    transform: none;
-  }
-
-  .employee-actions > button:active {
-    transform: scale(.97);
-  }
-}
-
-/* ---------- Motion safety ---------- */
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    transition-duration: .01ms !important;
-    animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
-  }
-}
-
 
 /* =========================================================
-   FUTURE ATTENDANCE — HARD UI BLOCK
-   Future dates remain visible for calendar context, but are
-   clearly unavailable and cannot be opened/tapped.
+   SURAKSHA GROUP — PAYMENT RECEIPTS
    ========================================================= */
-.calendar-cell.future-attendance {
-  opacity: .42;
-  cursor: not-allowed;
-  filter: grayscale(.25);
-  box-shadow: none !important;
+.receipts-panel,
+.receipt-preview-panel { margin-top: 18px; }
+.receipts-heading { align-items: flex-start; }
+.receipts-heading h2 { margin-bottom: 5px; }
+.receipt-toolbar { display:flex; justify-content:flex-end; margin: 18px 0; }
+.receipt-filter { min-width:260px; }
+.receipt-list { display:grid; gap:10px; }
+.receipt-row { display:grid; grid-template-columns: 1fr auto auto; gap:18px; align-items:center; padding:14px 16px; border:1px solid #e1e9e3; border-radius:14px; background:#fff; }
+.receipt-row-main { display:flex; gap:12px; align-items:center; min-width:0; }
+.receipt-mini-logo { width:42px; height:42px; border-radius:10px; background:#f3f7f4; display:grid; place-items:center; overflow:hidden; flex:0 0 auto; }
+.receipt-mini-logo img { width:34px; height:34px; object-fit:contain; }
+.receipt-row-main b, .receipt-row-main small, .receipt-row-amount b, .receipt-row-amount small { display:block; }
+.receipt-row-main small, .receipt-row-amount small { color:#7a887f; font-size:11px; margin-top:3px; }
+.receipt-row-amount { text-align:right; white-space:nowrap; }
+.receipt-row-actions { display:flex; gap:7px; flex-wrap:wrap; justify-content:flex-end; }
+.receipt-preview-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.payment-receipt { max-width:900px; margin:4px auto 0; background:#fff; border:1px solid #dfe7e1; border-radius:18px; padding:34px; box-shadow:0 10px 35px rgba(30,60,45,.08); color:#24332b; }
+.receipt-header { display:flex; justify-content:space-between; gap:24px; align-items:flex-start; }
+.receipt-brand { display:flex; gap:15px; align-items:center; }
+.receipt-brand img { width:62px; height:62px; object-fit:contain; }
+.receipt-company { margin:0 0 4px; font-size:12px; letter-spacing:2px; font-weight:800; }
+.receipt-brand h1 { margin:0; font-size:28px; }
+.receipt-brand span, .receipt-number-block span, .receipt-number-block small, .receipt-employee-card span, .receipt-employee-card small, .receipt-period span, .receipt-financials span, .receipt-note span, .receipt-footer span { display:block; color:#718078; font-size:12px; }
+.receipt-number-block { text-align:right; }
+.receipt-number-block b { display:block; font-size:15px; margin:5px 0; }
+.receipt-divider { height:1px; background:#e6ece7; margin:24px 0; }
+.receipt-employee-card { display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:18px; background:#f6f9f7; border:1px solid #e2eae4; border-radius:12px; padding:18px; }
+.receipt-employee-card strong { display:block; font-size:16px; margin:4px 0; }
+.receipt-period { display:flex; justify-content:space-between; align-items:center; gap:20px; border-bottom:1px solid #e6ece7; padding:20px 0; }
+.receipt-period strong { display:block; margin-top:5px; }
+.receipt-financials { margin-top:8px; }
+.receipt-financials > div { display:flex; justify-content:space-between; gap:20px; padding:15px 0; border-bottom:1px solid #edf1ee; }
+.receipt-financials b { font-size:15px; }
+.receipt-paid { font-weight:700; }
+.receipt-balance { background:#eef6f0; margin-top:12px; padding:18px !important; border:0 !important; border-radius:12px; }
+.receipt-balance b { font-size:21px; }
+.receipt-advance { background:#fff5f3 !important; }
+.receipt-note { padding:18px 0; border-bottom:1px solid #e6ece7; }
+.receipt-note p { margin:6px 0 0; font-size:13px; }
+.receipt-footer { display:flex; justify-content:space-between; gap:25px; margin-top:28px; padding-top:20px; border-top:1px solid #e6ece7; }
+.receipt-footer strong { display:block; font-size:13px; margin-bottom:6px; }
+.receipt-web { text-align:right; }
+.receipt-disclaimer { text-align:center; color:#8a958f; font-size:10px; margin-top:22px; }
+.receipt-period-modal { max-width:620px; }
+@media (max-width:700px) {
+  .receipt-row { grid-template-columns:1fr; gap:10px; }
+  .receipt-row-amount { text-align:left; }
+  .receipt-row-actions { justify-content:flex-start; }
+  .receipt-toolbar { justify-content:stretch; }
+  .receipt-filter { min-width:0; width:100%; }
+  .receipt-preview-actions { justify-content:flex-start; }
+  .payment-receipt { padding:20px; border-radius:14px; }
+  .receipt-header { flex-direction:column; }
+  .receipt-number-block { text-align:left; }
+  .receipt-employee-card { grid-template-columns:1fr; gap:14px; }
+  .receipt-period { align-items:flex-start; flex-direction:column; }
+  .receipt-footer { flex-direction:column; }
+  .receipt-web { text-align:left; }
+}
+@media print {
+  body * { visibility:hidden !important; }
+  #payment-receipt, #payment-receipt * { visibility:visible !important; }
+  #payment-receipt { position:absolute; left:0; top:0; width:100%; max-width:none; margin:0; box-shadow:none; border:0; border-radius:0; }
 }
 
-.calendar-cell.future-attendance:hover {
-  transform: none !important;
-  border-color: #e5ebe6;
-  box-shadow: none !important;
-}
 
-.calendar-cell.future-attendance:focus-visible {
-  outline: 0;
-}
+.app-header-logo { width: 38px; height: 38px; object-fit: contain; border-radius: 9px; flex: 0 0 auto; }
+@media (max-width:700px) { .app-header-logo { width:34px; height:34px; } }
 
-.calendar-cell.future-attendance .calendar-edit-btn {
-  display: none;
-}
-
-@media (hover: none) and (pointer: coarse) {
-  .calendar-cell.future-attendance:active {
-    transform: none !important;
-  }
+/* Monthly receipt controls */
+.receipt-toolbar { display:flex; justify-content:flex-end; align-items:flex-end; gap:12px; flex-wrap:wrap; }
+.receipt-filter { min-width:180px; }
+.receipt-filter select { width:100%; }
+.receipt-period-hint { margin: -6px 0 16px; padding:10px 13px; border-radius:10px; background:#f5f8f6; color:#6f7d75; font-size:12px; }
+@media (max-width:700px) {
+  .receipt-toolbar { display:grid; grid-template-columns:1fr; }
+  .receipt-filter { min-width:0; }
 }

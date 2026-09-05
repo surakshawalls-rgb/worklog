@@ -23,10 +23,10 @@ export class App implements OnInit {
   readonly busy = signal(false);
   readonly message = signal('');
   readonly error = signal('');
-  readonly tab = signal<'overview' | 'approval' | 'payments'>('overview');
+  readonly tab = signal<'overview' | 'approval' | 'payments' | 'receipts'>('overview');
   readonly selectedEmployee = signal<Employee | null>(null);
   readonly month = signal(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
-  readonly modal = signal<'attendance' | 'day' | 'payment' | 'employee' | 'admin-attendance' | 'bulk-attendance' | 'range-attendance' | 'admin-tools' | 'password' | 'announcement' | 'edit-payment' | null>(null);
+  readonly modal = signal<'attendance' | 'day' | 'payment' | 'employee' | 'admin-attendance' | 'bulk-attendance' | 'range-attendance' | 'admin-tools' | 'password' | 'announcement' | 'edit-payment' | 'receipt-period' | null>(null);
   readonly selectedDay = signal<string | null>(null);
   readonly paymentTarget = signal<Employee | null>(null);
   readonly paymentAmount = signal(0);
@@ -56,6 +56,13 @@ export class App implements OnInit {
   readonly editPaymentNote = signal('');
   readonly editPaymentMethod = signal('cash');
   readonly editPaymentDate = signal(this.today());
+  readonly receiptEmployeeId = signal<number | null>(null);
+  readonly receiptPayment = signal<Payment | null>(null);
+  readonly receiptEmployee = signal<Employee | null>(null);
+  readonly receiptYear = signal(new Date().getFullYear());
+  readonly receiptMonth = signal(new Date().getMonth() + 1);
+  readonly receiptStartDate = signal(this.today());
+  readonly receiptEndDate = signal(this.today());
   readonly passwordCurrent = signal('');
   readonly passwordNew = signal('');
   readonly forgotUsername = signal('');
@@ -79,6 +86,53 @@ export class App implements OnInit {
   readonly monthPaidDays = computed(() => this.monthRecords().filter(record => record.approval_status === 'approved' && record.earned_amount > 0 && record.outstanding_amount === 0).length);
   readonly monthUnpaidDays = computed(() => this.monthRecords().filter(record => record.approval_status === 'approved' && record.earned_amount > 0 && record.outstanding_amount > 0).length);
   readonly monthLeaves = computed(() => this.monthRecords().filter(record => record.approval_status === 'approved' && record.attendance_type === 'leave').length);
+  readonly receiptYears = computed(() => {
+    const years = new Set<number>([new Date().getFullYear()]);
+    this.records().forEach(r => years.add(Number(r.attendance_date.slice(0, 4))));
+    this.allPayments().forEach(p => years.add(Number(p.payment_date.slice(0, 4))));
+    return Array.from(years).filter(Boolean).sort((a, b) => b - a);
+  });
+  readonly receiptMonths = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: new Date(2000, i, 1).toLocaleDateString('en-IN', { month: 'long' }) }));
+  readonly receiptMonthStart = computed(() => `${this.receiptYear()}-${String(this.receiptMonth()).padStart(2, '0')}-01`);
+  readonly receiptMonthEnd = computed(() => {
+    const last = new Date(this.receiptYear(), this.receiptMonth(), 0).getDate();
+    return `${this.receiptYear()}-${String(this.receiptMonth()).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
+  });
+  readonly receiptPayments = computed(() => {
+    const employeeId = this.receiptEmployeeId();
+    const start = this.receiptMonthStart();
+    const end = this.receiptMonthEnd();
+    return this.allPayments().filter(p => p.status === 'completed' && p.payment_date >= start && p.payment_date <= end && (employeeId === null || p.employee_id === employeeId)).sort((a, b) => b.payment_date.localeCompare(a.payment_date) || b.id - a.id);
+  });
+  readonly receiptMonthPayments = computed(() => {
+    const employeeId = this.receiptEmployee()?.id;
+    if (!employeeId) return [];
+    return this.allPayments().filter(p => p.employee_id === employeeId && p.status === 'completed' && p.payment_date >= this.receiptStartDate() && p.payment_date <= this.receiptEndDate()).sort((a, b) => a.payment_date.localeCompare(b.payment_date) || a.id - b.id);
+  });
+  readonly receiptNumber = computed(() => {
+    const payment = this.receiptPayment();
+    return payment ? `SH-PAY-${String(payment.id).padStart(6, '0')}` : `SH-${this.receiptYear()}${String(this.receiptMonth()).padStart(2, '0')}`;
+  });
+  readonly receiptWorkDays = computed(() => {
+    const id = this.receiptEmployee()?.id;
+    if (!id) return 0;
+    return this.records().filter(r => r.employee_id === id && r.approval_status === 'approved' && Number(r.earned_amount) > 0 && r.attendance_date >= this.receiptStartDate() && r.attendance_date <= this.receiptEndDate()).length;
+  });
+  readonly receiptPeriodEarnings = computed(() => {
+    const id = this.receiptEmployee()?.id;
+    if (!id) return 0;
+    return this.records().filter(r => r.employee_id === id && r.approval_status === 'approved' && r.attendance_date >= this.receiptStartDate() && r.attendance_date <= this.receiptEndDate()).reduce((sum, r) => sum + Number(r.earned_amount), 0);
+  });
+  readonly receiptPreviousBalance = computed(() => {
+    const id = this.receiptEmployee()?.id;
+    const start = this.receiptStartDate();
+    if (!id || !start) return 0;
+    const earned = this.records().filter(r => r.employee_id === id && r.approval_status === 'approved' && r.attendance_date < start).reduce((sum, r) => sum + Number(r.earned_amount), 0);
+    const paid = this.allPayments().filter(p => p.employee_id === id && p.status === 'completed' && p.payment_date < start).reduce((sum, p) => sum + Number(p.amount), 0);
+    return earned - paid;
+  });
+  readonly receiptMonthlyPaid = computed(() => this.receiptMonthPayments().reduce((sum, p) => sum + Number(p.amount), 0));
+  readonly receiptRemainingBalance = computed(() => this.receiptPreviousBalance() + this.receiptPeriodEarnings() - this.receiptMonthlyPaid());
   readonly pendingRecords = computed(() => this.records().filter(record => record.approval_status === 'pending'));
   readonly totalEarned = computed(() => this.currentRecords().filter(record => record.approval_status === 'approved').reduce((sum, record) => sum + Number(record.earned_amount), 0));
   readonly totalPaid = computed(() => this.employeePaid(this.currentEmployee()?.id));
@@ -127,6 +181,110 @@ export class App implements OnInit {
   async changePassword(): Promise<void> { const user = this.session(); if (!user) return; await this.run(async () => { await this.attendance.updatePassword(user.id, this.passwordCurrent(), this.passwordNew()); this.closeModal(); this.passwordCurrent.set(''); this.passwordNew.set(''); this.message.set('Password updated successfully.'); }); }
   async forgotPassword(): Promise<void> { await this.run(async () => { await this.attendance.resetPassword(this.forgotUsername(), this.passwordNew()); this.closeModal(); this.forgotUsername.set(''); this.passwordNew.set(''); this.message.set('Password reset successfully.'); }); }
   async removeEmployee(employee: Employee): Promise<void> { if (!confirm(`Delete ${employee.name} (${employee.employee_code})? This is only allowed when no attendance or payment history exists.`)) return; await this.run(async () => { await this.attendance.deleteEmployee(employee.id); if (this.selectedEmployee()?.id === employee.id) this.selectedEmployee.set(null); await this.refresh(); this.message.set('Employee profile deleted.'); }); }
+  employeeForPayment(employeeId: number): Employee | undefined { return this.employees().find(employee => employee.id === employeeId); }
+
+  openReceipt(payment: Payment): void {
+    if (payment.status !== 'completed') { this.error.set('Only completed payments can have receipts.'); return; }
+    const employee = this.employeeForPayment(payment.employee_id);
+    if (!employee) { this.error.set('Employee profile not found.'); return; }
+    const date = new Date(`${payment.payment_date}T00:00:00`);
+    this.receiptYear.set(date.getFullYear());
+    this.receiptMonth.set(date.getMonth() + 1);
+    this.receiptPayment.set(payment);
+    this.receiptEmployee.set(employee);
+    this.receiptStartDate.set(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`);
+    this.receiptEndDate.set(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()).padStart(2, '0')}`);
+    setTimeout(() => document.getElementById('payment-receipt')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  }
+
+  viewReceipt(payment: Payment): void { this.openReceipt(payment); }
+
+  selectReceiptMonth(): void {
+    const start = this.receiptMonthStart();
+    const end = this.receiptMonthEnd();
+    const candidate = this.receiptPayments()[0];
+    if (candidate) this.openReceipt(candidate);
+    else {
+      const employee = this.receiptEmployeeId() === null ? null : this.employeeForPayment(this.receiptEmployeeId()!);
+      this.receiptPayment.set(null);
+      this.receiptEmployee.set(employee ?? null);
+      this.receiptStartDate.set(start);
+      this.receiptEndDate.set(end);
+    }
+  }
+
+  openReceiptPeriodEditor(): void { if (this.receiptPayment()) this.modal.set('receipt-period'); }
+  saveReceiptPeriod(): void {
+    const payment = this.receiptPayment();
+    if (!payment) return;
+    if (this.receiptStartDate() > this.receiptEndDate()) { this.error.set('Receipt start date cannot be after the end date.'); return; }
+    if (this.receiptEndDate() > payment.payment_date) { this.error.set('Receipt period cannot end after the payment date.'); return; }
+    this.closeModal();
+  }
+
+  private pdfEscape(value: string): string { return value.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)'); }
+  private makeReceiptPdf(): Blob | null {
+    const employee = this.receiptEmployee();
+    if (!employee) return null;
+    const lines = [
+      'SURAKSHA GROUP', 'PAYMENT / WAGE STATEMENT', '',
+      `Receipt No.: ${this.receiptNumber()}`,
+      `Period: ${this.receiptStartDate()} to ${this.receiptEndDate()}`,
+      `Employee: ${employee.name}`, `Employee Code: ${employee.employee_code}`,
+      `Mobile: ${employee.mobile || 'Not available'}`, `Daily Rate: ${this.currency(employee.default_daily_rate)}`,
+      `Work Days: ${this.receiptWorkDays()}`, `Period Earnings: ${this.currency(this.receiptPeriodEarnings())}`,
+      `${this.receiptPreviousBalance() < 0 ? 'Previous Advance' : 'Previous Outstanding'}: ${this.currency(Math.abs(this.receiptPreviousBalance()))}`,
+      `Payment Made: ${this.currency(this.receiptMonthlyPaid())}`,
+      `${this.receiptRemainingBalance() < 0 ? 'Remaining Advance' : 'Remaining Balance'}: ${this.currency(Math.abs(this.receiptRemainingBalance()))}`,
+      '', 'Payments in this period:'
+    ];
+    this.receiptMonthPayments().forEach(p => lines.push(`  ${p.payment_date}  ${this.currency(p.amount)}  ${String(p.payment_method).replace('_', ' ')}`));
+    const content = ['BT', '/F1 11 Tf', '45 800 Td', ...lines.flatMap((line, i) => [`(${this.pdfEscape(line)}) Tj`, i < lines.length - 1 ? '0 -18 Td' : '']), 'ET'].join('\n');
+    const objects: string[] = [
+      '<< /Type /Catalog /Pages 2 0 R >>',
+      '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+      `<< /Length ${content.length} >>\nstream\n${content}\nendstream`
+    ];
+    let pdf = '%PDF-1.4\n'; const offsets = [0];
+    objects.forEach((obj, i) => { offsets.push(pdf.length); pdf += `${i + 1} 0 obj\n${obj}\nendobj\n`; });
+    const xref = pdf.length;
+    pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+    offsets.slice(1).forEach(o => pdf += `${String(o).padStart(10, '0')} 00000 n \n`);
+    pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+    return new Blob([pdf], { type: 'application/pdf' });
+  }
+
+  printReceiptForPayment(payment: Payment): void { this.openReceipt(payment); setTimeout(() => this.printReceipt(), 150); }
+  printReceipt(): void {
+    const receipt = document.getElementById('payment-receipt');
+    if (!receipt) { this.error.set('Open a receipt before printing.'); return; }
+    const win = window.open('', '_blank', 'width=900,height=1100');
+    if (!win) { this.error.set('Please allow pop-ups to print the receipt.'); return; }
+    win.document.write(`<!doctype html><html><head><title>${this.receiptNumber()}</title><style>@page{size:A4;margin:14mm}body{font-family:Arial,Helvetica,sans-serif;color:#24332b;margin:0}.payment-receipt{max-width:820px;margin:auto;background:#fff;padding:28px}.receipt-header{display:flex;justify-content:space-between;gap:24px}.receipt-brand{display:flex;gap:15px;align-items:center}.receipt-brand img{width:58px;height:58px;object-fit:contain}.receipt-employee-card{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:18px;background:#f6f9f7;border:1px solid #e2eae4;border-radius:12px;padding:18px}.receipt-financials>div{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #edf1ee}.receipt-balance{background:#eef6f0;margin-top:12px;padding:18px;border-radius:12px}.receipt-footer{display:flex;justify-content:space-between;margin-top:28px;padding-top:20px;border-top:1px solid #e6ece7}</style></head><body>${receipt.outerHTML}</body></html>`);
+    win.document.close(); setTimeout(() => { win.focus(); win.print(); }, 350);
+  }
+
+  async shareReceiptWhatsApp(payment: Payment = this.receiptPayment() as Payment): Promise<void> {
+    if (!payment) return;
+    this.openReceipt(payment);
+    const employee = this.employeeForPayment(payment.employee_id);
+    if (!employee?.mobile) { this.error.set('This employee has no mobile number.'); return; }
+    await new Promise(resolve => setTimeout(resolve, 180));
+    const pdf = this.makeReceiptPdf();
+    if (pdf) {
+      const file = new File([pdf], `${this.receiptNumber()}-${employee.employee_code}.pdf`, { type: 'application/pdf' });
+      const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void>; canShare?: (data?: ShareData) => boolean };
+      if (nav.share && (!nav.canShare || nav.canShare({ files: [file] }))) {
+        try { await nav.share({ title: `Suraksha Group - ${this.receiptNumber()}`, text: `Monthly wage statement for ${employee.name}`, files: [file] }); return; } catch { }
+      }
+    }
+    const balance = this.receiptRemainingBalance();
+    const text = `SURAKSHA GROUP – PAYMENT RECEIPT\nReceipt: ${this.receiptNumber()}\nEmployee: ${employee.name} (${employee.employee_code})\nPeriod: ${this.receiptStartDate()} to ${this.receiptEndDate()}\nWork days: ${this.receiptWorkDays()}\nPeriod earnings: ${this.currency(this.receiptPeriodEarnings())}\nPayment made: ${this.currency(this.receiptMonthlyPaid())}\n${balance < 0 ? 'Remaining advance' : 'Remaining balance'}: ${this.currency(Math.abs(balance))}`;
+    window.open(`https://wa.me/${employee.mobile.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+  }
+
   formatType(type: AttendanceType): string { return type.replace('_', ' ').replace(/\b\w/g, letter => letter.toUpperCase()); }
   getAttendanceTypeLabel(date: string): string { const record = this.recordFor(date); return record ? record.attendance_type.replace('_', ' ') : '—'; }
   toNumber(value: number | string): number { return Number(value); }

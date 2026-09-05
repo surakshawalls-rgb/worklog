@@ -60,10 +60,10 @@
  
 <header class="topbar">
   <div class="brand">
-    <span class="brand-mark small">SH</span>
+    <img class="app-header-logo" src="/logo.png" alt="Suraksha Group" />
     <span>
       <b>SURAKSHA HUB</b>
-      <small>Attendance &amp; wages</small>
+      <small>Suraksha Group · Attendance &amp; wages</small>
     </span>
   </div>
 
@@ -350,6 +350,13 @@
         Payments
       </button>
 
+      <button
+        [class.active]="tab() === 'receipts'"
+        (click)="tab.set('receipts')"
+      >
+        Receipts
+      </button>
+
     </nav>
 
     @if (tab() === 'overview') {
@@ -440,19 +447,11 @@
 
                 <span class="row-total">
 
-                  {{
-                    currency(
-                      records()
-                        .filter(r => r.employee_id === employee.id)
-                        .reduce(
-                          (total, r) =>
-                            total + toNumber(r.outstanding_amount),
-                          0
-                        )
-                    )
-                  }}
+                  {{ currency(employeeBalance(employee.id)) }}
 
-                  <small>outstanding</small>
+                  <small>
+                    {{ employeeBalance(employee.id) < 0 ? 'advance' : 'outstanding' }}
+                  </small>
 
                 </span>
 
@@ -616,7 +615,7 @@
 
     }
 
-    @else {
+    @else if (tab() === 'payments') {
 
       <section class="panel">
 
@@ -775,6 +774,146 @@
 
         </section>
 
+      }
+
+    }
+
+    @else {
+
+      <section class="panel receipts-panel">
+        <div class="panel-title receipts-heading">
+          <div>
+            <p class="eyebrow">DOCUMENT DESK</p>
+            <h2>Payment receipts</h2>
+            <p class="muted">Create professional receipts from completed payments.</p>
+          </div>
+          <button class="outline" (click)="refresh()">Refresh</button>
+        </div>
+
+        <div class="receipt-toolbar">
+          <label class="receipt-filter">
+            Employee
+            <select [ngModel]="receiptEmployeeId()" (ngModelChange)="receiptEmployeeId.set($event ? +$event : null); selectReceiptMonth()">
+              <option [ngValue]="null">All employees</option>
+              @for (employee of employees(); track employee.id) {
+                <option [ngValue]="employee.id">{{ employee.name }} · {{ employee.employee_code }}</option>
+              }
+            </select>
+          </label>
+          <label class="receipt-filter">
+            Year
+            <select [ngModel]="receiptYear()" (ngModelChange)="receiptYear.set(+$event); selectReceiptMonth()">
+              @for (year of receiptYears(); track year) { <option [ngValue]="year">{{ year }}</option> }
+            </select>
+          </label>
+          <label class="receipt-filter">
+            Month
+            <select [ngModel]="receiptMonth()" (ngModelChange)="receiptMonth.set(+$event); selectReceiptMonth()">
+              @for (monthOption of receiptMonths; track monthOption.value) { <option [ngValue]="monthOption.value">{{ monthOption.label }}</option> }
+            </select>
+          </label>
+        </div>
+        <div class="receipt-period-hint">
+          Showing attendance and payments for <b>{{ receiptMonths[receiptMonth() - 1].label }} {{ receiptYear() }}</b>. Select an employee, year and month, then View, PDF or WhatsApp.
+        </div>
+
+        <div class="receipt-list">
+          @for (payment of receiptPayments(); track payment.id) {
+            @let employee = employeeForPayment(payment.employee_id);
+            <article class="receipt-row">
+              <div class="receipt-row-main">
+                <div class="receipt-mini-logo"><img src="/logo.png" alt="Suraksha Group logo" /></div>
+                <div>
+                  <b>{{ employee?.name || 'Employee' }}</b>
+                  <small>{{ employee?.employee_code || '—' }} · {{ payment.payment_date | date:'d MMM yyyy' }}</small>
+                </div>
+              </div>
+              <div class="receipt-row-amount">
+                <b>{{ currency(payment.amount) }}</b>
+                <small>{{ payment.payment_method.replace('_', ' ') }}</small>
+              </div>
+              <div class="receipt-row-actions">
+                <button class="outline small-button" (click)="viewReceipt(payment)">View</button>
+                <button class="primary small-button" (click)="printReceiptForPayment(payment)">PDF / Print</button>
+                @if (employee?.mobile) {
+                  <button class="outline small-button" (click)="shareReceiptWhatsApp(payment)">WhatsApp</button>
+                }
+              </div>
+            </article>
+          }
+          @empty {
+            <div class="empty-state compact">
+              <h2>No completed payments yet</h2>
+              <p>Complete a payment first. Its receipt will appear here automatically.</p>
+            </div>
+          }
+        </div>
+      </section>
+
+      @if (receiptPayment()) {
+        <section class="panel receipt-preview-panel">
+          <div class="panel-title">
+            <div>
+              <p class="eyebrow">RECEIPT PREVIEW</p>
+              <h2>{{ receiptNumber() }}</h2>
+            </div>
+            <div class="receipt-preview-actions">
+              <button class="outline" (click)="printReceipt()">Download / Save PDF</button>
+              @if (receiptEmployee()?.mobile) {
+                <button class="primary" (click)="shareReceiptWhatsApp()">Share on WhatsApp</button>
+              }
+            </div>
+          </div>
+
+          <article class="payment-receipt" id="payment-receipt">
+            <header class="receipt-header">
+              <div class="receipt-brand">
+                <img src="/logo.png" alt="Suraksha Group" />
+                <div>
+                  <p class="receipt-company">SURAKSHA GROUP</p>
+                  <h1>Payment Receipt</h1>
+                  <span>Employee wage payment record</span>
+                </div>
+              </div>
+              <div class="receipt-number-block">
+                <span>Receipt No.</span>
+                <b>{{ receiptNumber() }}</b>
+                <small>{{ receiptPayment()?.payment_date | date:'d MMM yyyy' }}</small>
+              </div>
+            </header>
+
+            <div class="receipt-divider"></div>
+
+            <section class="receipt-employee-card">
+              <div><span>Employee</span><strong>{{ receiptEmployee()?.name }}</strong><small>{{ receiptEmployee()?.employee_code }} · ₹{{ receiptEmployee()?.default_daily_rate }}/day</small></div>
+              <div><span>Mobile</span><strong>{{ receiptEmployee()?.mobile || 'Not available' }}</strong></div>
+              <div><span>Payment method</span><strong>{{ receiptMonthPayments().length > 1 ? 'Multiple payments' : (receiptPayment()?.payment_method?.replace('_', ' ') || '—') }}</strong></div>
+            </section>
+
+            <section class="receipt-period">
+              <div><span>Payment period</span><strong>{{ receiptStartDate() | date:'d MMM yyyy' }} – {{ receiptEndDate() | date:'d MMM yyyy' }}</strong></div>
+              <div><span>Work days</span><strong>{{ receiptWorkDays() }}</strong></div>
+              <button class="outline receipt-period-edit" (click)="openReceiptPeriodEditor()">Edit period</button>
+            </section>
+
+            <section class="receipt-financials">
+              <div><span>Period earnings</span><b>{{ currency(receiptPeriodEarnings()) }}</b></div>
+              <div><span>{{ receiptPreviousBalance() < 0 ? 'Previous advance' : 'Previous outstanding' }}</span><b>{{ currency(receiptPreviousBalance() < 0 ? -receiptPreviousBalance() : receiptPreviousBalance()) }}</b></div>
+              <div class="receipt-paid"><span>Payment made in month</span><b>{{ currency(receiptMonthlyPaid()) }}</b></div>
+              <div class="receipt-balance" [class.receipt-advance]="receiptRemainingBalance() < 0"><span>{{ receiptRemainingBalance() < 0 ? 'Remaining advance' : 'Remaining balance' }}</span><b>{{ currency(receiptRemainingBalance() < 0 ? -receiptRemainingBalance() : receiptRemainingBalance()) }}</b></div>
+            </section>
+
+            @if (receiptPayment()?.note) {
+              <div class="receipt-note"><span>Payment note</span><p>{{ receiptPayment()?.note }}</p></div>
+            }
+
+            <footer class="receipt-footer">
+              <div><strong>For further enquiry &amp; assistance</strong><span>Pradeep Vishwakarma · Mo. 9506629814</span><span>Praveen Pandey · Mo. 8090272727</span></div>
+              <div class="receipt-web"><strong>Suraksha Group</strong><span>www.surakshawalls.space</span></div>
+            </footer>
+            <div class="receipt-disclaimer">This is a computer-generated payment receipt issued by Suraksha Group.</div>
+          </article>
+        </section>
       }
 
     }
@@ -2676,4 +2815,20 @@
 
   </div>
 
+}
+@if (modal() === 'receipt-period') {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <section class="modal receipt-period-modal" (click)="$event.stopPropagation()">
+      <div class="modal-heading">
+        <div><p class="eyebrow">RECEIPT PERIOD</p><h2>Choose payment period</h2></div>
+        <button class="icon-button" (click)="closeModal()">×</button>
+      </div>
+      <p class="muted">Set the work period covered by this receipt. The remaining balance is calculated as of the selected payment.</p>
+      <div class="form-row">
+        <label>From<input type="date" [max]="receiptEndDate()" [ngModel]="receiptStartDate()" (ngModelChange)="receiptStartDate.set($event)" /></label>
+        <label>To<input type="date" [max]="receiptPayment()?.payment_date || today()" [ngModel]="receiptEndDate()" (ngModelChange)="receiptEndDate.set($event)" /></label>
+      </div>
+      <button class="primary wide" (click)="saveReceiptPeriod()">Update receipt</button>
+    </section>
+  </div>
 }
