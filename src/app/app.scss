@@ -2832,3 +2832,36 @@ textarea:focus-visible {
     animation-iteration-count: 1 !important;
   }
 }
+
+
+/* =========================================================
+   FUTURE ATTENDANCE — HARD UI BLOCK
+   Future dates remain visible for calendar context, but are
+   clearly unavailable and cannot be opened/tapped.
+   ========================================================= */
+.calendar-cell.future-attendance {
+  opacity: .42;
+  cursor: not-allowed;
+  filter: grayscale(.25);
+  box-shadow: none !important;
+}
+
+.calendar-cell.future-attendance:hover {
+  transform: none !important;
+  border-color: #e5ebe6;
+  box-shadow: none !important;
+}
+
+.calendar-cell.future-attendance:focus-visible {
+  outline: 0;
+}
+
+.calendar-cell.future-attendance .calendar-edit-btn {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .calendar-cell.future-attendance:active {
+    transform: none !important;
+  }
+}

@@ -906,10 +906,12 @@
         <div
           class="calendar-cell"
           [ngClass]="dayClass(calendarDate)"
-          (click)="openDay(calendarDate)"
+          [class.future-attendance]="isFutureDate(calendarDate)"
+          (click)="isFutureDate(calendarDate) ? null : openDay(calendarDate)"
           role="button"
-          tabindex="0"
-          (keydown.enter)="openDay(calendarDate)"
+          [attr.tabindex]="isFutureDate(calendarDate) ? -1 : 0"
+          [attr.aria-disabled]="isFutureDate(calendarDate)"
+          (keydown.enter)="isFutureDate(calendarDate) ? null : openDay(calendarDate)"
         >
 
           <strong>
@@ -2011,6 +2013,7 @@
 
     <input
       type="date"
+      [max]="today()"
       [ngModel]="adminAttendanceDate()"
       (ngModelChange)="adminAttendanceDate.set($event)"
     />
@@ -2201,6 +2204,7 @@
 
     <input
       type="date"
+      [max]="today()"
       [ngModel]="bulkAttendanceDate()"
       (ngModelChange)="bulkAttendanceDate.set($event)"
     />
