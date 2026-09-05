@@ -398,19 +398,37 @@ export class App implements OnInit {
     this.downloadReceiptPdf();
   }
 
+  private normalizeIndianMobile(value: string): string | null {
+    const digits = String(value || '').replace(/\\D/g, '');
+    if (digits.length === 10) return `91${digits}`;
+    if (digits.length === 11 && digits.startsWith('0')) return `91${digits.slice(1)}`;
+    if (digits.length === 12 && digits.startsWith('91')) return digits;
+    return null;
+  }
+
   payEmployeeViaUpi(): void {
     const employee = this.receiptEmployee();
     if (!employee?.mobile) { this.error.set('This employee has no mobile number.'); return; }
 
-    const mobile = employee.mobile.replace(/\D/g, '');
-    if (!mobile) { this.error.set('Employee mobile number is invalid.'); return; }
+    const mobile = this.normalizeIndianMobile(employee.mobile);
+    if (!mobile) {
+      this.error.set('Employee mobile number is invalid. Enter a valid 10-digit Indian mobile number.');
+      return;
+    }
 
     const amount = Math.max(0, Number(this.receiptMonthlyPaid()));
+    if (amount <= 0) {
+      this.error.set('There is no completed payment amount available for UPI.');
+      return;
+    }
+
+    // A phone number is not itself a guaranteed UPI ID. This opens the
+    // standard mobile-number UPI alias used by supported UPI apps.
     const note = `Suraksha Group payment - ${employee.name}`;
     const upiUrl =
       `upi://pay?pa=${encodeURIComponent(`${mobile}@upi`)}` +
       `&pn=${encodeURIComponent(employee.name)}` +
-      (amount > 0 ? `&am=${encodeURIComponent(amount.toFixed(2))}` : '') +
+      `&am=${encodeURIComponent(amount.toFixed(2))}` +
       `&cu=INR&tn=${encodeURIComponent(note)}`;
 
     window.location.href = upiUrl;
@@ -441,6 +459,12 @@ export class App implements OnInit {
       } catch { }
     }
 
+    const mobile = this.normalizeIndianMobile(employee.mobile);
+    if (!mobile) {
+      this.error.set('Employee mobile number is invalid. Enter a valid 10-digit Indian mobile number.');
+      return;
+    }
+
     const balance = this.receiptRemainingBalance();
     const text = `SURAKSHA GROUP – PAYMENT RECEIPT
 Receipt: ${this.receiptNumber()}
@@ -451,8 +475,8 @@ Period earnings: ${this.currency(this.receiptPeriodEarnings())}
 Payment made: ${this.currency(this.receiptMonthlyPaid())}
 ${balance < 0 ? 'Remaining advance' : 'Remaining balance'}: ${this.currency(Math.abs(balance))}`;
 
-    // Keep navigation in the current Android WebView/tab so Back returns to SURAKSHA HUB.
-    window.location.href = `https://wa.me/${employee.mobile.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
+    // WhatsApp requires an international number without the '+' sign.
+    window.location.href = `https://wa.me/${mobile}?text=${encodeURIComponent(text)}`;
   }
 
 
