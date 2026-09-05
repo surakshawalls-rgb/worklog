@@ -26,7 +26,7 @@ export class App implements OnInit {
   readonly tab = signal<'overview' | 'approval' | 'payments' | 'receipts'>('overview');
   readonly selectedEmployee = signal<Employee | null>(null);
   readonly month = signal(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
-  readonly modal = signal<'attendance' | 'day' | 'payment' | 'employee' | 'admin-attendance' | 'bulk-attendance' | 'range-attendance' | 'admin-tools' | 'password' | 'announcement' | 'edit-payment' | 'receipt-period' | null>(null);
+  readonly modal = signal<'attendance' | 'day' | 'payment' | 'employee' | 'admin-attendance' | 'bulk-attendance' | 'range-attendance' | 'admin-tools' | 'password' | 'announcement' | 'edit-payment' | 'receipt-view' | null>(null);
   readonly selectedDay = signal<string | null>(null);
   readonly paymentTarget = signal<Employee | null>(null);
   readonly paymentAmount = signal(0);
@@ -188,38 +188,53 @@ export class App implements OnInit {
     const employee = this.employeeForPayment(payment.employee_id);
     if (!employee) { this.error.set('Employee profile not found.'); return; }
     const date = new Date(`${payment.payment_date}T00:00:00`);
-    this.receiptYear.set(date.getFullYear());
-    this.receiptMonth.set(date.getMonth() + 1);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    this.receiptYear.set(year);
+    this.receiptMonth.set(month);
     this.receiptPayment.set(payment);
     this.receiptEmployee.set(employee);
-    this.receiptStartDate.set(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`);
-    this.receiptEndDate.set(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()).padStart(2, '0')}`);
-    setTimeout(() => document.getElementById('payment-receipt')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+    this.receiptStartDate.set(`${year}-${String(month).padStart(2, '0')}-01`);
+    this.receiptEndDate.set(`${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`);
+    this.modal.set('receipt-view');
   }
 
-  viewReceipt(payment: Payment): void { this.openReceipt(payment); }
+  viewReceipt(payment: Payment): void {
+    this.openReceipt(payment);
+  }
 
   selectReceiptMonth(): void {
     const start = this.receiptMonthStart();
     const end = this.receiptMonthEnd();
-    const candidate = this.receiptPayments()[0];
-    if (candidate) this.openReceipt(candidate);
-    else {
-      const employee = this.receiptEmployeeId() === null ? null : this.employeeForPayment(this.receiptEmployeeId()!);
-      this.receiptPayment.set(null);
-      this.receiptEmployee.set(employee ?? null);
-      this.receiptStartDate.set(start);
-      this.receiptEndDate.set(end);
+    const employee = this.receiptEmployeeId() === null
+      ? null
+      : this.employeeForPayment(this.receiptEmployeeId()!);
+
+    // Changing the receipt filters must only refresh the list.
+    // Never open a receipt automatically; the user must click View.
+    this.receiptPayment.set(null);
+    this.receiptEmployee.set(employee ?? null);
+    this.receiptStartDate.set(start);
+    this.receiptEndDate.set(end);
+
+    if (this.modal() === 'receipt-view') {
+      this.closeModal();
     }
   }
 
-  openReceiptPeriodEditor(): void { if (this.receiptPayment()) this.modal.set('receipt-period'); }
   saveReceiptPeriod(): void {
     const payment = this.receiptPayment();
     if (!payment) return;
     if (this.receiptStartDate() > this.receiptEndDate()) { this.error.set('Receipt start date cannot be after the end date.'); return; }
     if (this.receiptEndDate() > payment.payment_date) { this.error.set('Receipt period cannot end after the payment date.'); return; }
     this.closeModal();
+  }
+
+  private formatReceiptDate(value: string): string {
+    if (!value) return '—';
+    const date = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
   private pdfEscape(value: string): string { return value.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)'); }
@@ -229,7 +244,7 @@ export class App implements OnInit {
     const lines = [
       'SURAKSHA GROUP', 'PAYMENT / WAGE STATEMENT', '',
       `Receipt No.: ${this.receiptNumber()}`,
-      `Period: ${this.receiptStartDate()} to ${this.receiptEndDate()}`,
+      `Period: ${this.formatReceiptDate(this.receiptStartDate())} to ${this.formatReceiptDate(this.receiptEndDate())}`,
       `Employee: ${employee.name}`, `Employee Code: ${employee.employee_code}`,
       `Mobile: ${employee.mobile || 'Not available'}`, `Daily Rate: ${this.currency(employee.default_daily_rate)}`,
       `Work Days: ${this.receiptWorkDays()}`, `Period Earnings: ${this.currency(this.receiptPeriodEarnings())}`,
@@ -264,6 +279,25 @@ export class App implements OnInit {
     if (!win) { this.error.set('Please allow pop-ups to print the receipt.'); return; }
     win.document.write(`<!doctype html><html><head><title>${this.receiptNumber()}</title><style>@page{size:A4;margin:14mm}body{font-family:Arial,Helvetica,sans-serif;color:#24332b;margin:0}.payment-receipt{max-width:820px;margin:auto;background:#fff;padding:28px}.receipt-header{display:flex;justify-content:space-between;gap:24px}.receipt-brand{display:flex;gap:15px;align-items:center}.receipt-brand img{width:58px;height:58px;object-fit:contain}.receipt-employee-card{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:18px;background:#f6f9f7;border:1px solid #e2eae4;border-radius:12px;padding:18px}.receipt-financials>div{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #edf1ee}.receipt-balance{background:#eef6f0;margin-top:12px;padding:18px;border-radius:12px}.receipt-footer{display:flex;justify-content:space-between;margin-top:28px;padding-top:20px;border-top:1px solid #e6ece7}</style></head><body>${receipt.outerHTML}</body></html>`);
     win.document.close(); setTimeout(() => { win.focus(); win.print(); }, 350);
+  }
+
+  payEmployeeViaUpi(): void {
+    const payment = this.receiptPayment();
+    const employee = this.receiptEmployee();
+    if (!employee?.mobile) { this.error.set('This employee has no mobile number.'); return; }
+
+    const mobile = employee.mobile.replace(/\D/g, '');
+    if (!mobile) { this.error.set('Employee mobile number is invalid.'); return; }
+
+    const amount = Math.max(0, Number(payment?.amount ?? this.receiptMonthlyPaid()));
+    const note = `Suraksha Group payment - ${employee.name}`;
+    const upiUrl =
+      `upi://pay?pa=${encodeURIComponent(`${mobile}@upi`)}` +
+      `&pn=${encodeURIComponent(employee.name)}` +
+      (amount > 0 ? `&am=${encodeURIComponent(amount.toFixed(2))}` : '') +
+      `&cu=INR&tn=${encodeURIComponent(note)}`;
+
+    window.location.href = upiUrl;
   }
 
   async shareReceiptWhatsApp(payment: Payment = this.receiptPayment() as Payment): Promise<void> {
