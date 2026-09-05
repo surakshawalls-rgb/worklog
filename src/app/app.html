@@ -839,7 +839,7 @@
                   </div>
                   <div class="receipt-row-actions">
                     <button class="outline small-button" (click)="viewReceipt(employeePayments[0])">View</button>
-                    <button class="primary small-button" (click)="printReceiptForPayment(employeePayments[0])">PDF / Print</button>
+                    <button class="primary small-button" (click)="downloadReceiptForPayment(employeePayments[0])">PDF / Print</button>
                     @if (employee.mobile) {
                       <button class="outline small-button" (click)="shareReceiptWhatsApp(employeePayments[0])">WhatsApp</button>
                     }
@@ -2809,10 +2809,10 @@
       </article>
 
       <div class="receipt-dialog-actions">
-        <button class="outline" (click)="printReceipt()">Download / Save PDF</button>
+        <button type="button" class="receipt-action receipt-action-pdf" (click)="downloadReceiptPdf()">⬇ Download / Save PDF</button>
         @if (receiptEmployee()?.mobile) {
-          <button class="outline" (click)="shareReceiptWhatsApp()">Share on WhatsApp</button>
-          <button class="primary" (click)="payEmployeeViaUpi()">Pay via UPI</button>
+          <button type="button" class="receipt-action receipt-action-whatsapp" (click)="shareReceiptWhatsApp()">◉ Share on WhatsApp</button>
+          <button type="button" class="receipt-action receipt-action-upi" (click)="payEmployeeViaUpi()">₹ Pay via UPI</button>
         }
       </div>
     </section>

@@ -2624,3 +2624,109 @@ code {
   }
 }
 
+
+/* =========================================================
+   RECEIPT DIALOG — polished mobile experience
+   ========================================================= */
+.receipt-view-backdrop {
+  padding: 10px;
+  align-items: center;
+  overflow: hidden;
+}
+.receipt-view-modal {
+  width: min(940px, 100%);
+  max-width: 940px;
+  max-height: calc(100dvh - 20px);
+  padding: 18px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.receipt-view-modal .modal-heading {
+  position: sticky;
+  top: -18px;
+  z-index: 5;
+  background: #fff;
+  padding: 2px 0 12px;
+  margin-bottom: 10px;
+}
+.receipt-dialog-document {
+  box-shadow: 0 8px 28px rgba(30,60,45,.07);
+}
+.receipt-dialog-actions {
+  position: sticky;
+  bottom: -18px;
+  z-index: 5;
+  background: #fff;
+  padding: 12px 0 2px;
+}
+.receipt-action {
+  min-height: 44px;
+  padding: 10px 15px;
+  border-radius: 10px;
+  font-weight: 800;
+  border: 1px solid #cad6ce;
+  background: #fff;
+  color: #285642;
+  white-space: nowrap;
+}
+.receipt-action-pdf {
+  border-color: #8fa99a;
+}
+.receipt-action-whatsapp {
+  border-color: #8fa99a;
+}
+.receipt-action-upi {
+  border-color: #d8a947;
+  background: #d8a947;
+  color: #102c23;
+}
+.receipt-action:active {
+  transform: translateY(1px);
+}
+@media (max-width: 700px) {
+  .receipt-view-backdrop {
+    padding: 6px;
+    place-items: end center;
+  }
+  .receipt-view-modal {
+    width: 100%;
+    max-width: none;
+    max-height: calc(100dvh - 12px);
+    padding: 12px;
+    border-radius: 16px 16px 0 0;
+  }
+  .receipt-view-modal .modal-heading {
+    top: -12px;
+    padding: 4px 0 10px;
+  }
+  .receipt-dialog-document {
+    margin-top: 0;
+    padding: 16px;
+    border-radius: 12px;
+  }
+  .receipt-dialog-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    bottom: -12px;
+    padding: 10px 0 0;
+  }
+  .receipt-action {
+    width: 100%;
+    min-height: 46px;
+    font-size: 13px;
+  }
+  .receipt-brand img {
+    width: 48px;
+    height: 48px;
+  }
+  .receipt-brand h1 {
+    font-size: 22px;
+  }
+  .receipt-number-block {
+    width: 100%;
+  }
+  .receipt-employee-card {
+    padding: 12px;
+  }
+}

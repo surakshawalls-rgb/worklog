@@ -241,55 +241,171 @@ export class App implements OnInit {
   private makeReceiptPdf(): Blob | null {
     const employee = this.receiptEmployee();
     if (!employee) return null;
-    const lines = [
-      'SURAKSHA GROUP', 'PAYMENT / WAGE STATEMENT', '',
-      `Receipt No.: ${this.receiptNumber()}`,
-      `Period: ${this.formatReceiptDate(this.receiptStartDate())} to ${this.formatReceiptDate(this.receiptEndDate())}`,
-      `Employee: ${employee.name}`, `Employee Code: ${employee.employee_code}`,
-      `Mobile: ${employee.mobile || 'Not available'}`, `Daily Rate: ${this.currency(employee.default_daily_rate)}`,
-      `Work Days: ${this.receiptWorkDays()}`, `Period Earnings: ${this.currency(this.receiptPeriodEarnings())}`,
-      `${this.receiptPreviousBalance() < 0 ? 'Previous Advance' : 'Previous Outstanding'}: ${this.currency(Math.abs(this.receiptPreviousBalance()))}`,
-      `Payment Made: ${this.currency(this.receiptMonthlyPaid())}`,
-      `${this.receiptRemainingBalance() < 0 ? 'Remaining Advance' : 'Remaining Balance'}: ${this.currency(Math.abs(this.receiptRemainingBalance()))}`,
-      '', 'Payments in this period:'
+
+    const esc = (value: string) => this.pdfEscape(value.replace(/₹/g, 'Rs.'));
+    const money = (value: number) => esc(this.currency(value));
+    const pageWidth = 595;
+    const pageHeight = 842;
+    const left = 42;
+    const right = 553;
+    const contentWidth = right - left;
+
+    const commands: string[] = [];
+    const text = (value: string, x: number, y: number, size = 10, bold = false) => {
+      commands.push(`${bold ? '/F2' : '/F1'} ${size} Tf ${x} ${y} Td (${esc(value)}) Tj`);
+    };
+    const line = (x1: number, y1: number, x2: number, y2: number) => {
+      commands.push(`${x1} ${y1} m ${x2} ${y2} l S`);
+    };
+    const fillRect = (x: number, y: number, w: number, h: number, r: number, g: number, b: number) => {
+      commands.push(`${r} ${g} ${b} rg ${x} ${y} ${w} ${h} re f 0 0 0 rg`);
+    };
+    const strokeRect = (x: number, y: number, w: number, h: number) => {
+      commands.push(`${x} ${y} ${w} ${h} re S`);
+    };
+
+    // Header
+    fillRect(left, 758, 56, 56, 0.06, 0.17, 0.14);
+    text('SG', left + 14, 779, 20, true);
+    text('SURAKSHA GROUP', left + 70, 796, 13, true);
+    text('PAYMENT RECEIPT', left + 70, 776, 21, true);
+    text('Employee wage payment statement', left + 70, 759, 9);
+
+    text('RECEIPT NO.', 420, 797, 8, true);
+    text(this.receiptNumber(), 420, 782, 11, true);
+    text(this.formatReceiptDate(this.receiptPayment()?.payment_date || ''), 420, 766, 9);
+
+    line(left, 744, right, 744);
+
+    // Employee information card
+    fillRect(left, 650, contentWidth, 72, 0.965, 0.976, 0.969);
+    strokeRect(left, 650, contentWidth, 72);
+    text('EMPLOYEE', left + 14, 701, 8, true);
+    text(employee.name, left + 14, 684, 13, true);
+    text(`${employee.employee_code}  |  ${employee.mobile || 'Mobile not available'}`, left + 14, 668, 9);
+
+    text('DAILY RATE', 390, 701, 8, true);
+    text(this.currency(employee.default_daily_rate), 390, 684, 12, true);
+
+    // Period
+    text('STATEMENT PERIOD', left, 625, 8, true);
+    text(`${this.formatReceiptDate(this.receiptStartDate())}  -  ${this.formatReceiptDate(this.receiptEndDate())}`, left, 607, 12, true);
+    text(`Approved work days: ${this.receiptWorkDays()}`, 390, 607, 9);
+
+    line(left, 590, right, 590);
+
+    // Financial summary
+    text('PAYMENT SUMMARY', left, 570, 9, true);
+    const rows: Array<[string, string]> = [
+      ['Earnings in selected period', this.currency(this.receiptPeriodEarnings())],
+      [this.receiptPreviousBalance() < 0 ? 'Previous advance' : 'Previous outstanding', this.currency(Math.abs(this.receiptPreviousBalance()))],
+      ['Payments made in selected period', this.currency(this.receiptMonthlyPaid())]
     ];
-    this.receiptMonthPayments().forEach(p => lines.push(`  ${p.payment_date}  ${this.currency(p.amount)}  ${String(p.payment_method).replace('_', ' ')}`));
-    const content = ['BT', '/F1 11 Tf', '45 800 Td', ...lines.flatMap((line, i) => [`(${this.pdfEscape(line)}) Tj`, i < lines.length - 1 ? '0 -18 Td' : '']), 'ET'].join('\n');
+    let y = 546;
+    rows.forEach(([label, value]) => {
+      text(label, left + 4, y, 10);
+      text(value, 450, y, 10, true);
+      line(left, y - 10, right, y - 10);
+      y -= 30;
+    });
+
+    const balance = this.receiptRemainingBalance();
+    fillRect(left, y - 5, contentWidth, 45, balance < 0 ? 1 : 0.93, balance < 0 ? 0.96 : 0.965, balance < 0 ? 0.95 : 0.94);
+    text(balance < 0 ? 'REMAINING ADVANCE' : 'REMAINING BALANCE', left + 14, y + 17, 9, true);
+    text(this.currency(Math.abs(balance)), 430, y + 14, 15, true);
+    y -= 68;
+
+    // Payment breakdown
+    const periodPayments = this.receiptMonthPayments();
+    text('PAYMENT ACTIVITY', left, y, 9, true);
+    y -= 20;
+    text('DATE', left, y, 8, true);
+    text('METHOD', 285, y, 8, true);
+    text('AMOUNT', 460, y, 8, true);
+    line(left, y - 7, right, y - 7);
+    y -= 24;
+
+    periodPayments.slice(0, 12).forEach(payment => {
+      text(this.formatReceiptDate(payment.payment_date), left, y, 9);
+      text(String(payment.payment_method).replace(/_/g, ' '), 285, y, 9);
+      text(this.currency(payment.amount), 460, y, 9, true);
+      y -= 20;
+    });
+    if (periodPayments.length > 12) {
+      text(`+ ${periodPayments.length - 12} more payment(s)`, left, y, 8);
+      y -= 20;
+    }
+
+    // Footer
+    line(left, 92, right, 92);
+    text('For enquiry & assistance', left, 74, 8, true);
+    text('Pradeep Vishwakarma  |  Mo. 9506629814', left, 58, 8);
+    text('Praveen Pandey  |  Mo. 8090272727', left, 44, 8);
+    text('www.surakshawalls.space', 390, 58, 8, true);
+    text('Computer-generated receipt issued by Suraksha Group', 170, 25, 7);
+
+    const content = ['q', '0 0 0 RG', '0.7 w', ...commands, 'Q'].join('\n');
     const objects: string[] = [
       '<< /Type /Catalog /Pages 2 0 R >>',
       '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>',
       '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>',
       `<< /Length ${content.length} >>\nstream\n${content}\nendstream`
     ];
-    let pdf = '%PDF-1.4\n'; const offsets = [0];
-    objects.forEach((obj, i) => { offsets.push(pdf.length); pdf += `${i + 1} 0 obj\n${obj}\nendobj\n`; });
+
+    let pdf = '%PDF-1.4\n';
+    const offsets = [0];
+    objects.forEach((obj, i) => {
+      offsets.push(pdf.length);
+      pdf += `${i + 1} 0 obj\n${obj}\nendobj\n`;
+    });
     const xref = pdf.length;
     pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-    offsets.slice(1).forEach(o => pdf += `${String(o).padStart(10, '0')} 00000 n \n`);
+    offsets.slice(1).forEach(offset => pdf += `${String(offset).padStart(10, '0')} 00000 n \n`);
     pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
     return new Blob([pdf], { type: 'application/pdf' });
   }
 
-  printReceiptForPayment(payment: Payment): void { this.openReceipt(payment); setTimeout(() => this.printReceipt(), 150); }
+  downloadReceiptPdf(): void {
+    const pdf = this.makeReceiptPdf();
+    const employee = this.receiptEmployee();
+    if (!pdf || !employee) {
+      this.error.set('Open a receipt before downloading the PDF.');
+      return;
+    }
+    const url = URL.createObjectURL(pdf);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${this.receiptNumber()}-${employee.employee_code}.pdf`;
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  downloadReceiptForPayment(payment: Payment): void {
+    this.openReceipt(payment);
+    setTimeout(() => this.downloadReceiptPdf(), 100);
+  }
+
+  printReceiptForPayment(payment: Payment): void {
+    this.downloadReceiptForPayment(payment);
+  }
+
   printReceipt(): void {
-    const receipt = document.getElementById('payment-receipt');
-    if (!receipt) { this.error.set('Open a receipt before printing.'); return; }
-    const win = window.open('', '_blank', 'width=900,height=1100');
-    if (!win) { this.error.set('Please allow pop-ups to print the receipt.'); return; }
-    win.document.write(`<!doctype html><html><head><title>${this.receiptNumber()}</title><style>@page{size:A4;margin:14mm}body{font-family:Arial,Helvetica,sans-serif;color:#24332b;margin:0}.payment-receipt{max-width:820px;margin:auto;background:#fff;padding:28px}.receipt-header{display:flex;justify-content:space-between;gap:24px}.receipt-brand{display:flex;gap:15px;align-items:center}.receipt-brand img{width:58px;height:58px;object-fit:contain}.receipt-employee-card{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:18px;background:#f6f9f7;border:1px solid #e2eae4;border-radius:12px;padding:18px}.receipt-financials>div{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #edf1ee}.receipt-balance{background:#eef6f0;margin-top:12px;padding:18px;border-radius:12px}.receipt-footer{display:flex;justify-content:space-between;margin-top:28px;padding-top:20px;border-top:1px solid #e6ece7}</style></head><body>${receipt.outerHTML}</body></html>`);
-    win.document.close(); setTimeout(() => { win.focus(); win.print(); }, 350);
+    this.downloadReceiptPdf();
   }
 
   payEmployeeViaUpi(): void {
-    const payment = this.receiptPayment();
     const employee = this.receiptEmployee();
     if (!employee?.mobile) { this.error.set('This employee has no mobile number.'); return; }
 
     const mobile = employee.mobile.replace(/\D/g, '');
     if (!mobile) { this.error.set('Employee mobile number is invalid.'); return; }
 
-    const amount = Math.max(0, Number(payment?.amount ?? this.receiptMonthlyPaid()));
+    const amount = Math.max(0, Number(this.receiptMonthlyPaid()));
     const note = `Suraksha Group payment - ${employee.name}`;
     const upiUrl =
       `upi://pay?pa=${encodeURIComponent(`${mobile}@upi`)}` +
@@ -305,19 +421,40 @@ export class App implements OnInit {
     this.openReceipt(payment);
     const employee = this.employeeForPayment(payment.employee_id);
     if (!employee?.mobile) { this.error.set('This employee has no mobile number.'); return; }
+
     await new Promise(resolve => setTimeout(resolve, 180));
     const pdf = this.makeReceiptPdf();
-    if (pdf) {
-      const file = new File([pdf], `${this.receiptNumber()}-${employee.employee_code}.pdf`, { type: 'application/pdf' });
-      const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void>; canShare?: (data?: ShareData) => boolean };
-      if (nav.share && (!nav.canShare || nav.canShare({ files: [file] }))) {
-        try { await nav.share({ title: `Suraksha Group - ${this.receiptNumber()}`, text: `Monthly wage statement for ${employee.name}`, files: [file] }); return; } catch { }
-      }
+    const file = pdf ? new File([pdf], `${this.receiptNumber()}-${employee.employee_code}.pdf`, { type: 'application/pdf' }) : null;
+    const nav = navigator as Navigator & {
+      share?: (data: ShareData) => Promise<void>;
+      canShare?: (data?: ShareData) => boolean;
+    };
+
+    if (file && nav.share && (!nav.canShare || nav.canShare({ files: [file] }))) {
+      try {
+        await nav.share({
+          title: `Suraksha Group - ${this.receiptNumber()}`,
+          text: `Monthly wage statement for ${employee.name}`,
+          files: [file]
+        });
+        return;
+      } catch { }
     }
+
     const balance = this.receiptRemainingBalance();
-    const text = `SURAKSHA GROUP – PAYMENT RECEIPT\nReceipt: ${this.receiptNumber()}\nEmployee: ${employee.name} (${employee.employee_code})\nPeriod: ${this.receiptStartDate()} to ${this.receiptEndDate()}\nWork days: ${this.receiptWorkDays()}\nPeriod earnings: ${this.currency(this.receiptPeriodEarnings())}\nPayment made: ${this.currency(this.receiptMonthlyPaid())}\n${balance < 0 ? 'Remaining advance' : 'Remaining balance'}: ${this.currency(Math.abs(balance))}`;
-    window.open(`https://wa.me/${employee.mobile.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+    const text = `SURAKSHA GROUP – PAYMENT RECEIPT
+Receipt: ${this.receiptNumber()}
+Employee: ${employee.name} (${employee.employee_code})
+Period: ${this.formatReceiptDate(this.receiptStartDate())} to ${this.formatReceiptDate(this.receiptEndDate())}
+Work days: ${this.receiptWorkDays()}
+Period earnings: ${this.currency(this.receiptPeriodEarnings())}
+Payment made: ${this.currency(this.receiptMonthlyPaid())}
+${balance < 0 ? 'Remaining advance' : 'Remaining balance'}: ${this.currency(Math.abs(balance))}`;
+
+    // Keep navigation in the current Android WebView/tab so Back returns to SURAKSHA HUB.
+    window.location.href = `https://wa.me/${employee.mobile.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
   }
+
 
   formatType(type: AttendanceType): string { return type.replace('_', ' ').replace(/\b\w/g, letter => letter.toUpperCase()); }
   getAttendanceTypeLabel(date: string): string { const record = this.recordFor(date); return record ? record.attendance_type.replace('_', ' ') : '—'; }
