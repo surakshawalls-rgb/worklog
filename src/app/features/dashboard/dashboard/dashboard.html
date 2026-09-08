@@ -1,0 +1,104 @@
+<section class="dashboard">
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">ADMIN CONSOLE</p>
+      <h1>Overview</h1>
+      <p class="muted">A clear view of attendance, wages and payments.</p>
+    </div>
+
+    <button
+      type="button"
+      class="outline"
+      (click)="refresh()"
+      [disabled]="busy()"
+    >
+      {{ busy() ? 'Refreshing...' : 'Refresh' }}
+    </button>
+  </section>
+
+  <section class="panel period-panel">
+    <div class="panel-title">
+      <div>
+        <p class="eyebrow">MONTHLY OVERVIEW</p>
+        <h2>{{ monthLabel() }}</h2>
+      </div>
+
+      <div class="period-actions">
+        <button type="button" class="outline" (click)="previousMonth()">‹</button>
+        <button type="button" class="outline" (click)="nextMonth()">›</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats-grid admin-stats">
+    <article class="stat">
+      <span>Employees</span>
+      <strong>{{ employees.length }}</strong>
+      <small>Active profiles</small>
+    </article>
+
+    <article class="stat">
+      <span>Monthly expense</span>
+      <strong>{{ currency(totalExpense()) }}</strong>
+      <small>Approved wages</small>
+    </article>
+
+    <article class="stat">
+      <span>Paid this month</span>
+      <strong>{{ currency(totalPaid()) }}</strong>
+      <small>{{ paymentCount() }} payment{{ paymentCount() === 1 ? '' : 's' }}</small>
+    </article>
+
+    <article class="stat">
+      <span>Outstanding</span>
+      <strong>{{ currency(monthOutstanding()) }}</strong>
+      <small>From this month's approved work</small>
+    </article>
+  </section>
+
+  <section class="dashboard-grid">
+    <section class="panel">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">ATTENDANCE</p>
+          <h2>Work summary</h2>
+        </div>
+      </div>
+
+      <div class="summary-list">
+        <div><span>Full days</span><strong>{{ fullDays() }}</strong></div>
+        <div><span>Half days</span><strong>{{ halfDays() }}</strong></div>
+        <div><span>Leaves</span><strong>{{ leaves() }}</strong></div>
+        <div><span>Approved entries</span><strong>{{ approvedDays() }}</strong></div>
+        <div><span>Pending approval</span><strong>{{ pendingMonthCount() }}</strong></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">FINANCIAL SNAPSHOT</p>
+          <h2>Money summary</h2>
+        </div>
+      </div>
+
+      <div class="summary-list">
+        <div><span>Monthly expense</span><strong>{{ currency(totalExpense()) }}</strong></div>
+        <div><span>Paid this month</span><strong>{{ currency(totalPaid()) }}</strong></div>
+        <div><span>Outstanding</span><strong>{{ currency(monthOutstanding()) }}</strong></div>
+        <div><span>Current advances</span><strong>{{ currency(totalAdvance()) }}</strong></div>
+        <div><span>Average expense / employee</span><strong>{{ currency(averageExpense()) }}</strong></div>
+      </div>
+    </section>
+  </section>
+
+  <section class="panel quick-info">
+    <div>
+      <p class="eyebrow">PENDING WORK</p>
+      <h2>{{ pendingCount }} attendance entries need review</h2>
+      <p class="muted">
+        Use the Approval tab to review and approve attendance before it becomes part of the wage expense.
+      </p>
+    </div>
+  </section>
+</section>

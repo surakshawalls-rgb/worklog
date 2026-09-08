@@ -1,0 +1,1010 @@
+<section class="attendance-page">
+
+  <!-- HEADER -->
+  <header class="attendance-header">
+
+    <div>
+      <p class="eyebrow">ATTENDANCE</p>
+
+      <h1>Employee attendance</h1>
+
+      <p class="muted">
+        Record and review daily attendance.
+      </p>
+    </div>
+
+    @if (session()?.role === 'admin') {
+      <div class="header-actions">
+        <button
+          type="button"
+          class="outline"
+          (click)="openRangeAttendance()"
+        >
+          Range attendance
+        </button>
+
+        <button
+          type="button"
+          class="primary"
+          (click)="openBulkAttendance()"
+        >
+          Bulk attendance
+        </button>
+      </div>
+    }
+
+  </header>
+
+
+  <!-- FEEDBACK -->
+  @if (message()) {
+    <div class="feedback success">
+      {{ message() }}
+    </div>
+  }
+
+  @if (error()) {
+    <div class="feedback error">
+      {{ error() }}
+    </div>
+  }
+
+
+  <!-- EMPLOYEE SELECTOR -->
+  <section class="employee-selector">
+
+    <div class="selector-heading">
+      <div>
+        <p class="eyebrow">EMPLOYEE</p>
+        <h2>Select employee</h2>
+      </div>
+
+      @if (busy()) {
+        <span class="loading-label">
+          Loading...
+        </span>
+      }
+    </div>
+
+    <div class="employee-list">
+
+      @for (employee of employees(); track employee.id) {
+
+        <button
+          type="button"
+          class="employee-card"
+          [class.selected]="currentEmployee()?.id === employee.id"
+          (click)="selectEmployee(employee)"
+        >
+
+          <div class="employee-avatar">
+            {{ employee.name.charAt(0).toUpperCase() }}
+          </div>
+
+          <div class="employee-card-info">
+            <strong>{{ employee.name }}</strong>
+
+            <small>
+              {{ employee.employee_code }}
+              ·
+              {{ employee.mobile || 'No mobile' }}
+            </small>
+          </div>
+
+        </button>
+
+      }
+
+      @empty {
+        <div class="empty-state">
+          <h3>No employees found</h3>
+          <p>
+            Add an employee before recording attendance.
+          </p>
+        </div>
+      }
+
+    </div>
+
+  </section>
+
+
+  @if (currentEmployee()) {
+
+    <!-- CALENDAR -->
+    <section class="calendar-panel">
+
+      <div class="calendar-employee-header">
+
+        <div class="employee-detail-heading">
+
+          <p class="eyebrow">
+            EMPLOYEE ATTENDANCE
+          </p>
+
+          <h2>
+            {{ currentEmployee()?.name }}
+          </h2>
+
+          <p class="muted">
+            {{ currentEmployee()?.employee_code }}
+            · Joined
+            {{ currentEmployee()?.joining_date | date:'d MMM yyyy' }}
+            ·
+            {{ currentEmployee()?.mobile || 'No mobile' }}
+          </p>
+
+        </div>
+
+
+        <div class="month-controls">
+
+          <button
+            type="button"
+            class="outline month-button"
+            (click)="previousMonth()"
+            aria-label="Previous month"
+          >
+            ‹
+          </button>
+
+          <span class="report-month">
+            {{ monthLabel() }}
+          </span>
+
+          <button
+            type="button"
+            class="outline month-button"
+            (click)="nextMonth()"
+            aria-label="Next month"
+          >
+            ›
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- MONTH SUMMARY -->
+      <div class="report-stats">
+
+        <span>
+          <b>{{ monthWorkingDays() }}</b>
+          Working days
+        </span>
+
+        <span>
+          <b>{{ monthPaidDays() }}</b>
+          Paid days
+        </span>
+
+        <span>
+          <b>{{ monthUnpaidDays() }}</b>
+          Unpaid days
+        </span>
+
+        <span>
+          <b>{{ monthLeaves() }}</b>
+          Leave
+        </span>
+
+      </div>
+
+
+      <!-- CALENDAR -->
+      <div class="calendar-grid">
+
+        <div class="calendar-header">Sun</div>
+        <div class="calendar-header">Mon</div>
+        <div class="calendar-header">Tue</div>
+        <div class="calendar-header">Wed</div>
+        <div class="calendar-header">Thu</div>
+        <div class="calendar-header">Fri</div>
+        <div class="calendar-header">Sat</div>
+
+
+        @for (i of [0,1,2,3,4,5]; track i) {
+
+          @for (d of [0,1,2,3,4,5,6]; track d) {
+
+            @if (
+              i * 7 + d < calendarOffset()
+              ||
+              i * 7 + d >= calendarOffset() + days().length
+            ) {
+
+              <div class="calendar-cell empty"></div>
+
+            }
+            @else {
+
+              @let calendarDate =
+                days()[i * 7 + d - calendarOffset()];
+
+              @let calendarRecord =
+                recordFor(calendarDate);
+
+
+              <div
+                class="calendar-cell"
+                [ngClass]="dayClass(calendarDate)"
+                [class.future-attendance]="isFutureDate(calendarDate)"
+                [class.selected-day]="selectedDay() === calendarDate"
+                [attr.tabindex]="isFutureDate(calendarDate) ? -1 : 0"
+                [attr.aria-disabled]="isFutureDate(calendarDate)"
+                (click)="isFutureDate(calendarDate) ? null : openDay(calendarDate)"
+                (keydown.enter)="isFutureDate(calendarDate) ? null : openDay(calendarDate)"
+              >
+
+                <strong>
+                  {{ i * 7 + d - calendarOffset() + 1 }}
+                </strong>
+
+                <small>
+                  {{ getAttendanceTypeLabel(calendarDate) }}
+                </small>
+
+
+                @if (
+                  session()?.role === 'admin'
+                  &&
+                  calendarRecord
+                  &&
+                  !isFutureDate(calendarDate)
+                ) {
+
+                  <button
+                    type="button"
+                    class="calendar-edit-btn"
+                    title="Edit attendance"
+                    aria-label="Edit attendance"
+                    (click)="$event.stopPropagation(); openCorrection(calendarRecord)"
+                  >
+                    ✎
+                  </button>
+
+                }
+
+              </div>
+
+            }
+
+          }
+
+        }
+
+      </div>
+
+
+      <!-- LEGEND -->
+      <div class="calendar-legend">
+
+        <span>
+          <i class="legend-dot paid"></i>
+          Paid
+        </span>
+
+        <span>
+          <i class="legend-dot unpaid"></i>
+          Unpaid
+        </span>
+
+        <span>
+          <i class="legend-dot partial"></i>
+          Partial
+        </span>
+
+        <span>
+          <i class="legend-dot pending"></i>
+          Pending
+        </span>
+
+        <span>
+          <i class="legend-dot half"></i>
+          Half day
+        </span>
+
+        <span>
+          <i class="legend-dot leave"></i>
+          Leave
+        </span>
+
+        <span>
+          <i class="legend-dot denied"></i>
+          Denied
+        </span>
+
+      </div>
+
+    </section>
+
+  }
+
+
+  <!-- =====================================================
+       MODALS
+       ===================================================== -->
+
+  @if (modal()) {
+
+    <div
+      class="modal-backdrop"
+      (click)="closeModal()"
+    >
+
+      <section
+        class="modal"
+        (click)="$event.stopPropagation()"
+      >
+
+
+        <!-- NEW ATTENDANCE -->
+        @if (modal() === 'attendance') {
+
+          <div class="modal-heading">
+
+            <div>
+              <p class="eyebrow">NEW ENTRY</p>
+
+              <h2>
+                {{ selectedDay() | date:'d MMMM yyyy' }}
+              </h2>
+            </div>
+
+            <button
+              type="button"
+              class="icon-button"
+              (click)="closeModal()"
+            >
+              ×
+            </button>
+
+          </div>
+
+          <p class="muted">
+            Choose what your day looked like.
+            An admin will review it before it affects earnings.
+          </p>
+
+
+          <div class="choice-grid">
+
+            <button
+              type="button"
+              [class.selected]="attendanceType() === 'full_day'"
+              (click)="setAttendanceType('full_day')"
+            >
+              <b>Full day</b>
+              <small>Earns daily rate</small>
+            </button>
+
+            <button
+              type="button"
+              [class.selected]="attendanceType() === 'half_day'"
+              (click)="setAttendanceType('half_day')"
+            >
+              <b>Half day</b>
+              <small>Earns half rate</small>
+            </button>
+
+            <button
+              type="button"
+              [class.selected]="attendanceType() === 'leave'"
+              (click)="setAttendanceType('leave')"
+            >
+              <b>Leave</b>
+              <small>No earnings</small>
+            </button>
+
+            <button
+              type="button"
+              [class.selected]="attendanceType() === 'custom'"
+              (click)="setAttendanceType('custom')"
+            >
+              <b>Custom wage</b>
+              <small>Enter any amount</small>
+            </button>
+
+          </div>
+
+
+          @if (attendanceType() === 'custom') {
+
+            <label>
+              Custom wage
+
+              <input
+                type="number"
+                min="1"
+                [ngModel]="customWage()"
+                (ngModelChange)="customWage.set(+$event)"
+                placeholder="Enter amount"
+              />
+            </label>
+
+          }
+
+
+          <label>
+            Note (optional)
+
+            <textarea
+              [ngModel]="attendanceNote()"
+              (ngModelChange)="attendanceNote.set($event)"
+              rows="3"
+              placeholder="Worked at site..."
+            ></textarea>
+          </label>
+
+
+          <button
+            type="button"
+            class="primary wide"
+            [disabled]="busy()"
+            (click)="submitAttendance()"
+          >
+            {{ busy() ? 'Submitting...' : 'Submit attendance' }}
+          </button>
+
+        }
+
+
+        <!-- DAY DETAILS -->
+        @if (modal() === 'day') {
+
+          <div class="modal-heading">
+
+            <div>
+              <p class="eyebrow">DAY DETAIL</p>
+
+              <h2>
+                {{ selectedDay() | date:'d MMMM yyyy' }}
+              </h2>
+            </div>
+
+            <button
+              type="button"
+              class="icon-button"
+              (click)="closeModal()"
+            >
+              ×
+            </button>
+
+          </div>
+
+
+          @if (selectedRecord(); as record) {
+
+            <div class="detail-list">
+
+              <div>
+                <span>Attendance</span>
+                <b>{{ formatType(record.attendance_type) }}</b>
+              </div>
+
+              <div>
+                <span>Approval</span>
+                <b class="status">
+                  {{ record.approval_status }}
+                </b>
+              </div>
+
+              <div>
+                <span>Daily rate</span>
+                <b>{{ currency(record.daily_rate) }}</b>
+              </div>
+
+              <div>
+                <span>Earned</span>
+                <b>{{ currency(record.earned_amount) }}</b>
+              </div>
+
+              <div>
+                <span>Paid</span>
+                <b>{{ currency(record.paid_amount) }}</b>
+              </div>
+
+              <div>
+                <span>Outstanding</span>
+                <b>{{ currency(record.outstanding_amount) }}</b>
+              </div>
+
+            </div>
+
+
+            <p class="modal-note">
+              {{ record.note || 'No note added.' }}
+            </p>
+
+
+            @if (
+              session()?.role === 'admin'
+              &&
+              record.approval_status === 'denied'
+            ) {
+
+              <button
+                type="button"
+                class="primary wide"
+                (click)="openCorrection(record)"
+              >
+                Correct and approve
+              </button>
+
+            }
+
+          }
+
+        }
+
+
+        <!-- ADMIN ATTENDANCE / CORRECTION -->
+        @if (modal() === 'admin-attendance') {
+
+          <div class="modal-heading">
+
+            <div>
+              <p class="eyebrow">
+                {{ correctingRecord() ? 'CORRECTION' : 'ADMIN ENTRY' }}
+              </p>
+
+              <h2>
+                {{ correctingRecord() ? 'Correct attendance' : 'Mark attendance' }}
+              </h2>
+            </div>
+
+            <button
+              type="button"
+              class="icon-button"
+              (click)="closeModal()"
+            >
+              ×
+            </button>
+
+          </div>
+
+
+          <p class="muted">
+            Marking for
+            <b>{{ adminAttendanceEmployee()?.name }}</b>.
+          </p>
+
+
+          @if (!correctingRecord()) {
+
+            <label>
+              Date
+
+              <input
+                type="date"
+                [max]="today()"
+                [ngModel]="adminAttendanceDate()"
+                (ngModelChange)="adminAttendanceDate.set($event)"
+              />
+            </label>
+
+          }
+
+
+          <div class="choice-grid">
+
+            <button
+              type="button"
+              [class.selected]="adminAttendanceType() === 'full_day'"
+              (click)="setAdminAttendanceType('full_day')"
+            >
+              <b>Full day</b>
+              <small>Earns daily rate</small>
+            </button>
+
+            <button
+              type="button"
+              [class.selected]="adminAttendanceType() === 'half_day'"
+              (click)="setAdminAttendanceType('half_day')"
+            >
+              <b>Half day</b>
+              <small>Earns half rate</small>
+            </button>
+
+            <button
+              type="button"
+              [class.selected]="adminAttendanceType() === 'leave'"
+              (click)="setAdminAttendanceType('leave')"
+            >
+              <b>Leave</b>
+              <small>No earnings</small>
+            </button>
+
+            <button
+              type="button"
+              [class.selected]="adminAttendanceType() === 'custom'"
+              (click)="setAdminAttendanceType('custom')"
+            >
+              <b>Custom wage</b>
+              <small>Enter any amount</small>
+            </button>
+
+          </div>
+
+
+          @if (adminAttendanceType() === 'custom') {
+
+            <label>
+              Custom wage
+
+              <input
+                type="number"
+                min="1"
+                [ngModel]="customWage()"
+                (ngModelChange)="customWage.set(+$event)"
+              />
+            </label>
+
+          }
+
+
+          <label>
+            Note
+
+            <textarea
+              [ngModel]="adminAttendanceNote()"
+              (ngModelChange)="adminAttendanceNote.set($event)"
+              rows="3"
+            ></textarea>
+          </label>
+
+
+          <button
+            type="button"
+            class="primary wide"
+            [disabled]="busy()"
+            (click)="submitAdminAttendance()"
+          >
+            {{ busy() ? 'Saving...' : 'Save attendance' }}
+          </button>
+
+        }
+
+
+        <!-- BULK ATTENDANCE -->
+        @if (modal() === 'bulk-attendance') {
+
+          <div class="modal-heading">
+
+            <div>
+              <p class="eyebrow">ADMIN TOOLS</p>
+              <h2>Bulk attendance</h2>
+            </div>
+
+            <button
+              type="button"
+              class="icon-button"
+              (click)="closeModal()"
+            >
+              ×
+            </button>
+
+          </div>
+
+
+          <label>
+            Date
+
+            <input
+              type="date"
+              [max]="today()"
+              [ngModel]="bulkAttendanceDate()"
+              (ngModelChange)="bulkAttendanceDate.set($event)"
+            />
+          </label>
+
+
+          <div class="choice-grid">
+
+            <button
+              type="button"
+              [class.selected]="bulkAttendanceType() === 'full_day'"
+              (click)="setBulkAttendanceType('full_day')"
+            >
+              <b>Full day</b>
+              <small>Daily rate</small>
+            </button>
+
+            <button
+              type="button"
+              [class.selected]="bulkAttendanceType() === 'half_day'"
+              (click)="setBulkAttendanceType('half_day')"
+            >
+              <b>Half day</b>
+              <small>Half rate</small>
+            </button>
+
+            <button
+              type="button"
+              [class.selected]="bulkAttendanceType() === 'leave'"
+              (click)="setBulkAttendanceType('leave')"
+            >
+              <b>Leave</b>
+              <small>No earnings</small>
+            </button>
+
+            <button
+              type="button"
+              [class.selected]="bulkAttendanceType() === 'custom'"
+              (click)="setBulkAttendanceType('custom')"
+            >
+              <b>Custom</b>
+              <small>Custom wage</small>
+            </button>
+
+          </div>
+
+
+          @if (bulkAttendanceType() === 'custom') {
+
+            <label>
+              Custom wage
+
+              <input
+                type="number"
+                min="1"
+                [ngModel]="customWage()"
+                (ngModelChange)="customWage.set(+$event)"
+              />
+            </label>
+
+          }
+
+
+          <label>
+            Note
+
+            <textarea
+              [ngModel]="bulkAttendanceNote()"
+              (ngModelChange)="bulkAttendanceNote.set($event)"
+              rows="2"
+            ></textarea>
+          </label>
+
+
+          <div class="employee-check-list">
+
+            <div class="check-list-heading">
+              <b>Employees</b>
+
+              <span>
+                {{ bulkEmployeeIds().length }}
+                selected
+              </span>
+            </div>
+
+            @for (
+              employee of employees();
+              track employee.id
+            ) {
+
+              @if (employee.status === 'active') {
+
+                <label class="check-row">
+
+                  <input
+                    type="checkbox"
+                    [checked]="bulkEmployeeIds().includes(employee.id)"
+                    (change)="toggleBulkEmployee(employee.id)"
+                  />
+
+                  <span>
+                    <b>{{ employee.name }}</b>
+                    <small>
+                      {{ employee.employee_code }}
+                    </small>
+                  </span>
+
+                </label>
+
+              }
+
+            }
+
+          </div>
+
+
+          <button
+            type="button"
+            class="primary wide"
+            [disabled]="busy()"
+            (click)="submitBulkAttendance()"
+          >
+            {{ busy() ? 'Saving...' : 'Mark attendance' }}
+          </button>
+
+        }
+
+
+        <!-- RANGE ATTENDANCE -->
+        @if (modal() === 'range-attendance') {
+
+          <div class="modal-heading">
+
+            <div>
+              <p class="eyebrow">MISSED ATTENDANCE</p>
+              <h2>Mark date range</h2>
+            </div>
+
+            <button
+              type="button"
+              class="icon-button"
+              (click)="closeModal()"
+            >
+              ×
+            </button>
+
+          </div>
+
+
+          <p class="muted">
+            Submit missed attendance entries for the selected
+            employees and date range.
+          </p>
+
+
+          <div class="form-row">
+
+            <label>
+              Start date
+
+              <input
+                type="date"
+                [max]="today()"
+                [ngModel]="rangeStartDate()"
+                (ngModelChange)="rangeStartDate.set($event)"
+              />
+            </label>
+
+            <label>
+              End date
+
+              <input
+                type="date"
+                [max]="today()"
+                [ngModel]="rangeEndDate()"
+                (ngModelChange)="rangeEndDate.set($event)"
+              />
+            </label>
+
+          </div>
+
+
+          <div class="choice-grid">
+
+            <button
+              type="button"
+              [class.selected]="rangeAttendanceType() === 'full_day'"
+              (click)="setRangeAttendanceType('full_day')"
+            >
+              <b>Full day</b>
+              <small>Daily rate</small>
+            </button>
+
+            <button
+              type="button"
+              [class.selected]="rangeAttendanceType() === 'half_day'"
+              (click)="setRangeAttendanceType('half_day')"
+            >
+              <b>Half day</b>
+              <small>Half rate</small>
+            </button>
+
+            <button
+              type="button"
+              [class.selected]="rangeAttendanceType() === 'leave'"
+              (click)="setRangeAttendanceType('leave')"
+            >
+              <b>Leave</b>
+              <small>No earnings</small>
+            </button>
+
+            <button
+              type="button"
+              [class.selected]="rangeAttendanceType() === 'custom'"
+              (click)="setRangeAttendanceType('custom')"
+            >
+              <b>Custom</b>
+              <small>Custom wage</small>
+            </button>
+
+          </div>
+
+
+          @if (rangeAttendanceType() === 'custom') {
+
+            <label>
+              Custom wage
+
+              <input
+                type="number"
+                min="1"
+                [ngModel]="customWage()"
+                (ngModelChange)="customWage.set(+$event)"
+              />
+            </label>
+
+          }
+
+
+          @if (session()?.role === 'admin') {
+
+            <div class="employee-check-list">
+
+              <div class="check-list-heading">
+                <b>Employees</b>
+
+                <span>
+                  {{ rangeEmployeeIds().length }}
+                  selected
+                </span>
+              </div>
+
+              @for (
+                employee of employees();
+                track employee.id
+              ) {
+
+                @if (employee.status === 'active') {
+
+                  <label class="check-row">
+
+                    <input
+                      type="checkbox"
+                      [checked]="rangeEmployeeIds().includes(employee.id)"
+                      (change)="toggleRangeEmployee(employee.id)"
+                    />
+
+                    <span>
+                      <b>{{ employee.name }}</b>
+                      <small>
+                        {{ employee.employee_code }}
+                      </small>
+                    </span>
+
+                  </label>
+
+                }
+
+              }
+
+            </div>
+
+          }
+
+
+          <label>
+            Note
+
+            <textarea
+              [ngModel]="rangeAttendanceNote()"
+              (ngModelChange)="rangeAttendanceNote.set($event)"
+              rows="2"
+            ></textarea>
+          </label>
+
+
+          <button
+            type="button"
+            class="primary wide"
+            [disabled]="busy()"
+            (click)="submitRangeAttendance()"
+          >
+            {{ busy() ? 'Submitting...' : 'Submit attendance' }}
+          </button>
+
+        }
+
+      </section>
+
+    </div>
+
+  }
+
+</section>

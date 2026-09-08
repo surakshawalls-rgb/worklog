@@ -1,0 +1,77 @@
+<main class="login-shell">
+  <section class="login-card">
+
+    <div class="brand-mark">
+      SH
+    </div>
+
+    <p class="eyebrow">
+      SURAKSHA HUB
+    </p>
+
+    <h1>
+      Attendance &amp; wage tracker
+    </h1>
+
+    <p class="muted">
+      Simple attendance, clear earnings, fair payments.
+    </p>
+
+    <form (ngSubmit)="login()">
+
+      <label>
+        Username or email
+
+        <input
+          [ngModel]="username()"
+          (ngModelChange)="username.set($event)"
+          name="username"
+          autocomplete="username"
+          required
+        />
+      </label>
+
+      <label>
+        Password
+
+        <input
+          [ngModel]="password()"
+          (ngModelChange)="password.set($event)"
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          required
+        />
+      </label>
+
+      <button
+        class="primary wide"
+        type="submit"
+        [disabled]="busy()"
+      >
+        {{ busy() ? 'Signing in...' : 'Sign in' }}
+      </button>
+
+    </form>
+
+    <button
+      type="button"
+      class="text-button login-reset"
+      (click)="openForgotPassword()"
+    >
+      Forgot password?
+    </button>
+
+    @if (error()) {
+      <p class="alert error">
+        {{ error() }}
+      </p>
+    }
+
+    <p class="login-note">
+      Use the same account as Sync Point. Admin access follows the
+      <code>users.role</code> value.
+    </p>
+
+  </section>
+</main>

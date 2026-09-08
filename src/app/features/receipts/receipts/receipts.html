@@ -1,0 +1,497 @@
+<section class="receipts-feature">
+
+  <div class="feature-heading">
+    <div>
+      <p class="eyebrow">DOCUMENT DESK</p>
+      <h2>Payment receipts</h2>
+      <p class="muted">View, share and pay employee statements for any month.</p>
+    </div>
+
+    <button
+      type="button"
+      class="outline"
+      (click)="refreshRequested.emit()"
+    >
+      Refresh
+    </button>
+  </div>
+
+  <div class="toolbar">
+
+    <label>
+      Employee
+
+      <select
+        [ngModel]="receiptEmployeeId()"
+        (ngModelChange)="
+          receiptEmployeeId.set($event ? +$event : null);
+          selectPeriod()
+        "
+      >
+        <option [ngValue]="null">
+          All employees
+        </option>
+
+        @for (employee of employees; track employee.id) {
+          <option [ngValue]="employee.id">
+            {{ employee.name }} · {{ employee.employee_code }}
+          </option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Year
+
+      <select
+        [ngModel]="receiptYear()"
+        (ngModelChange)="
+          receiptYear.set(+$event);
+          selectPeriod()
+        "
+      >
+        @for (year of receiptYears(); track year) {
+          <option [ngValue]="year">
+            {{ year }}
+          </option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Month
+
+      <select
+        [ngModel]="receiptMonth()"
+        (ngModelChange)="
+          receiptMonth.set(+$event);
+          selectPeriod()
+        "
+      >
+        @for (month of receiptMonths; track month.value) {
+          <option [ngValue]="month.value">
+            {{ month.label }}
+          </option>
+        }
+      </select>
+    </label>
+
+  </div>
+
+  <div class="period-hint">
+    Showing <b>{{ periodLabel() }}</b>.
+    Each employee appears only once, with all completed
+    payments for the selected month combined.
+  </div>
+
+  <div class="receipt-summary">
+    <div class="summary-card">
+      <span>Employees paid</span>
+      <b>{{ receiptRows().length }}</b>
+      <small>In selected period</small>
+    </div>
+    <div class="summary-card">
+      <span>Total paid</span>
+      <b>{{ currency(receiptPayments().reduce((sum, payment) => sum + toNumber(payment.amount), 0)) }}</b>
+      <small>Completed payments</small>
+    </div>
+    <div class="summary-card">
+      <span>Payments</span>
+      <b>{{ receiptPayments().length }}</b>
+      <small>Transactions</small>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="error">
+      {{ error() }}
+    </div>
+  }
+
+  <div class="receipt-list">
+
+    @for (row of receiptRows(); track row.employee.id) {
+
+      <article class="receipt-row">
+
+        <div class="employee">
+
+          <div class="logo">
+            <img
+              src="/logo.png"
+              alt="Suraksha Group"
+            >
+          </div>
+
+          <div>
+            <b>{{ row.employee.name }}</b>
+
+            <small>
+              {{ row.employee.employee_code }}
+              ·
+              {{ row.count }}
+              payment{{ row.count === 1 ? '' : 's' }}
+            </small>
+          </div>
+
+        </div>
+
+        <div class="total">
+          <b>{{ currency(row.total) }}</b>
+          <small>Total paid</small>
+        </div>
+
+        <div class="actions">
+
+          <button
+            type="button"
+            class="outline small"
+            (click)="viewReceipt(row.latestPayment)"
+          >
+            View receipt
+          </button>
+
+          <button
+            type="button"
+            class="primary small"
+            (click)="printReceiptForPayment(row.latestPayment)"
+          >
+            PDF
+          </button>
+
+          @if (row.employee.mobile) {
+            <button
+              type="button"
+              class="outline small"
+              (click)="shareReceiptWhatsApp(row.latestPayment)"
+            >
+              WhatsApp
+            </button>
+          }
+
+        </div>
+
+      </article>
+
+    } @empty {
+
+      <div class="empty">
+        <h3>No completed payments</h3>
+        <p>
+          No completed payment was found for the
+          selected employee/month/year.
+        </p>
+      </div>
+
+    }
+
+  </div>
+
+</section>
+
+
+@if (showReceipt() && selectedEmployee(); as employee) {
+
+  <div
+    class="dialog-backdrop"
+    (click)="closeReceipt()"
+  >
+
+    <section
+      class="dialog"
+      (click)="$event.stopPropagation()"
+    >
+
+      <div class="dialog-head">
+
+        <div>
+          <p class="eyebrow">SURAKSHA GROUP</p>
+          <h2>Payment Receipt</h2>
+        </div>
+
+        <button
+          type="button"
+          class="close"
+          (click)="closeReceipt()"
+          aria-label="Close"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <article class="receipt">
+
+        <header class="receipt-header">
+
+          <img
+            src="/logo.png"
+            alt="Suraksha Group logo"
+          >
+
+          <div>
+            <h1>Suraksha Group</h1>
+            <p>Payment Receipt</p>
+          </div>
+
+        </header>
+
+
+        <section class="info-grid">
+
+          <div>
+            <span>Employee</span>
+            <b>{{ employee.name }}</b>
+          </div>
+
+          <div>
+            <span>Employee Code</span>
+            <b>{{ employee.employee_code }}</b>
+          </div>
+
+          <div>
+            <span>Mobile</span>
+            <b>
+              {{ employee.mobile || 'Not available' }}
+            </b>
+          </div>
+
+          <div>
+            <span>Payment Method</span>
+            <b>
+              {{
+                selectedPeriodPayments().length > 1
+                  ? 'Multiple payments'
+                  : paymentMethodLabel(
+                      selectedPayment()?.payment_method || ''
+                    )
+              }}
+            </b>
+          </div>
+
+          <div>
+            <span>Selected Period</span>
+            <b>
+              {{ periodStart() | date:'d MMM yyyy' }}
+              –
+              {{ periodEnd() | date:'d MMM yyyy' }}
+            </b>
+          </div>
+
+          <div>
+            <span>Work Days</span>
+            <b>{{ workDays() }}</b>
+          </div>
+
+        </section>
+
+
+        <section class="financials">
+
+          <div>
+            <span>Earnings in selected period</span>
+            <b>{{ currency(periodEarnings()) }}</b>
+          </div>
+
+          <div>
+            <span>
+              {{
+                previousBalance() < 0
+                  ? 'Previous advance'
+                  : 'Previous outstanding'
+              }}
+            </span>
+
+            <b>
+              {{ currency(Math.abs(previousBalance())) }}
+            </b>
+          </div>
+
+          <div class="paid">
+            <span>Payments made in selected period</span>
+            <b>{{ currency(monthlyPaid()) }}</b>
+          </div>
+
+          <div class="balance">
+            <span>
+              {{
+                remainingBalance() < 0
+                  ? 'Remaining advance'
+                  : 'Remaining balance'
+              }}
+            </span>
+
+            <b>
+              {{ currency(Math.abs(remainingBalance())) }}
+            </b>
+          </div>
+
+        </section>
+
+
+        <section class="breakdown">
+
+          <h3>Payments in selected period</h3>
+
+          @for (
+            payment of selectedPeriodPayments();
+            track payment.id
+          ) {
+
+            <div class="payment-line">
+
+              <span>
+                {{ payment.payment_date | date:'d MMM yyyy' }}
+              </span>
+
+              <span>
+                {{ paymentMethodLabel(payment.payment_method) }}
+              </span>
+
+              <b>
+                {{ currency(payment.amount) }}
+              </b>
+
+            </div>
+
+          }
+
+        </section>
+
+
+        @if (selectedPayment()?.note) {
+
+          <div class="note">
+            <span>Payment note</span>
+            <p>{{ selectedPayment()?.note }}</p>
+          </div>
+
+        }
+
+
+        <footer>
+
+          <div>
+            <b>For further enquiry &amp; assistance</b>
+            <span>
+              Pradeep Vishwakarma · Mo. 9506629814
+            </span>
+            <span>
+              Praveen Pandey · Mo. 8090272727
+            </span>
+          </div>
+
+          <div>
+            <b>Suraksha Group</b>
+            <span>
+              www.surakshawalls.space
+            </span>
+          </div>
+
+        </footer>
+
+      </article>
+
+
+      <div class="dialog-actions">
+
+        <button
+          type="button"
+          class="outline"
+          (click)="printReceipt()"
+        >
+          Download / Save PDF
+        </button>
+
+        @if (employee.mobile) {
+
+          <button
+            type="button"
+            class="outline"
+            (click)="shareReceiptWhatsApp()"
+          >
+            Share on WhatsApp
+          </button>
+
+          <button
+            type="button"
+            class="primary"
+            (click)="payEmployeeViaUpi()"
+          >
+            Pay with UPI
+          </button>
+
+        }
+
+      </div>
+
+    </section>
+
+  </div>
+
+}
+
+@if (showUpiPayment() && selectedEmployee(); as employee) {
+  <div class="upi-backdrop" (click)="closeUpiPayment()">
+    <section class="upi-dialog" (click)="$event.stopPropagation()">
+      <div class="upi-head">
+        <div>
+          <p class="eyebrow">UPI PAYMENT</p>
+          <h3>Pay {{ employee.name }}</h3>
+          <p class="muted">Use the employee's mobile number to find their UPI account.</p>
+        </div>
+        <button type="button" class="close" (click)="closeUpiPayment()">×</button>
+      </div>
+
+      <div class="upi-person">
+        <div class="upi-avatar">{{ employee.name.slice(0, 1) }}</div>
+        <div>
+          <b>{{ employee.name }}</b>
+          <span>{{ employee.employee_code }}</span>
+        </div>
+      </div>
+
+      <div class="upi-form">
+        <label>
+          Employee mobile number
+          <div class="mobile-input-row">
+            <input
+              type="tel"
+              [value]="upiMobile()"
+              readonly
+              inputmode="numeric"
+            />
+            <button type="button" class="outline small" (click)="copyUpiMobile()">Copy</button>
+          </div>
+        </label>
+
+        <label>
+          Amount
+          <input
+            type="number"
+            min="1"
+            step="0.01"
+            [ngModel]="upiAmount()"
+            (ngModelChange)="upiAmount.set(+$event)"
+          />
+        </label>
+      </div>
+
+      <div class="upi-note">
+        <b>How it works:</b> UPI supports payments to a phone number when that number is mapped to a UPI ID/UPI Number.
+        Open your UPI app, search the mobile number, verify that the displayed recipient is <b>{{ employee.name }}</b>, and then pay the amount.
+        Do not use a made-up <b>mobile@upi</b> ID.
+      </div>
+
+      @if (upiStatus()) {
+        <div class="upi-status">{{ upiStatus() }}</div>
+      }
+
+      <div class="dialog-actions upi-actions">
+        <button type="button" class="outline" (click)="closeUpiPayment()">Cancel</button>
+        <button type="button" class="primary" (click)="openUpiApp()">Copy number &amp; continue</button>
+      </div>
+    </section>
+  </div>
+}

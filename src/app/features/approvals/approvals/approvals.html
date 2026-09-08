@@ -1,0 +1,96 @@
+<section class="approvals-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">ATTENDANCE REVIEW</p>
+      <h1>Attendance approvals</h1>
+      <p class="subtitle">Review attendance entries submitted by employees before they are included in wages.</p>
+    </div>
+
+    <button
+      type="button"
+      class="outline"
+      [disabled]="busy()"
+      (click)="refresh()"
+    >
+      {{ busy() ? 'Working...' : 'Refresh' }}
+    </button>
+  </header>
+
+  @if (message()) {
+    <div class="alert success">{{ message() }}</div>
+  }
+
+  @if (error()) {
+    <div class="alert error">{{ error() }}</div>
+  }
+
+  <div class="summary-card">
+    <div>
+      <span>WAITING FOR REVIEW</span>
+      <strong>{{ pendingRecords().length }}</strong>
+    </div>
+    <small>
+      Pending attendance is not treated as approved attendance until an admin makes a decision.
+    </small>
+  </div>
+
+  <section class="approval-list" aria-label="Attendance records awaiting approval">
+    @for (record of pendingRecords(); track record.id) {
+      <article class="approval-card">
+        <div class="approval-main">
+          <div class="date-block">
+            <strong>{{ formatDate(record.attendance_date) }}</strong>
+            <span>{{ attendanceTypeLabel(record.attendance_type) }}</span>
+          </div>
+
+          <div class="approval-info">
+            <h3>{{ employeeName(record.employee_id) }}</h3>
+
+            <p class="note">
+              {{ record.note || 'No note added.' }}
+            </p>
+
+            <div class="meta">
+              <span>
+                Rate: <b>{{ currency(record.daily_rate) }}</b>
+              </span>
+              <span>
+                Earned: <b>{{ currency(record.earned_amount) }}</b>
+              </span>
+              <span>
+                Marked by: <b>{{ record.submitted_by_name || 'Admin' }}</b>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="approval-actions">
+          <button
+            type="button"
+            class="approve"
+            [disabled]="busy()"
+            (click)="decide(record, 'approved')"
+          >
+            {{ busy() ? 'Please wait...' : 'Approve' }}
+          </button>
+
+          <button
+            type="button"
+            class="deny"
+            [disabled]="busy()"
+            (click)="decide(record, 'denied')"
+          >
+            Deny
+          </button>
+        </div>
+      </article>
+    }
+    @empty {
+      <div class="empty-state">
+        <div class="empty-icon">✓</div>
+        <h2>All caught up</h2>
+        <p>There are no attendance records waiting for approval.</p>
+      </div>
+    }
+  </section>
+</section>

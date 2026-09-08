@@ -1,0 +1,374 @@
+<section class="payments-page">
+
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">PAYMENTS</p>
+      <h1>Employee Payments</h1>
+      <p class="subtitle">
+        Process wages, advances and manage payment history.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="outline"
+      [disabled]="busy()"
+      (click)="refreshRequested.emit()"
+    >
+      Refresh
+    </button>
+  </div>
+
+  @if (message()) {
+    <div class="alert success">
+      {{ message() }}
+    </div>
+  }
+
+  @if (error()) {
+    <div class="alert error">
+      {{ error() }}
+    </div>
+  }
+
+  <section class="panel">
+
+    <div class="panel-title">
+      <div>
+        <p class="eyebrow">EMPLOYEES</p>
+        <h2>Select employee</h2>
+      </div>
+
+      <span class="count">
+        {{ employees.length }} employees
+      </span>
+    </div>
+
+    <div class="employee-grid">
+
+      @for (employee of employees; track employee.id) {
+
+        <article
+          class="employee-card"
+          [class.selected]="selectedEmployee()?.id === employee.id"
+          (click)="selectEmployee(employee)"
+        >
+
+          <div class="employee-info">
+            <div class="avatar">
+              {{ employee.name.charAt(0).toUpperCase() }}
+            </div>
+
+            <div>
+              <h3>{{ employee.name }}</h3>
+
+              <span>
+                {{ employee.employee_code }}
+              </span>
+
+              @if (employee.mobile) {
+                <small>{{ employee.mobile }}</small>
+              }
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="primary small-button"
+            [disabled]="busy()"
+            (click)="$event.stopPropagation(); openPayment(employee)"
+          >
+            Pay / advance
+          </button>
+
+        </article>
+
+      } @empty {
+
+        <div class="empty-state compact">
+          <h2>No employees</h2>
+          <p>Add an employee to start processing wages.</p>
+        </div>
+
+      }
+
+    </div>
+
+  </section>
+
+  @if (selectedEmployee()) {
+
+    <section id="payment-form-panel" class="payment-form-panel">
+
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">PROCESS PAYMENT</p>
+          <h2>
+            {{ selectedEmployee()?.name }}
+          </h2>
+          <span class="muted">
+            Pay salary, wages or an advance.
+          </span>
+        </div>
+      </div>
+
+      <div class="payment-form">
+
+        <label>
+          <span>Amount</span>
+          <div class="input-with-prefix">
+            <b>₹</b>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              [value]="paymentAmount()"
+              (input)="paymentAmount.set(+$any($event.target).value)"
+              placeholder="Enter amount"
+            />
+          </div>
+        </label>
+
+        <label>
+          <span>Payment date</span>
+          <input
+            type="date"
+            [value]="paymentDate()"
+            (input)="paymentDate.set($any($event.target).value)"
+          />
+        </label>
+
+        <label>
+          <span>Payment method</span>
+
+          <select
+            [value]="paymentMethod()"
+            (change)="paymentMethod.set($any($event.target).value)"
+          >
+            <option value="cash">Cash</option>
+            <option value="upi">UPI</option>
+            <option value="bank_transfer">Bank transfer</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+
+        <label class="full-width">
+          <span>Note</span>
+
+          <textarea
+            rows="3"
+            [value]="paymentNote()"
+            (input)="paymentNote.set($any($event.target).value)"
+            placeholder="Optional payment note"
+          ></textarea>
+        </label>
+
+        <div class="form-actions full-width">
+
+          <button
+            type="button"
+            class="primary wide"
+            [disabled]="busy()"
+            (click)="confirmPayment()"
+          >
+            {{ busy() ? 'Processing...' : 'Process payment' }}
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <section class="panel history-panel">
+
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">LEDGER</p>
+          <h2>
+            {{ selectedEmployee()?.name }} payment history
+          </h2>
+        </div>
+
+        <span class="count">
+          {{ localPayments().length }} payments
+        </span>
+      </div>
+
+      @if (localPayments().length > 0) {
+
+        <div class="history-list">
+
+          @for (payment of localPayments(); track payment.id) {
+
+            <article class="history-row">
+
+              <div class="history-date">
+                <strong>
+                  {{ payment.payment_date | date:'d MMM yyyy' }}
+                </strong>
+
+                <small>
+                  {{ paymentMethodLabel(payment.payment_method) }}
+                </small>
+              </div>
+
+              <div class="history-amount">
+                <b>{{ currency(payment.amount) }}</b>
+
+                @if (payment.note) {
+                  <span>{{ payment.note }}</span>
+                }
+              </div>
+
+              <div class="history-status">
+                <span
+                  class="status"
+                  [class.reversed]="payment.status === 'reversed'"
+                >
+                  {{ payment.status }}
+                </span>
+              </div>
+
+              <div class="history-actions">
+
+                <button
+                  type="button"
+                  class="text-button"
+                  [disabled]="busy() || payment.status === 'reversed'"
+                  (click)="openPaymentEdit(payment)"
+                >
+                  Edit
+                </button>
+
+                <button
+                  type="button"
+                  class="text-button danger-text"
+                  [disabled]="busy() || payment.status === 'reversed'"
+                  (click)="reverse(payment)"
+                >
+                  Reverse
+                </button>
+
+              </div>
+
+            </article>
+
+          }
+
+        </div>
+
+      } @else {
+
+        <div class="empty-state compact">
+          <h2>No payments recorded</h2>
+          <p>No payments have been recorded for this employee.</p>
+        </div>
+
+      }
+
+    </section>
+
+  }
+
+  @if (editingPayment()) {
+
+    <div class="modal-backdrop">
+
+      <section class="modal">
+
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">EDIT PAYMENT</p>
+            <h2>Update payment</h2>
+          </div>
+
+          <button
+            type="button"
+            class="close-button"
+            [disabled]="busy()"
+            (click)="closePaymentEdit()"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="modal-body">
+
+          <label>
+            <span>Amount</span>
+
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              [value]="editPaymentAmount()"
+              (input)="editPaymentAmount.set(+$any($event.target).value)"
+            />
+          </label>
+
+          <label>
+            <span>Payment date</span>
+
+            <input
+              type="date"
+              [value]="editPaymentDate()"
+              (input)="editPaymentDate.set($any($event.target).value)"
+            />
+          </label>
+
+          <label>
+            <span>Payment method</span>
+
+            <select
+              [value]="editPaymentMethod()"
+              (change)="editPaymentMethod.set($any($event.target).value)"
+            >
+              <option value="cash">Cash</option>
+              <option value="upi">UPI</option>
+              <option value="bank_transfer">Bank transfer</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Note</span>
+
+            <textarea
+              rows="3"
+              [value]="editPaymentNote()"
+              (input)="editPaymentNote.set($any($event.target).value)"
+            ></textarea>
+          </label>
+
+        </div>
+
+        <div class="modal-actions">
+
+          <button
+            type="button"
+            class="outline"
+            [disabled]="busy()"
+            (click)="closePaymentEdit()"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            class="primary"
+            [disabled]="busy()"
+            (click)="savePaymentEdit()"
+          >
+            {{ busy() ? 'Saving...' : 'Save changes' }}
+          </button>
+
+        </div>
+
+      </section>
+
+    </div>
+
+  }
+
+</section>
