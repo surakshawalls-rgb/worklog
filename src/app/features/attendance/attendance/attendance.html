@@ -230,11 +230,12 @@
                 class="calendar-cell"
                 [ngClass]="dayClass(calendarDate)"
                 [class.future-attendance]="isFutureDate(calendarDate)"
+                [class.past-locked]="isPastAttendanceLocked(calendarDate) && !calendarRecord"
                 [class.selected-day]="selectedDay() === calendarDate"
-                [attr.tabindex]="isFutureDate(calendarDate) ? -1 : 0"
-                [attr.aria-disabled]="isFutureDate(calendarDate)"
-                (click)="isFutureDate(calendarDate) ? null : openDay(calendarDate)"
-                (keydown.enter)="isFutureDate(calendarDate) ? null : openDay(calendarDate)"
+                [attr.tabindex]="(isFutureDate(calendarDate) || (isPastAttendanceLocked(calendarDate) && !calendarRecord)) ? -1 : 0"
+                [attr.aria-disabled]="isFutureDate(calendarDate) || (isPastAttendanceLocked(calendarDate) && !calendarRecord)"
+                (click)="(isFutureDate(calendarDate) || (isPastAttendanceLocked(calendarDate) && !calendarRecord)) ? null : openDay(calendarDate)"
+                (keydown.enter)="(isFutureDate(calendarDate) || (isPastAttendanceLocked(calendarDate) && !calendarRecord)) ? null : openDay(calendarDate)"
               >
 
                 <strong>
@@ -856,6 +857,7 @@
 
               <input
                 type="date"
+                [min]="session()?.role === 'admin' ? null : employeeAttendanceCutoffDate()"
                 [max]="today()"
                 [ngModel]="rangeStartDate()"
                 (ngModelChange)="rangeStartDate.set($event)"
@@ -867,6 +869,7 @@
 
               <input
                 type="date"
+                [min]="session()?.role === 'admin' ? null : employeeAttendanceCutoffDate()"
                 [max]="today()"
                 [ngModel]="rangeEndDate()"
                 (ngModelChange)="rangeEndDate.set($event)"

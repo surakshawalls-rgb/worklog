@@ -250,6 +250,15 @@ export class AttendanceComponent implements OnInit {
         record.attendance_date === date
     );
 
+    // Employees may view an old record, but they cannot create a new
+    // attendance entry once the 3-day marking window has passed.
+    if (!existing && this.isPastAttendanceLocked(date)) {
+      this.error.set(
+        'Attendance older than 3 days can only be marked by admin.'
+      );
+      return;
+    }
+
     this.modal.set(existing ? 'day' : 'attendance');
   }
 
@@ -294,8 +303,8 @@ export class AttendanceComponent implements OnInit {
       return;
     }
 
-    if (this.isFutureDate(date)) {
-      this.error.set('Future attendance cannot be marked.');
+    if (!this.canMarkAttendanceDate(date)) {
+      this.error.set(this.attendanceDateLockMessage(date));
       return;
     }
 
@@ -441,13 +450,15 @@ export class AttendanceComponent implements OnInit {
       return;
     }
 
-    if (
-      this.isFutureDate(start) ||
-      this.isFutureDate(end)
-    ) {
-      this.error.set(
-        'Future attendance cannot be marked.'
-      );
+    if (this.session()?.role !== 'admin') {
+      if (!this.canMarkAttendanceDate(start) || !this.canMarkAttendanceDate(end)) {
+        this.error.set(
+          'Employees can mark attendance only for today or the previous 3 days. Older dates are admin-only.'
+        );
+        return;
+      }
+    } else if (this.isFutureDate(start) || this.isFutureDate(end)) {
+      this.error.set('Future attendance cannot be marked.');
       return;
     }
 
@@ -574,7 +585,15 @@ export class AttendanceComponent implements OnInit {
     const record = this.recordFor(date);
 
     if (!record) {
-      return 'future';
+      if (this.isFutureDate(date)) {
+        return 'future';
+      }
+
+      if (this.isPastAttendanceLocked(date)) {
+        return 'past-locked';
+      }
+
+      return 'available';
     }
 
     if (record.approval_status === 'pending') {
@@ -610,8 +629,12 @@ export class AttendanceComponent implements OnInit {
   getAttendanceTypeLabel(date: string): string {
     const record = this.recordFor(date);
 
-    return record
-      ? record.attendance_type.replace('_', ' ')
+    if (record) {
+      return record.attendance_type.replace('_', ' ');
+    }
+
+    return this.isPastAttendanceLocked(date)
+      ? 'Locked'
       : '—';
   }
 
@@ -655,6 +678,49 @@ export class AttendanceComponent implements OnInit {
 
   isFutureDate(date: string): boolean {
     return date > this.today();
+  }
+
+  /**
+   * Employees can create attendance for today and the previous 3 days.
+   * Admin can create attendance for any non-future date.
+   */
+  isPastAttendanceLocked(date: string): boolean {
+    if (this.session()?.role === 'admin' || this.isFutureDate(date)) {
+      return false;
+    }
+
+    return date < this.dateDaysAgo(3);
+  }
+
+  canMarkAttendanceDate(date: string): boolean {
+    if (this.isFutureDate(date)) {
+      return false;
+    }
+
+    return this.session()?.role === 'admin' || !this.isPastAttendanceLocked(date);
+  }
+
+  attendanceDateLockMessage(date: string): string {
+    if (this.isFutureDate(date)) {
+      return 'Future attendance cannot be marked.';
+    }
+
+    return 'Employees can mark attendance only for today or the previous 3 days. Older dates are admin-only.';
+  }
+
+  employeeAttendanceCutoffDate(): string {
+    return this.dateDaysAgo(3);
+  }
+
+  private dateDaysAgo(days: number): string {
+    const now = new Date();
+    const value = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - days
+    );
+
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
   }
 
   private async run(

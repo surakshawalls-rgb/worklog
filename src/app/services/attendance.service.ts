@@ -106,6 +106,8 @@ export class AttendanceService {
     return this.mapAttendanceRows(data);
   }
   async submitAttendance(employeeId: number, userId: number, date: string, type: AttendanceType, note: string, customWage = 0): Promise<void> {
+    this.assertAttendanceDateAllowed(date, userId);
+
     const { data: employee } = await this.client.from('attendance_employees').select('default_daily_rate').eq('id', employeeId).single();
     if (!employee) throw new Error('Employee not found.');
     const rate = Number(employee.default_daily_rate);
@@ -156,6 +158,9 @@ export class AttendanceService {
     return Number(data);
   }
   async submitAttendanceRange(employeeIds: number[], startDate: string, endDate: string, type: AttendanceType, note: string, customWage: number, userId: number): Promise<number> {
+    this.assertAttendanceDateAllowed(startDate, userId);
+    this.assertAttendanceDateAllowed(endDate, userId);
+
     const { data, error } = await this.client.rpc('submit_attendance_range', { p_employee_ids: employeeIds, p_start_date: startDate, p_end_date: endDate, p_attendance_type: type, p_note: note || null, p_custom_wage: customWage || 0, p_submitted_by: userId });
     if (error) throw new Error(error.message.includes('ATTENDANCE_ALREADY_EXISTS_IN_RANGE') ? 'Attendance already exists for at least one selected day. Nothing was saved.' : error.message);
     return Number(data);
@@ -173,6 +178,33 @@ export class AttendanceService {
     const { error } = await this.client.rpc('publish_daily_announcement', { p_message: message, p_posted_by: adminId });
     if (error) throw new Error(error.message);
   }
+  private assertAttendanceDateAllowed(date: string, userId: number): void {
+    const user = this.getSession();
+
+    if (!user || user.id !== userId) {
+      throw new Error('Your session is invalid. Please log in again.');
+    }
+
+    if (date > this.today()) {
+      throw new Error('Future attendance cannot be marked.');
+    }
+
+    if (user.role !== 'admin' && date < this.dateDaysAgo(3)) {
+      throw new Error('Employees can mark attendance only for today or the previous 3 days. Older dates are admin-only.');
+    }
+  }
+
+  private today(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }
+
+  private dateDaysAgo(days: number): string {
+    const now = new Date();
+    const value = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days);
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+  }
+
   private mapAttendanceRows(rows: unknown[] | null): AttendanceRecord[] {
     return (rows || []).map(row => {
       const item = row as Record<string, unknown>;

@@ -404,28 +404,52 @@ button:disabled {
   white-space: nowrap;
 }
 
+.calendar-cell.available {
+  background: #f8faf8;
+  border-color: #cfdad2;
+}
+
 .calendar-cell.paid {
-  background: #b9dcd0;
+  background: #a8dfc2;
+  border-color: #74bd97;
 }
 
 .calendar-cell.unpaid {
-  background: #c7ebcd;
+  background: #b9d2ef;
+  border-color: #83a9d2;
 }
 
 .calendar-cell.partial {
-  background: #d8c5ee;
+  background: #d6b9ee;
+  border-color: #ad82d0;
 }
 
 .calendar-cell.pending {
-  background: #f4c994;
+  background: #ffd09a;
+  border-color: #e8aa5f;
 }
 
 .calendar-cell.half {
-  background: #f1dc88;
+  background: #f5df83;
+  border-color: #d3b94c;
 }
 
 .calendar-cell.leave {
-  background: #efa5a0;
+  background: #f1a6aa;
+  border-color: #d7787d;
+}
+
+.calendar-cell.past-locked {
+  background: #e8ece9;
+  border-color: #c7cfca;
+  color: #68756d;
+  cursor: not-allowed;
+  opacity: .72;
+}
+
+.calendar-cell.past-locked small {
+  color: #68756d;
+  font-weight: 700;
 }
 
 .calendar-cell.denied {
@@ -499,15 +523,15 @@ button:disabled {
 }
 
 .legend-dot.paid {
-  background: #8cc5b2;
+  background: #4fa878;
 }
 
 .legend-dot.unpaid {
-  background: #91d29b;
+  background: #5d8fc7;
 }
 
 .legend-dot.partial {
-  background: #ae8dd0;
+  background: #9462bd;
 }
 
 .legend-dot.pending {
