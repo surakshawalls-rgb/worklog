@@ -1,0 +1,22 @@
+<div class="notification-wrap">
+  <button type="button" class="notification-trigger" (click)="toggle()" aria-label="Notifications" title="Notifications">
+    <span class="bell">🔔</span>@if(unreadCount()>0){<span class="unread-badge">{{unreadCount()>99?'99+':unreadCount()}}</span>}
+  </button>
+  @if(open()){
+    <div class="notification-backdrop" (click)="close()"></div>
+    <section class="notification-panel" (click)="$event.stopPropagation()">
+      <div class="notification-header"><div><p class="eyebrow">SURAKSHA HUB</p><h2>Notifications</h2>@if(unreadCount()>0){<small>{{unreadCount()}} unread</small>}</div><div class="notification-header-actions">@if(unreadCount()>0){<button type="button" class="text-button" (click)="markAllRead()">Mark all read</button>}<button type="button" class="icon-button" (click)="close()">×</button></div></div>
+      @if(browserPermission()!=='granted'&&browserPermission()!=='unsupported'){
+        <div class="enable-box"><div><b>Enable browser notifications</b><small>Get an alert when SURAKSHA HUB is not open.</small></div><button type="button" class="outline" (click)="enableBrowserNotifications()">Enable</button></div>
+      }
+      @if(error()){<p class="notification-error">{{error()}}</p>}
+      <div class="notification-list">
+        @for(item of notifications();track item.id){
+          <button type="button" class="notification-item" [class.unread]="!item.is_read" (click)="openNotification(item)">
+            <span class="notification-icon">{{notificationIcon(item.type)}}</span><span class="notification-content"><b>{{item.title}}</b><span>{{item.message}}</span><small>{{timeAgo(item.created_at)}}</small></span>@if(!item.is_read){<span class="unread-dot"></span>}
+          </button>
+        }@empty{<div class="empty-notifications"><div class="empty-icon">🔔</div><b>You're all caught up</b><p>Important activity will appear here automatically.</p></div>}
+      </div>
+    </section>
+  }
+</div>

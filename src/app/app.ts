@@ -27,6 +27,8 @@ import { EmployeesComponent } from './features/employees/employees/employees';
 import { ApprovalsComponent } from './features/approvals/approvals/approvals';
 import { PaymentsComponent } from './features/payments/payments/payments';
 import { ReceiptsComponent } from './features/receipts/receipts/receipts';
+import { NotificationCenterComponent } from './features/notifications/notification-center/notification-center';
+import { AppNotification, NotificationService } from './services/notification.service';
 
 @Component({
   selector: 'app-root',
@@ -41,7 +43,8 @@ import { ReceiptsComponent } from './features/receipts/receipts/receipts';
     EmployeesComponent,
     ApprovalsComponent,
     PaymentsComponent,
-    ReceiptsComponent
+    ReceiptsComponent,
+    NotificationCenterComponent
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss'
@@ -49,6 +52,7 @@ import { ReceiptsComponent } from './features/receipts/receipts/receipts';
 export class App implements OnInit {
   private readonly attendance = inject(AttendanceService);
   private readonly router = inject(Router);
+  private readonly notifications = inject(NotificationService);
 
   @ViewChild(AttendanceComponent)
   private attendanceFeature?: AttendanceComponent;
@@ -109,7 +113,9 @@ export class App implements OnInit {
   }
 
   async init(): Promise<void> {
-    if (this.session()) {
+    const user = this.session();
+    if (user) {
+      await this.notifications.initialize(user.id);
       await this.refresh();
     }
   }
@@ -143,6 +149,7 @@ export class App implements OnInit {
 
   async onLoggedIn(user: SessionUser): Promise<void> {
     this.session.set(user);
+    await this.notifications.initialize(user.id);
     this.tab.set(user.role === 'admin' ? 'overview' : 'attendance');
     await this.refresh();
   }
@@ -157,6 +164,10 @@ export class App implements OnInit {
   }
 
   logout(): void {
+    this.notifications.unsubscribe();
+    this.notifications.notifications.set([]);
+    this.notifications.unreadCount.set(0);
+    this.notifications.initializedUserId.set(null);
     this.attendance.logout();
     this.session.set(null);
     this.tab.set('overview');
@@ -272,6 +283,36 @@ export class App implements OnInit {
       this.attendanceFeature?.selectEmployee(employee);
       this.attendanceFeature?.openDay(this.today());
     });
+  }
+
+
+  async onNotificationOpened(notification: AppNotification): Promise<void> {
+    switch (notification.action) {
+      case 'attendance':
+        this.selectTab('attendance');
+        break;
+      case 'approval':
+        if (this.session()?.role === 'admin') this.selectTab('approval');
+        else this.selectTab('attendance');
+        break;
+      case 'payment':
+        this.selectTab('payments');
+        break;
+      case 'employee':
+        if (this.session()?.role === 'admin') this.selectTab('employees');
+        break;
+      case 'announcement':
+        this.closeNotificationPanel();
+        break;
+      case 'security':
+        this.openPassword();
+        break;
+    }
+  }
+
+  private closeNotificationPanel(): void {
+    // The notification component owns its drawer; this hook intentionally
+    // remains lightweight so existing navigation is never interrupted.
   }
 
   onFeatureRefresh(): void {

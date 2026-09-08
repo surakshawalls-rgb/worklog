@@ -78,6 +78,8 @@
           {{ session()?.role }}
         </span>
 
+        <app-notification-center (notificationOpened)="onNotificationOpened($event)" />
+
         <button
           type="button"
           class="icon-button password-icon"
