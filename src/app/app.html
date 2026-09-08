@@ -78,8 +78,12 @@
           {{ session()?.role }}
         </span>
 
-        <button type="button" class="text-button top-action" (click)="openPassword()">
-          Password
+        <button
+          type="button"
+          class="icon-button password-icon"
+          (click)="openPassword()"
+          aria-label="Change password"
+          title="Change password">🔒
         </button>
 
         <button
