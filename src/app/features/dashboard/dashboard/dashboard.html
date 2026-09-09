@@ -24,33 +24,58 @@
       </div>
 
       <div class="period-actions">
-        <button type="button" class="outline" (click)="previousMonth()">‹</button>
-        <button type="button" class="outline" (click)="nextMonth()">›</button>
+        <button
+          type="button"
+          class="outline"
+          (click)="previousMonth()"
+          aria-label="Previous month"
+          title="Previous month"
+        >‹</button>
+
+        <button
+          type="button"
+          class="outline"
+          (click)="nextMonth()"
+          aria-label="Next month"
+          title="Next month"
+        >›</button>
       </div>
     </div>
   </section>
 
   <section class="stats-grid admin-stats">
     <article class="stat">
-      <span>Employees</span>
+      <div class="stat-top">
+        <span class="stat-icon" aria-hidden="true">👥</span>
+        <span class="stat-label">Employees</span>
+      </div>
       <strong>{{ employees.length }}</strong>
       <small>Active profiles</small>
     </article>
 
     <article class="stat">
-      <span>Monthly expense</span>
+      <div class="stat-top">
+        <span class="stat-icon" aria-hidden="true">₹</span>
+        <span class="stat-label">Monthly expense</span>
+      </div>
       <strong>{{ currency(totalExpense()) }}</strong>
       <small>Approved wages</small>
     </article>
 
     <article class="stat">
-      <span>Paid this month</span>
+      <div class="stat-top">
+        <span class="stat-icon" aria-hidden="true">✓</span>
+        <span class="stat-label">Paid this month</span>
+      </div>
       <strong>{{ currency(totalPaid()) }}</strong>
       <small>{{ paymentCount() }} payment{{ paymentCount() === 1 ? '' : 's' }}</small>
     </article>
 
     <article class="stat">
-      <span>Outstanding</span>
+      <div class="stat-top">
+        <span class="stat-icon" aria-hidden="true">↗</span>
+        <span class="stat-label">Outstanding</span>
+      </div>
       <strong>{{ currency(monthOutstanding()) }}</strong>
       <small>From this month's approved work</small>
     </article>

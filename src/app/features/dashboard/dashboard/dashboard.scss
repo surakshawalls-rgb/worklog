@@ -37,7 +37,7 @@
 .panel {
   border: 1px solid #dfe7e1;
   border-radius: 18px;
-  background: rgba(255,255,255,.96);
+  background: rgba(255, 255, 255, .96);
   box-shadow: 0 8px 28px rgba(25, 48, 38, .045);
   overflow: hidden;
 }
@@ -84,9 +84,9 @@
 .stat {
   position: relative;
   min-height: 128px;
-  padding: 19px;
+  padding: 17px;
   border: 1px solid #dfe7e1;
-  border-radius: 18px;
+  border-radius: 16px;
   background: #fff;
   box-shadow: 0 7px 22px rgba(25, 48, 38, .045);
   overflow: hidden;
@@ -104,31 +104,53 @@
   opacity: .55;
 }
 
-.stat span,
-.stat small {
+.stat-top {
   position: relative;
   z-index: 1;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
 }
 
-.stat span {
+.stat-icon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #eef5f0;
+  color: #246247;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.stat-label {
+  min-width: 0;
   color: #66756c;
   font-size: 12px;
   font-weight: 700;
+  line-height: 1.25;
 }
 
 .stat strong {
   position: relative;
   z-index: 1;
   display: block;
-  margin-top: 10px;
+  margin-top: 11px;
   color: #172820;
   font-size: clamp(23px, 3vw, 29px);
   line-height: 1.05;
   letter-spacing: -.025em;
+  overflow-wrap: anywhere;
 }
 
 .stat small {
+  position: relative;
+  z-index: 1;
+  display: block;
   margin-top: 9px;
   color: #89958e;
   font-size: 11px;
@@ -258,12 +280,30 @@
 
   .stat {
     min-height: 112px;
-    padding: 14px;
+    padding: 13px;
     border-radius: 14px;
+  }
+
+  .stat-icon {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+    border-radius: 9px;
+    font-size: 14px;
+  }
+
+  .stat-label {
+    font-size: 11px;
   }
 
   .stat strong {
     font-size: 21px;
+    margin-top: 9px;
+  }
+
+  .stat small {
+    font-size: 10px;
+    margin-top: 7px;
   }
 
   .panel-title {
@@ -276,5 +316,30 @@
 
   .quick-info {
     padding: 17px;
+  }
+}
+
+@media (max-width: 380px) {
+  .stat {
+    padding: 11px;
+  }
+
+  .stat-top {
+    gap: 7px;
+  }
+
+  .stat-icon {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
+    font-size: 13px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+  }
+
+  .stat strong {
+    font-size: 19px;
   }
 }

@@ -2,17 +2,24 @@
 
   <div class="feature-heading">
     <div>
-      <p class="eyebrow">DOCUMENT DESK</p>
-      <h2>Payment receipts</h2>
+      <div class="title-row">
+        <span class="title-icon" aria-hidden="true">▣</span>
+        <div>
+          <p class="eyebrow">DOCUMENT DESK</p>
+          <h2>Payment receipts</h2>
+        </div>
+      </div>
       <p class="muted">View, share and pay employee statements for any month.</p>
     </div>
 
     <button
       type="button"
-      class="outline"
+      class="outline top-action"
       (click)="refreshRequested.emit()"
+      aria-label="Refresh receipts"
     >
-      Refresh
+      <span class="ui-icon" aria-hidden="true">↻</span>
+      <span>Refresh</span>
     </button>
   </div>
 
@@ -79,26 +86,31 @@
   </div>
 
   <div class="period-hint">
-    Showing <b>{{ periodLabel() }}</b>.
-    Each employee appears only once, with all completed
-    payments for the selected month combined.
+    <span class="hint-icon" aria-hidden="true">i</span>
+    <span>
+      Showing <b>{{ periodLabel() }}</b>.
+      Each employee appears once with all completed payments for the selected month combined.
+    </span>
   </div>
 
   <div class="receipt-summary">
     <div class="summary-card">
-      <span>Employees paid</span>
+      <span class="summary-icon" aria-hidden="true">♙</span>
+      <div class="summary-copy"><span>Employees paid</span>
       <b>{{ receiptRows().length }}</b>
-      <small>In selected period</small>
+      <small>In selected period</small></div>
     </div>
     <div class="summary-card">
-      <span>Total paid</span>
+      <span class="summary-icon" aria-hidden="true">₹</span>
+      <div class="summary-copy"><span>Total paid</span>
       <b>{{ currency(receiptPayments().reduce((sum, payment) => sum + toNumber(payment.amount), 0)) }}</b>
-      <small>Completed payments</small>
+      <small>Completed payments</small></div>
     </div>
     <div class="summary-card">
-      <span>Payments</span>
+      <span class="summary-icon" aria-hidden="true">≡</span>
+      <div class="summary-copy"><span>Payments</span>
       <b>{{ receiptPayments().length }}</b>
-      <small>Transactions</small>
+      <small>Transactions</small></div>
     </div>
   </div>
 
@@ -115,15 +127,7 @@
       <article class="receipt-row">
 
         <div class="employee">
-
-          <div class="logo">
-            <img
-              src="/logo.png"
-              alt="Suraksha Group"
-            >
-          </div>
-
-          <div>
+<div>
             <b>{{ row.employee.name }}</b>
 
             <small>
@@ -148,12 +152,13 @@
             class="outline small"
             (click)="viewReceipt(row.latestPayment)"
           >
-            View receipt
+            <span class="ui-icon" aria-hidden="true">▤</span>
+            <span>View receipt</span>
           </button>
 
           <button
             type="button"
-            class="primary small"
+            class="outline small"
             (click)="printReceiptForPayment(row.latestPayment)"
           >
             PDF
@@ -165,7 +170,8 @@
               class="outline small"
               (click)="shareReceiptWhatsApp(row.latestPayment)"
             >
-              WhatsApp
+              <span class="ui-icon" aria-hidden="true">↗</span>
+              <span>WhatsApp</span>
             </button>
           }
 
@@ -224,13 +230,7 @@
       <article class="receipt">
 
         <header class="receipt-header">
-
-          <img
-            src="/logo.png"
-            alt="Suraksha Group logo"
-          >
-
-          <div>
+<div>
             <h1>Suraksha Group</h1>
             <p>Payment Receipt</p>
           </div>
@@ -416,7 +416,7 @@
 
           <button
             type="button"
-            class="primary"
+            class="outline"
             (click)="payEmployeeViaUpi()"
           >
             Pay with UPI

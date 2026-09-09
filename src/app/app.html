@@ -16,7 +16,7 @@
             <h2>Reset password</h2>
           </div>
 
-          <button type="button" class="icon-button" (click)="closeModal()">
+          <button type="button" class="icon-button" (click)="closeModal()" aria-label="Close">
             ×
           </button>
         </div>
@@ -60,32 +60,40 @@
   <div class="app-shell">
     <header class="topbar">
       <div class="brand">
-        <img class="app-header-logo" src="/logo.png" alt="Suraksha Group" />
-        <span>
-          <b>SURAKSHA HUB</b>
-          <small>Suraksha Group · Attendance &amp; wages</small>
-        </span>
+        <span class="brand-name">WorkLog</span>
       </div>
 
       <div class="user-menu">
-        <button type="button" class="text-button top-action" (click)="openCommunication()">
+        <button
+          type="button"
+          class="text-button top-action"
+          (click)="openCommunication()"
+        >
           Chat &amp; calls
         </button>
 
-        <span>{{ session()?.name }}</span>
+        <span class="user-name">{{ session()?.name }}</span>
 
-        <span class="role-chip">
-          {{ session()?.role }}
+        <span
+          class="role-mark"
+          [attr.title]="session()?.role === 'admin' ? 'Admin' : 'Employee'"
+          [attr.aria-label]="session()?.role === 'admin' ? 'Admin' : 'Employee'"
+        >
+          {{ session()?.role === 'admin' ? 'A' : 'E' }}
         </span>
 
-        <app-notification-center (notificationOpened)="onNotificationOpened($event)" />
+        <app-notification-center
+          (notificationOpened)="onNotificationOpened($event)"
+        />
 
         <button
           type="button"
           class="icon-button password-icon"
-          (click)="openPassword()"
+          (click)="modal.set('password')"
           aria-label="Change password"
-          title="Change password">🔒
+          title="Change password"
+        >
+          🔒
         </button>
 
         <button
@@ -93,6 +101,7 @@
           class="icon-button"
           (click)="logout()"
           aria-label="Sign out"
+          title="Sign out"
         >
           ↪
         </button>
@@ -258,7 +267,7 @@
               <h2>Change password</h2>
             </div>
 
-            <button type="button" class="icon-button" (click)="closeModal()">
+            <button type="button" class="icon-button" (click)="closeModal()" aria-label="Close">
               ×
             </button>
           </div>
@@ -308,7 +317,7 @@
               <h2>Tell the team about today</h2>
             </div>
 
-            <button type="button" class="icon-button" (click)="closeModal()">
+            <button type="button" class="icon-button" (click)="closeModal()" aria-label="Close">
               ×
             </button>
           </div>

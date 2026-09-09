@@ -1,73 +1,63 @@
 <section class="employees">
 
   <div class="page-heading">
-
-    <div>
+    <div class="heading-copy">
       <p class="eyebrow">PEOPLE</p>
-
-      <h1>
-        Employees
-      </h1>
-
+      <h1>Employees</h1>
       <p class="muted">
         Manage employee profiles, login access and wage rates.
       </p>
     </div>
 
     <div class="employee-heading-actions">
-
       <button
         type="button"
-        class="outline"
+        class="outline action-button"
         (click)="refresh()"
+        aria-label="Refresh employees"
       >
-        Refresh
+        <span class="button-icon" aria-hidden="true">↻</span>
+        <span>Refresh</span>
       </button>
 
       <button
         type="button"
-        class="primary"
+        class="primary action-button"
         (click)="openAddEmployee()"
       >
-        Add employee
+        <span class="button-icon" aria-hidden="true">+</span>
+        <span>Add employee</span>
       </button>
-
     </div>
-
   </div>
-
 
   @if (message()) {
     <div class="alert success">
-      {{ message() }}
+      <span class="alert-icon" aria-hidden="true">✓</span>
+      <span>{{ message() }}</span>
     </div>
   }
-
 
   @if (error()) {
     <div class="alert error">
-      {{ error() }}
+      <span class="alert-icon" aria-hidden="true">!</span>
+      <span>{{ error() }}</span>
     </div>
   }
 
-
   <!-- EMPLOYEE LIST -->
-
   <section class="panel">
 
     <div class="panel-title">
-
       <div>
-        <p class="eyebrow">PEOPLE</p>
+        <p class="eyebrow">TEAM</p>
         <h2>Employee profiles</h2>
       </div>
 
-      <span class="employee-count">
+      <span class="employee-count" [attr.aria-label]="employees.length + ' employees'">
         {{ employees.length }}
       </span>
-
     </div>
-
 
     <div class="employee-list">
 
@@ -79,43 +69,26 @@
             type="button"
             class="employee-main"
             (click)="selectEmployee(employee)"
+            [attr.aria-label]="'Open ' + employee.name"
           >
-
             <span class="avatar">
               {{ employee.name.slice(0, 1).toUpperCase() }}
             </span>
 
             <span class="employee-info">
-
-              <strong>
-                {{ employee.name }}
-              </strong>
-
-              <small>
-                {{ employee.employee_code }}
-              </small>
-
-              <small>
+              <strong>{{ employee.name }}</strong>
+              <small class="employee-code">{{ employee.employee_code }}</small>
+              <small class="employee-mobile">
+                <span aria-hidden="true">☎</span>
                 {{ employee.mobile || 'No mobile number' }}
               </small>
-
             </span>
-
           </button>
 
-
           <div class="employee-rate">
-
-            <span>
-              Daily rate
-            </span>
-
-            <strong>
-              {{ currency(employee.default_daily_rate) }}
-            </strong>
-
+            <span>Daily rate</span>
+            <strong>{{ currency(employee.default_daily_rate) }}</strong>
           </div>
-
 
           <div class="employee-actions">
 
@@ -124,19 +97,18 @@
               class="mark-button"
               (click)="openAttendance(employee)"
             >
-              <span>+</span>
-              Mark
+              <span class="action-icon" aria-hidden="true">✓</span>
+              <span>Mark</span>
             </button>
-
 
             <button
               type="button"
               class="share-button"
               (click)="shareCredentials(employee)"
             >
-              Share
+              <span class="action-icon" aria-hidden="true">↗</span>
+              <span>Share</span>
             </button>
-
 
             <button
               type="button"
@@ -144,7 +116,8 @@
               [disabled]="busy()"
               (click)="removeEmployee(employee)"
             >
-              Delete
+              <span class="action-icon" aria-hidden="true">⌫</span>
+              <span>Delete</span>
             </button>
 
           </div>
@@ -154,57 +127,41 @@
       }
 
       @empty {
-
         <div class="empty-state">
-
-          <h2>
-            No employees yet
-          </h2>
-
-          <p>
-            Add the first employee profile to begin.
-          </p>
+          <div class="empty-icon" aria-hidden="true">♙</div>
+          <h2>No employees yet</h2>
+          <p>Add the first employee profile to begin.</p>
 
           <button
             type="button"
             class="primary"
             (click)="openAddEmployee()"
           >
+            <span class="button-icon" aria-hidden="true">+</span>
             Add employee
           </button>
-
         </div>
-
       }
 
     </div>
-
   </section>
 
-
   <!-- ADD EMPLOYEE -->
-
   @if (showAddForm()) {
 
     <div
       class="modal-backdrop"
       (click)="closeAddEmployee()"
     >
-
       <section
         class="modal"
         (click)="$event.stopPropagation()"
       >
 
         <div class="modal-heading">
-
           <div>
-            <p class="eyebrow">PEOPLE</p>
-
-            <h2>
-              Add employee
-            </h2>
-
+            <p class="eyebrow">NEW EMPLOYEE</p>
+            <h2>Add employee</h2>
             <p class="muted">
               Create an employee profile and login account.
             </p>
@@ -214,18 +171,17 @@
             type="button"
             class="icon-button"
             (click)="closeAddEmployee()"
+            aria-label="Close"
+            title="Close"
           >
             ×
           </button>
-
         </div>
-
 
         <div class="form-grid">
 
           <label>
             Name
-
             <input
               [ngModel]="newEmployee().name"
               (ngModelChange)="updateName($event)"
@@ -234,25 +190,18 @@
             />
           </label>
 
-
           <label>
             Employee ID
-
             <input
               [ngModel]="newEmployee().employee_code"
               (ngModelChange)="updateEmployeeCode($event)"
               placeholder="Auto-generated: SH-001"
             />
-
-            <small>
-              Leave empty to generate automatically.
-            </small>
+            <small>Leave empty to generate automatically.</small>
           </label>
-
 
           <label>
             Mobile
-
             <input
               [ngModel]="newEmployee().mobile"
               (ngModelChange)="updateMobile($event)"
@@ -260,16 +209,13 @@
               required
               placeholder="Mobile number"
             />
-
             <small>
               Used as username and initial password for a new login.
             </small>
           </label>
 
-
           <label>
             Daily rate
-
             <input
               type="number"
               min="0"
@@ -278,10 +224,8 @@
             />
           </label>
 
-
           <label>
             Joining date
-
             <input
               type="date"
               [ngModel]="newEmployee().joining_date"
@@ -289,15 +233,12 @@
             />
           </label>
 
-
           <label>
             Existing Sync Point account
-
             <select
               [ngModel]="newEmployee().user_id"
               (ngModelChange)="updateUser($event)"
             >
-
               <option [ngValue]="null">
                 Create new login from mobile
               </option>
@@ -306,49 +247,40 @@
                 user of availableUsers();
                 track user.id
               ) {
-
                 <option [ngValue]="user.id">
                   {{ user.display_name || user.username }}
                   ({{ user.username }})
                 </option>
-
               }
-
             </select>
 
             <small>
               Select an existing account only if this employee already
               has a Sync Point login.
             </small>
-
           </label>
 
         </div>
 
-
         <div class="login-info">
-
-          <strong>
-            Login information
-          </strong>
-
-          <p>
-            When a new login is created, the employee's mobile number
-            will be used as both the initial username and password.
-          </p>
-
+          <div class="login-info-icon" aria-hidden="true">⌁</div>
+          <div>
+            <strong>Login information</strong>
+            <p>
+              When a new login is created, the employee's mobile number
+              will be used as both the initial username and password.
+            </p>
+          </div>
         </div>
-
 
         @if (error()) {
           <p class="alert error">
-            {{ error() }}
+            <span class="alert-icon" aria-hidden="true">!</span>
+            <span>{{ error() }}</span>
           </p>
         }
 
-
         <div class="modal-actions">
-
           <button
             type="button"
             class="outline"
@@ -366,13 +298,10 @@
           >
             {{ busy() ? 'Adding...' : 'Add employee' }}
           </button>
-
         </div>
 
       </section>
-
     </div>
-
   }
 
 </section>

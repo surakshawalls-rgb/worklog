@@ -68,29 +68,19 @@ button:disabled {
 }
 
 .brand {
-  gap: 12px;
+  display: flex;
+  align-items: center;
   min-width: 0;
 }
 
-.brand > span:last-child {
-  min-width: 0;
-}
-
-.brand b,
-.brand small {
+.brand-name {
   display: block;
-}
-
-.brand b {
-  letter-spacing: .12em;
-  font-size: 13px;
+  color: #f6f4ed;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.04em;
   white-space: nowrap;
-}
-
-.brand small {
-  color: #a9c3b4;
-  font-size: 11px;
-  margin-top: 3px;
+  line-height: 1;
 }
 
 .brand-mark {
@@ -115,27 +105,31 @@ button:disabled {
 }
 
 .user-menu {
-  gap: 13px;
+  gap: 8px;
   font-size: 13px;
   min-width: 0;
 }
 
-.user-menu > span:not(.role-chip) {
+.user-menu > .user-name {
   max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.role-chip {
-  border: 1px solid #789282;
-  color: #d4e3d9;
-  padding: 5px 9px;
-  border-radius: 20px;
+.role-mark {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(220, 235, 226, .28);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .07);
+  color: #e4eee7;
   font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  white-space: nowrap;
+  font-weight: 800;
+  letter-spacing: 0;
 }
 
 /* =========================================================
@@ -1484,25 +1478,24 @@ code {
   }
 
   .brand {
-    gap: 9px;
-    flex: 1 1 auto;
-  }
+  flex: 1 1 auto;
+  min-width: 0;
+}
 
-  .brand-mark.small {
-    width: 34px;
-    height: 34px;
-    flex-basis: 34px;
-  }
+.brand-name {
+  font-size: 21px;
+}
 
-  .brand b {
-    font-size: 11px;
-    letter-spacing: .09em;
-  }
+.user-menu > .user-name {
+  display: none;
+}
 
-  .brand small,
-  .user-menu > span:not(.role-chip) {
-    display: none;
-  }
+.role-mark {
+  width: 32px;
+  height: 32px;
+  flex-basis: 32px;
+  font-size: 11px;
+}
 
   .user-menu {
     margin-left: auto;
@@ -1518,9 +1511,11 @@ code {
     display: none;
   }
 
-  .role-chip {
-    padding: 5px 7px;
-    font-size: 9px;
+  .role-mark {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    font-size: 11px;
   }
 
   .user-menu .icon-button {
@@ -2728,5 +2723,74 @@ code {
   }
   .receipt-employee-card {
     padding: 12px;
+  }
+}
+
+
+/* =========================================================
+   WORKLOG HEADER REFINEMENTS
+   ========================================================= */
+
+.topbar {
+  padding-top: max(0px, env(safe-area-inset-top));
+}
+
+.topbar .user-menu {
+  align-items: center;
+}
+
+.topbar .text-button {
+  color: #dcebe2;
+  padding: 7px 8px;
+  border-radius: 8px;
+}
+
+.topbar .text-button:hover,
+.topbar .text-button:focus-visible {
+  color: #ffffff;
+  background: rgba(255, 255, 255, .08);
+}
+
+.topbar .icon-button {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  padding: 0;
+  border-radius: 10px;
+  background: transparent;
+}
+
+.topbar .icon-button:hover,
+.topbar .icon-button:focus-visible {
+  background: rgba(255, 255, 255, .08);
+}
+
+@media (max-width: 700px) {
+  .topbar {
+    min-height: 60px;
+    padding-left: 14px;
+    padding-right: 10px;
+  }
+
+  .brand-name {
+    font-size: 20px;
+  }
+
+  .user-menu {
+    gap: 2px;
+  }
+
+  .user-menu .icon-button {
+    width: 38px;
+    height: 38px;
+    flex-basis: 38px;
+    font-size: 20px;
+  }
+
+  .role-mark {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+    font-size: 10px;
   }
 }
