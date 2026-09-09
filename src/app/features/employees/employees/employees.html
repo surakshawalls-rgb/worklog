@@ -92,11 +92,26 @@
             </span>
           </button>
 
+          <div class="employee-financial">
+
           <div class="employee-rate">
             <span>Daily rate</span>
             <strong>
               {{ currency(employee.default_daily_rate) }}
             </strong>
+          </div>
+          
+          <div class="employee-balance" [class.pending]="employeeBalance(employee) > 0"
+            [class.advance]="employeeBalance(employee) < 0" [class.settled]="employeeBalance(employee) === 0">
+            <span>
+              {{ employeeBalanceLabel(employee) }}
+            </span>
+          
+            <strong>
+              {{ currency(employeeBalanceAmount(employee)) }}
+            </strong>
+          </div>
+          
           </div>
 
           <div class="employee-actions">

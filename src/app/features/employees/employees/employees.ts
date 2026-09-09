@@ -10,8 +10,10 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import {
+  AttendanceRecord,
   AttendanceService,
   Employee,
+  Payment,
   UserOption
 } from '../../../services/attendance.service';
 
@@ -29,6 +31,8 @@ import { ConversationService } from '../../../services/conversation.service';
 export class EmployeesComponent {
   @Input() employees: Employee[] = [];
   @Input() users: UserOption[] = [];
+  @Input() records: AttendanceRecord[] = [];
+  @Input() allPayments: Payment[] = [];
 
   @Output() employeeSelected =
     new EventEmitter<Employee>();
@@ -79,6 +83,61 @@ export class EmployeesComponent {
       user => !linkedUserIds.has(user.id)
     );
   };
+
+    employeeEarned(employee: Employee): number {
+    return this.records
+      .filter(
+        record =>
+          record.employee_id === employee.id &&
+          record.approval_status === 'approved'
+      )
+      .reduce(
+        (total, record) =>
+          total + Number(record.earned_amount || 0),
+        0
+      );
+  }
+
+  employeePaid(employee: Employee): number {
+    return this.allPayments
+      .filter(
+        payment =>
+          payment.employee_id === employee.id &&
+          payment.status === 'completed'
+      )
+      .reduce(
+        (total, payment) =>
+          total + Number(payment.amount || 0),
+        0
+      );
+  }
+
+  employeeBalance(employee: Employee): number {
+    return (
+      this.employeeEarned(employee) -
+      this.employeePaid(employee)
+    );
+  }
+
+  employeeBalanceLabel(employee: Employee): string {
+    const balance = this.employeeBalance(employee);
+
+    if (balance > 0) {
+      return 'Pending';
+    }
+
+    if (balance < 0) {
+      return 'Advance';
+    }
+
+    return 'Settled';
+  }
+
+  employeeBalanceAmount(employee: Employee): number {
+    return Math.abs(
+      this.employeeBalance(employee)
+    );
+  }
 
   openAddEmployee(): void {
     this.error.set('');

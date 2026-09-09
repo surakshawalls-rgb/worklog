@@ -229,6 +229,8 @@
           <app-employees
             [employees]="employees()"
             [users]="users()"
+            [records]="records()"
+            [allPayments]="allPayments()"
             (employeeSelected)="onEmployeeSelected($event)"
             (attendanceRequested)="onAttendanceRequested($event)"
             (refreshRequested)="onFeatureRefresh()"
