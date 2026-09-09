@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, Input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
@@ -7,6 +7,7 @@ import {
   AttendanceService,
   AttendanceType,
   Employee,
+  Payment,
   SessionUser
 } from '../../../services/attendance.service';
 
@@ -25,6 +26,7 @@ export class AttendanceComponent implements OnInit {
 
   readonly employees = signal<Employee[]>([]);
   readonly records = signal<AttendanceRecord[]>([]);
+  @Input() allPayments: Payment[] = [];
 
   readonly selectedEmployee = signal<Employee | null>(null);
   readonly month = signal(
@@ -87,6 +89,65 @@ export class AttendanceComponent implements OnInit {
       record => record.employee_id === employee.id
     );
   });
+
+    readonly selectedEmployeeEarned = computed(() =>
+    this.currentRecords()
+      .filter(
+        record =>
+          record.approval_status === 'approved'
+      )
+      .reduce(
+        (total, record) =>
+          total + Number(record.earned_amount || 0),
+        0
+      )
+  );
+
+  readonly selectedEmployeePaid = computed(() => {
+    const employee = this.currentEmployee();
+
+    if (!employee) {
+      return 0;
+    }
+
+    return this.allPayments
+      .filter(
+        payment =>
+          payment.employee_id === employee.id &&
+          payment.status === 'completed'
+      )
+      .reduce(
+        (total, payment) =>
+          total + Number(payment.amount || 0),
+        0
+      );
+  });
+
+  readonly selectedEmployeeBalance = computed(() =>
+    this.selectedEmployeeEarned() -
+    this.selectedEmployeePaid()
+  );
+
+  readonly selectedEmployeeBalanceLabel = computed(() => {
+    const balance =
+      this.selectedEmployeeBalance();
+
+    if (balance > 0) {
+      return 'Due';
+    }
+
+    if (balance < 0) {
+      return 'Advance';
+    }
+
+    return 'Settled';
+  });
+
+  readonly selectedEmployeeBalanceAmount = computed(() =>
+    Math.abs(
+      this.selectedEmployeeBalance()
+    )
+  );
 
   readonly monthRecords = computed(() => {
     const value = this.month();

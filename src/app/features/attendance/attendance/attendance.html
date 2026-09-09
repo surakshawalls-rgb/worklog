@@ -133,8 +133,19 @@
             ·
             {{ currentEmployee()?.mobile || 'No mobile' }}
           </p>
-
-        </div>
+          
+          <div class="selected-employee-balance" [class.pending]="selectedEmployeeBalance() > 0"
+            [class.advance]="selectedEmployeeBalance() < 0" [class.settled]="selectedEmployeeBalance() === 0">
+            <span>
+              {{ selectedEmployeeBalanceLabel() }}
+            </span>
+          
+            <strong>
+              {{ currency(selectedEmployeeBalanceAmount()) }}
+            </strong>
+          </div>
+          
+          </div>
 
 
         <div class="month-controls">

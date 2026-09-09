@@ -139,11 +139,9 @@
             </button>
         </section>
 
-        <app-attendance
-          [hidden]="tab() !== 'attendance'"
-        />
-
-      </main>
+        <app-attendance [hidden]="tab() !== 'attendance'" [allPayments]="allPayments()" />
+        
+        </main>
 
     }
     @else {
@@ -220,8 +218,8 @@
 
         @if (tab() === 'attendance') {
 
-          <app-attendance />
-
+          <app-attendance [allPayments]="allPayments()" />
+          
         }
 
         @if (tab() === 'employees') {

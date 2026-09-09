@@ -52,7 +52,8 @@ export class EmployeesComponent {
    * Holds the user ID of the employee whose chat
    * conversation is currently being opened.
    */
-  readonly chattingUserId = signal<number | null>(null);
+  readonly chattingUserId =
+    signal<number | null>(null);
 
   readonly newEmployee = signal({
     name: '',
@@ -84,7 +85,12 @@ export class EmployeesComponent {
     );
   };
 
-    employeeEarned(employee: Employee): number {
+  /*
+   * Total approved earnings for this employee.
+   */
+  employeeEarned(
+    employee: Employee
+  ): number {
     return this.records
       .filter(
         record =>
@@ -98,7 +104,12 @@ export class EmployeesComponent {
       );
   }
 
-  employeePaid(employee: Employee): number {
+  /*
+   * Total completed payments made to this employee.
+   */
+  employeePaid(
+    employee: Employee
+  ): number {
     return this.allPayments
       .filter(
         payment =>
@@ -112,15 +123,28 @@ export class EmployeesComponent {
       );
   }
 
-  employeeBalance(employee: Employee): number {
+  /*
+   * Positive balance = employee is still owed money.
+   * Negative balance = employee has received an advance.
+   * Zero = completely settled.
+   */
+  employeeBalance(
+    employee: Employee
+  ): number {
     return (
       this.employeeEarned(employee) -
       this.employeePaid(employee)
     );
   }
 
-  employeeBalanceLabel(employee: Employee): string {
-    const balance = this.employeeBalance(employee);
+  /*
+   * Display label for employee balance.
+   */
+  employeeBalanceLabel(
+    employee: Employee
+  ): string {
+    const balance =
+      this.employeeBalance(employee);
 
     if (balance > 0) {
       return 'Pending';
@@ -133,7 +157,13 @@ export class EmployeesComponent {
     return 'Settled';
   }
 
-  employeeBalanceAmount(employee: Employee): number {
+  /*
+   * Always display the balance as a positive amount.
+   * The label tells whether it is Pending or Advance.
+   */
+  employeeBalanceAmount(
+    employee: Employee
+  ): number {
     return Math.abs(
       this.employeeBalance(employee)
     );
@@ -156,141 +186,170 @@ export class EmployeesComponent {
   }
 
   closeAddEmployee(): void {
-    if (this.busy()) return;
+    if (this.busy()) {
+      return;
+    }
 
     this.showAddForm.set(false);
     this.error.set('');
   }
 
-  updateName(value: string): void {
-    this.newEmployee.update(employee => ({
-      ...employee,
-      name: value
-    }));
+  updateName(
+    value: string
+  ): void {
+    this.newEmployee.update(
+      employee => ({
+        ...employee,
+        name: value
+      })
+    );
   }
 
-  updateEmployeeCode(value: string): void {
-    this.newEmployee.update(employee => ({
-      ...employee,
-      employee_code: value
-    }));
+  updateEmployeeCode(
+    value: string
+  ): void {
+    this.newEmployee.update(
+      employee => ({
+        ...employee,
+        employee_code: value
+      })
+    );
   }
 
-  updateMobile(value: string): void {
-    this.newEmployee.update(employee => ({
-      ...employee,
-      mobile: value
-    }));
+  updateMobile(
+    value: string
+  ): void {
+    this.newEmployee.update(
+      employee => ({
+        ...employee,
+        mobile: value
+      })
+    );
   }
 
   updateDailyRate(
     value: number | string
   ): void {
-    this.newEmployee.update(employee => ({
-      ...employee,
-      default_daily_rate:
-        Number(value) || 0
-    }));
+    this.newEmployee.update(
+      employee => ({
+        ...employee,
+        default_daily_rate:
+          Number(value) || 0
+      })
+    );
   }
 
   updateJoiningDate(
     value: string
   ): void {
-    this.newEmployee.update(employee => ({
-      ...employee,
-      joining_date: value
-    }));
+    this.newEmployee.update(
+      employee => ({
+        ...employee,
+        joining_date: value
+      })
+    );
   }
 
   updateUser(
     value: number | string | null
   ): void {
-    this.newEmployee.update(employee => ({
-      ...employee,
-      user_id: value
-        ? Number(value)
-        : null
-    }));
+    this.newEmployee.update(
+      employee => ({
+        ...employee,
+        user_id: value
+          ? Number(value)
+          : null
+      })
+    );
   }
 
   /*
    * Open or create a conversation with the selected employee.
    *
    * The existing ConversationService handles the
-   * get-or-create logic, so we don't create a second
-   * conversation architecture here.
+   * get-or-create logic.
    */
   async openChat(
-  employee: Employee,
-  event?: Event
-): Promise<void> {
-  event?.stopPropagation();
+    employee: Employee,
+    event?: Event
+  ): Promise<void> {
+    event?.stopPropagation();
 
-  if (this.chattingUserId() !== null) {
-    return;
-  }
-
-  if (!employee.user_id) {
-    this.error.set(
-      `${employee.name} does not have a linked login account, so chat is not available.`
-    );
-    return;
-  }
-
-  const currentUser =
-    this.attendance.getSession();
-
-  if (!currentUser) {
-    this.error.set(
-      'Please log in again to start a chat.'
-    );
-    return;
-  }
-
-  if (employee.user_id === currentUser.id) {
-    this.error.set(
-      'You cannot start a chat with your own account.'
-    );
-    return;
-  }
-
-  this.chattingUserId.set(employee.user_id);
-  this.error.set('');
-  this.message.set('');
-
-  try {
-    const conversationId =
-      await this.conversationService.getOrCreateConversation(
-        currentUser.id,
-        employee.user_id
-      );
-
-    if (!conversationId) {
-      throw new Error(
-        `Unable to create or find a conversation with ${employee.name}.`
-      );
+    if (this.chattingUserId() !== null) {
+      return;
     }
 
-    await this.router.navigate(
-      ['/chat', conversationId],
-      {
-        state: {
-          otherDisplayName: employee.name,
-          otherUserId: employee.user_id
-        }
+    if (!employee.user_id) {
+      this.error.set(
+        `${employee.name} does not have a linked login account, so chat is not available.`
+      );
+      return;
+    }
+
+    const currentUser =
+      this.attendance.getSession();
+
+    if (!currentUser) {
+      this.error.set(
+        'Please log in again to start a chat.'
+      );
+      return;
+    }
+
+    if (
+      employee.user_id === currentUser.id
+    ) {
+      this.error.set(
+        'You cannot start a chat with your own account.'
+      );
+      return;
+    }
+
+    this.chattingUserId.set(
+      employee.user_id
+    );
+
+    this.error.set('');
+    this.message.set('');
+
+    try {
+      const conversationId =
+        await this.conversationService
+          .getOrCreateConversation(
+            currentUser.id,
+            employee.user_id
+          );
+
+      if (!conversationId) {
+        throw new Error(
+          `Unable to create or find a conversation with ${employee.name}.`
+        );
       }
-    );
-  } catch (error) {
-    this.error.set(
-      this.readError(error)
-    );
-  } finally {
-    this.chattingUserId.set(null);
+
+      await this.router.navigate(
+        ['/chat', conversationId],
+        {
+          state: {
+            otherDisplayName:
+              employee.name,
+            otherUserId:
+              employee.user_id
+          }
+        }
+      );
+    } catch (error) {
+      this.error.set(
+        this.readError(error)
+      );
+    } finally {
+      this.chattingUserId.set(null);
+    }
   }
-}
 
   async saveEmployee(): Promise<void> {
-    if (this.busy()) return;
+    if (this.busy()) {
+      return;
+    }
 
     const value =
       this.newEmployee();
@@ -312,7 +371,9 @@ export class EmployeesComponent {
       return;
     }
 
-    if (value.default_daily_rate < 0) {
+    if (
+      value.default_daily_rate < 0
+    ) {
       this.error.set(
         'Daily rate cannot be negative.'
       );
@@ -329,19 +390,22 @@ export class EmployeesComponent {
     this.busy.set(true);
 
     try {
-      let userId = value.user_id;
+      let userId =
+        value.user_id;
 
       /*
-       * If no existing Sync Point account is selected,
-       * create a new employee login using the mobile number.
+       * If no existing account is selected,
+       * create a new employee login using
+       * the mobile number.
        */
       if (!userId) {
         userId =
-          await this.attendance.createEmployeeLogin(
-            value.mobile.trim(),
-            value.mobile.trim(),
-            value.name.trim()
-          );
+          await this.attendance
+            .createEmployeeLogin(
+              value.mobile.trim(),
+              value.mobile.trim(),
+              value.name.trim()
+            );
       }
 
       const employeeCode =
@@ -353,8 +417,10 @@ export class EmployeesComponent {
       await this.attendance.saveEmployee({
         user_id: userId,
         name: value.name.trim(),
-        employee_code: employeeCode,
-        mobile: value.mobile.trim(),
+        employee_code:
+          employeeCode,
+        mobile:
+          value.mobile.trim(),
         default_daily_rate:
           value.default_daily_rate,
         joining_date:
@@ -405,23 +471,29 @@ export class EmployeesComponent {
   async removeEmployee(
     employee: Employee
   ): Promise<void> {
-    if (this.busy()) return;
+    if (this.busy()) {
+      return;
+    }
 
-    const confirmed = confirm(
-      `Delete ${employee.name} (${employee.employee_code})?\n\n` +
-      `This is only allowed when no attendance or payment history exists.`
-    );
+    const confirmed =
+      confirm(
+        `Delete ${employee.name} (${employee.employee_code})?\n\n` +
+        `This is only allowed when no attendance or payment history exists.`
+      );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     this.busy.set(true);
     this.error.set('');
     this.message.set('');
 
     try {
-      await this.attendance.deleteEmployee(
-        employee.id
-      );
+      await this.attendance
+        .deleteEmployee(
+          employee.id
+        );
 
       this.message.set(
         `${employee.name} was deleted successfully.`
@@ -454,7 +526,9 @@ export class EmployeesComponent {
       `Please change your password after signing in.`;
 
     window.location.href =
-      `sms:${employee.mobile}?body=${encodeURIComponent(text)}`;
+      `sms:${employee.mobile}?body=${encodeURIComponent(
+        text
+      )}`;
   }
 
   selectEmployee(
