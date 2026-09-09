@@ -1,69 +1,27 @@
-@if (isCommunicationRoute()) {
-  <router-outlet />
-}
-@else if (!session()) {
+@if (!session()) {
+
   <app-login
     (loggedIn)="onLoggedIn($event)"
     (forgotPassword)="onForgotPassword()"
   />
 
-  @if (modal() === 'password') {
-    <div class="modal-backdrop" (click)="closeModal()">
-      <section class="modal" (click)="$event.stopPropagation()">
-        <div class="modal-heading">
-          <div>
-            <p class="eyebrow">ACCOUNT SECURITY</p>
-            <h2>Reset password</h2>
-          </div>
+}
+@else if (isCommunicationRoute() && !currentUrl().startsWith('/chat/')) {
 
-          <button type="button" class="icon-button" (click)="closeModal()" aria-label="Close">
-            ×
-          </button>
-        </div>
+  <router-outlet />
 
-        <label>
-          Username or mobile
-          <input
-            [ngModel]="forgotUsername()"
-            (ngModelChange)="forgotUsername.set($event)"
-            autocomplete="username"
-          />
-        </label>
-
-        <label>
-          New password
-          <input
-            type="password"
-            [ngModel]="passwordNew()"
-            (ngModelChange)="passwordNew.set($event)"
-            autocomplete="new-password"
-          />
-        </label>
-
-        @if (error()) {
-          <p class="alert error">{{ error() }}</p>
-        }
-
-        <button
-          type="button"
-          class="primary wide"
-          [disabled]="busy()"
-          (click)="forgotPassword()"
-        >
-          {{ busy() ? 'Resetting...' : 'Reset password' }}
-        </button>
-      </section>
-    </div>
-  }
 }
 @else {
+
   <div class="app-shell">
+
     <header class="topbar">
       <div class="brand">
         <span class="brand-name">WorkLog</span>
       </div>
 
       <div class="user-menu">
+
         <button
           type="button"
           class="text-button top-action"
@@ -72,7 +30,9 @@
           Chat &amp; calls
         </button>
 
-        <span class="user-name">{{ session()?.name }}</span>
+        <span class="user-name">
+          {{ session()?.name }}
+        </span>
 
         <span
           class="role-mark"
@@ -105,45 +65,70 @@
         >
           ↪
         </button>
+
       </div>
     </header>
 
     @if (announcement() || session()?.role === 'admin') {
+
       <section
         class="daily-plan-banner"
         [class.empty-plan]="!announcement()"
       >
+
         <div>
           <p class="eyebrow">TODAY'S WORK PLAN</p>
+
           <p>
-            {{ announcement()?.message || 'No work plan has been posted for today.' }}
+            {{
+              announcement()?.message ||
+              'No work plan has been posted for today.'
+            }}
           </p>
         </div>
 
         @if (session()?.role === 'admin') {
-          <button type="button" class="outline plan-edit" (click)="openAnnouncementEditor()">
+
+          <button
+            type="button"
+            class="outline plan-edit"
+            (click)="openAnnouncementEditor()"
+          >
             {{ announcement() ? 'Update plan' : 'Post plan' }}
           </button>
+
         }
+
       </section>
+
     }
 
     @if (message()) {
+
       <div class="alert success page-alert">
         {{ message() }}
       </div>
+
     }
 
     @if (error()) {
+
       <div class="alert error page-alert">
         {{ error() }}
       </div>
+
     }
 
     @if (session()?.role === 'employee') {
+
       <main class="page employee-page">
+
         <section class="attendance-shortcut">
-          <button type="button" class="outline" (click)="selectTab('attendance')">
+          <button
+            type="button"
+            class="outline"
+            (click)="selectTab('attendance')"
+          >
             Open attendance
           </button>
         </section>
@@ -151,11 +136,19 @@
         <app-attendance
           [hidden]="tab() !== 'attendance'"
         />
+
       </main>
+
     }
     @else {
+
       <main class="page admin-page">
-        <nav class="tabs" aria-label="Admin sections">
+
+        <nav
+          class="tabs"
+          aria-label="Admin sections"
+        >
+
           <button
             type="button"
             [class.active]="tab() === 'overview'"
@@ -204,9 +197,11 @@
           >
             Receipts
           </button>
+
         </nav>
 
         @if (tab() === 'overview') {
+
           <app-dashboard
             [employees]="employees()"
             [records]="records()"
@@ -214,13 +209,17 @@
             [pendingCount]="pendingRecords().length"
             (refreshRequested)="onDashboardRefresh()"
           />
+
         }
 
         @if (tab() === 'attendance') {
+
           <app-attendance />
+
         }
 
         @if (tab() === 'employees') {
+
           <app-employees
             [employees]="employees()"
             [users]="users()"
@@ -228,52 +227,78 @@
             (attendanceRequested)="onAttendanceRequested($event)"
             (refreshRequested)="onFeatureRefresh()"
           />
+
         }
 
         @if (tab() === 'approval') {
+
           <app-approvals
             [records]="records()"
             [employees]="employees()"
             (refreshRequested)="onFeatureRefresh()"
           />
+
         }
 
         @if (tab() === 'payments') {
+
           <app-payments
             [employees]="employees()"
             [payments]="payments()"
             [allPayments]="allPayments()"
             (refreshRequested)="onFeatureRefresh()"
           />
+
         }
 
         @if (tab() === 'receipts') {
+
           <app-receipts
             [employees]="employees()"
             [records]="records()"
             [allPayments]="allPayments()"
             (refreshRequested)="onFeatureRefresh()"
           />
+
         }
+
       </main>
+
     }
 
     @if (modal() === 'password') {
-      <div class="modal-backdrop" (click)="closeModal()">
-        <section class="modal" (click)="$event.stopPropagation()">
+
+      <div
+        class="modal-backdrop"
+        (click)="closeModal()"
+      >
+
+        <section
+          class="modal"
+          (click)="$event.stopPropagation()"
+        >
+
           <div class="modal-heading">
+
             <div>
               <p class="eyebrow">ACCOUNT SECURITY</p>
               <h2>Change password</h2>
             </div>
 
-            <button type="button" class="icon-button" (click)="closeModal()" aria-label="Close">
+            <button
+              type="button"
+              class="icon-button"
+              (click)="closeModal()"
+              aria-label="Close"
+            >
               ×
             </button>
+
           </div>
 
           <label>
             Current password
+
             <input
               type="password"
               [ngModel]="passwordCurrent()"
@@ -284,6 +309,7 @@
 
           <label>
             New password
+
             <input
               type="password"
               [ngModel]="passwordNew()"
@@ -293,7 +319,11 @@
           </label>
 
           @if (error()) {
-            <p class="alert error">{{ error() }}</p>
+
+            <p class="alert error">
+              {{ error() }}
+            </p>
+
           }
 
           <button
@@ -304,30 +334,51 @@
           >
             {{ busy() ? 'Updating...' : 'Update password' }}
           </button>
+
         </section>
+
       </div>
+
     }
 
     @if (modal() === 'announcement') {
-      <div class="modal-backdrop" (click)="closeModal()">
-        <section class="modal" (click)="$event.stopPropagation()">
+
+      <div
+        class="modal-backdrop"
+        (click)="closeModal()"
+      >
+
+        <section
+          class="modal"
+          (click)="$event.stopPropagation()"
+        >
+
           <div class="modal-heading">
+
             <div>
               <p class="eyebrow">DAILY WORK PLAN</p>
               <h2>Tell the team about today</h2>
             </div>
 
-            <button type="button" class="icon-button" (click)="closeModal()" aria-label="Close">
+            <button
+              type="button"
+              class="icon-button"
+              (click)="closeModal()"
+              aria-label="Close"
+            >
               ×
             </button>
+
           </div>
 
           <p class="muted">
-            This banner is shown to everyone after login and automatically disappears at 8:00 PM India time.
+            This banner is shown to everyone after login and automatically
+            disappears at 8:00 PM India time.
           </p>
 
           <label>
             Today's plan
+
             <textarea
               [ngModel]="announcementText()"
               (ngModelChange)="announcementText.set($event)"
@@ -337,7 +388,11 @@
           </label>
 
           @if (error()) {
-            <p class="alert error">{{ error() }}</p>
+
+            <p class="alert error">
+              {{ error() }}
+            </p>
+
           }
 
           <button
@@ -348,8 +403,39 @@
           >
             {{ busy() ? 'Posting...' : 'Post today’s plan' }}
           </button>
+
         </section>
+
       </div>
+
     }
+
+    <!-- =====================================================
+         FLOATING CHAT POPUP
+         Only /chat/:id uses this popup.
+         /chats, /people, /profile and /call remain full-page.
+         ===================================================== -->
+
+    @if (currentUrl().startsWith('/chat/')) {
+
+      <div
+        class="chat-overlay"
+        (click)="closeCommunication()"
+      >
+
+        <section
+          class="chat-popup"
+          (click)="$event.stopPropagation()"
+        >
+
+          <router-outlet />
+
+        </section>
+
+      </div>
+
+    }
+
   </div>
+
 }

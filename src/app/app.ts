@@ -8,7 +8,12 @@ import {
   signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterOutlet } from '@angular/router';
+import {
+  NavigationEnd,
+  Router,
+  RouterOutlet
+} from '@angular/router';
+import { filter } from 'rxjs/operators';
 
 import {
   AttendanceRecord,
@@ -28,7 +33,10 @@ import { ApprovalsComponent } from './features/approvals/approvals/approvals';
 import { PaymentsComponent } from './features/payments/payments/payments';
 import { ReceiptsComponent } from './features/receipts/receipts/receipts';
 import { NotificationCenterComponent } from './features/notifications/notification-center/notification-center';
-import { AppNotification, NotificationService } from './services/notification.service';
+import {
+  AppNotification,
+  NotificationService
+} from './services/notification.service';
 
 @Component({
   selector: 'app-root',
@@ -60,7 +68,10 @@ export class App implements OnInit {
   @ViewChild(EmployeesComponent)
   private employeesFeature?: EmployeesComponent;
 
-  readonly session = signal<SessionUser | null>(this.attendance.getSession());
+  readonly session = signal<SessionUser | null>(
+    this.attendance.getSession()
+  );
+
   readonly employees = signal<Employee[]>([]);
   readonly users = signal<UserOption[]>([]);
   readonly records = signal<AttendanceRecord[]>([]);
@@ -73,7 +84,12 @@ export class App implements OnInit {
   readonly error = signal('');
 
   readonly tab = signal<
-    'overview' | 'attendance' | 'employees' | 'approval' | 'payments' | 'receipts'
+    'overview' |
+    'attendance' |
+    'employees' |
+    'approval' |
+    'payments' |
+    'receipts'
   >('overview');
 
   readonly modal = signal<'password' | 'announcement' | null>(null);
@@ -83,22 +99,42 @@ export class App implements OnInit {
   readonly forgotUsername = signal('');
   readonly announcementText = signal('');
 
+  /*
+   * Reactive current URL.
+   *
+   * Router.url itself is not a signal, so using it directly inside
+   * computed() does not cause the template to update after navigation.
+   */
+  readonly currentUrl = signal('');
+
   readonly pendingRecords = computed(() =>
-    this.records().filter(record => record.approval_status === 'pending')
+    this.records().filter(
+      record => record.approval_status === 'pending'
+    )
   );
 
   readonly approvedCount = computed(() =>
-    this.records().filter(record => record.approval_status === 'approved').length
+    this.records().filter(
+      record => record.approval_status === 'approved'
+    ).length
   );
 
   readonly totalOutstanding = computed(() =>
     this.records()
       .filter(record => record.approval_status === 'approved')
-      .reduce((total, record) => total + Number(record.outstanding_amount || 0), 0)
+      .reduce(
+        (total, record) =>
+          total + Number(record.outstanding_amount || 0),
+        0
+      )
   );
 
+  /*
+   * Communication pages are displayed through the router outlet.
+   */
   readonly isCommunicationRoute = computed(() => {
-    const url = this.router.url;
+    const url = this.currentUrl();
+
     return (
       url.startsWith('/chats') ||
       url.startsWith('/chat/') ||
@@ -109,11 +145,29 @@ export class App implements OnInit {
   });
 
   ngOnInit(): void {
+    /*
+     * Set the initial URL immediately.
+     */
+    this.currentUrl.set(this.router.url);
+
+    /*
+     * Keep currentUrl synchronized with Angular Router navigation.
+     * This makes isCommunicationRoute() reactive.
+     */
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(event => {
+        this.currentUrl.set(
+          (event as NavigationEnd).urlAfterRedirects
+        );
+      });
+
     void this.init();
   }
 
   async init(): Promise<void> {
     const user = this.session();
+
     if (user) {
       await this.notifications.initialize(user.id);
       await this.refresh();
@@ -124,23 +178,42 @@ export class App implements OnInit {
     if (!this.session()) return;
 
     await this.run(async () => {
-      this.employees.set(await this.attendance.loadEmployees());
-      this.users.set(await this.attendance.loadUsers());
-      this.records.set(await this.attendance.loadAllAttendance());
-      this.allPayments.set(await this.attendance.loadAllPayments());
-      this.announcement.set(await this.attendance.loadActiveAnnouncement());
+      this.employees.set(
+        await this.attendance.loadEmployees()
+      );
+
+      this.users.set(
+        await this.attendance.loadUsers()
+      );
+
+      this.records.set(
+        await this.attendance.loadAllAttendance()
+      );
+
+      this.allPayments.set(
+        await this.attendance.loadAllPayments()
+      );
+
+      this.announcement.set(
+        await this.attendance.loadActiveAnnouncement()
+      );
 
       const employee = this.employees().find(
         item => item.user_id === this.session()?.id
       );
 
       if (employee) {
-        this.payments.set(await this.attendance.loadPayments(employee.id));
+        this.payments.set(
+          await this.attendance.loadPayments(employee.id)
+        );
       } else {
         this.payments.set([]);
       }
 
-      // Attendance is a self-contained feature, so refresh it when it is mounted.
+      /*
+       * Attendance is a self-contained feature,
+       * so refresh it when it is mounted.
+       */
       if (this.attendanceFeature) {
         await this.attendanceFeature.refresh();
       }
@@ -149,8 +222,15 @@ export class App implements OnInit {
 
   async onLoggedIn(user: SessionUser): Promise<void> {
     this.session.set(user);
+
     await this.notifications.initialize(user.id);
-    this.tab.set(user.role === 'admin' ? 'overview' : 'attendance');
+
+    this.tab.set(
+      user.role === 'admin'
+        ? 'overview'
+        : 'attendance'
+    );
+
     await this.refresh();
   }
 
@@ -168,17 +248,29 @@ export class App implements OnInit {
     this.notifications.notifications.set([]);
     this.notifications.unreadCount.set(0);
     this.notifications.initializedUserId.set(null);
+
     this.attendance.logout();
+
     this.session.set(null);
     this.tab.set('overview');
     this.modal.set(null);
     this.message.set('');
     this.error.set('');
+
+    /*
+     * Make sure we return to the normal application route
+     * after logout.
+     */
+    void this.router.navigate(['/']);
   }
 
   openCommunication(): void {
     void this.router.navigate(['/chats']);
   }
+
+  closeCommunication(): void {
+  void this.router.navigate(['/']);
+}
 
   openPassword(): void {
     this.error.set('');
@@ -187,7 +279,10 @@ export class App implements OnInit {
   }
 
   openAnnouncementEditor(): void {
-    this.announcementText.set(this.announcement()?.message || '');
+    this.announcementText.set(
+      this.announcement()?.message || ''
+    );
+
     this.error.set('');
     this.message.set('');
     this.modal.set('announcement');
@@ -200,15 +295,27 @@ export class App implements OnInit {
     if (!user) return;
 
     if (!text) {
-      this.error.set('Enter today’s work plan before posting.');
+      this.error.set(
+        'Enter today’s work plan before posting.'
+      );
       return;
     }
 
     await this.run(async () => {
-      await this.attendance.publishDailyAnnouncement(text, user.id);
-      this.announcement.set(await this.attendance.loadActiveAnnouncement());
+      await this.attendance.publishDailyAnnouncement(
+        text,
+        user.id
+      );
+
+      this.announcement.set(
+        await this.attendance.loadActiveAnnouncement()
+      );
+
       this.closeModal();
-      this.message.set('Today’s work plan is visible until 8:00 PM.');
+
+      this.message.set(
+        'Today’s work plan is visible until 8:00 PM.'
+      );
     });
   }
 
@@ -217,8 +324,13 @@ export class App implements OnInit {
 
     if (!user) return;
 
-    if (!this.passwordCurrent() || !this.passwordNew()) {
-      this.error.set('Enter your current and new password.');
+    if (
+      !this.passwordCurrent() ||
+      !this.passwordNew()
+    ) {
+      this.error.set(
+        'Enter your current and new password.'
+      );
       return;
     }
 
@@ -231,8 +343,12 @@ export class App implements OnInit {
 
       this.passwordCurrent.set('');
       this.passwordNew.set('');
+
       this.closeModal();
-      this.message.set('Password updated successfully.');
+
+      this.message.set(
+        'Password updated successfully.'
+      );
     });
   }
 
@@ -241,20 +357,38 @@ export class App implements OnInit {
     const newPassword = this.passwordNew();
 
     if (!username || !newPassword) {
-      this.error.set('Enter the username/mobile and new password.');
+      this.error.set(
+        'Enter the username/mobile and new password.'
+      );
       return;
     }
 
     await this.run(async () => {
-      await this.attendance.resetPassword(username, newPassword);
+      await this.attendance.resetPassword(
+        username,
+        newPassword
+      );
+
       this.forgotUsername.set('');
       this.passwordNew.set('');
+
       this.closeModal();
-      this.message.set('Password reset successfully.');
+
+      this.message.set(
+        'Password reset successfully.'
+      );
     });
   }
 
-  selectTab(tab: 'overview' | 'attendance' | 'employees' | 'approval' | 'payments' | 'receipts'): void {
+  selectTab(
+    tab:
+      | 'overview'
+      | 'attendance'
+      | 'employees'
+      | 'approval'
+      | 'payments'
+      | 'receipts'
+  ): void {
     this.tab.set(tab);
     this.error.set('');
     this.message.set('');
@@ -285,25 +419,36 @@ export class App implements OnInit {
     });
   }
 
-
-  async onNotificationOpened(notification: AppNotification): Promise<void> {
+  async onNotificationOpened(
+    notification: AppNotification
+  ): Promise<void> {
     switch (notification.action) {
       case 'attendance':
         this.selectTab('attendance');
         break;
+
       case 'approval':
-        if (this.session()?.role === 'admin') this.selectTab('approval');
-        else this.selectTab('attendance');
+        if (this.session()?.role === 'admin') {
+          this.selectTab('approval');
+        } else {
+          this.selectTab('attendance');
+        }
         break;
+
       case 'payment':
         this.selectTab('payments');
         break;
+
       case 'employee':
-        if (this.session()?.role === 'admin') this.selectTab('employees');
+        if (this.session()?.role === 'admin') {
+          this.selectTab('employees');
+        }
         break;
+
       case 'announcement':
         this.closeNotificationPanel();
         break;
+
       case 'security':
         this.openPassword();
         break;
@@ -311,8 +456,11 @@ export class App implements OnInit {
   }
 
   private closeNotificationPanel(): void {
-    // The notification component owns its drawer; this hook intentionally
-    // remains lightweight so existing navigation is never interrupted.
+    /*
+     * The notification component owns its drawer;
+     * this hook intentionally remains lightweight so
+     * existing navigation is never interrupted.
+     */
   }
 
   onFeatureRefresh(): void {
@@ -331,7 +479,9 @@ export class App implements OnInit {
     }).format(value || 0);
   }
 
-  async removeEmployee(employee: Employee): Promise<void> {
+  async removeEmployee(
+    employee: Employee
+  ): Promise<void> {
     const confirmed = confirm(
       `Delete ${employee.name} (${employee.employee_code})?\n\n` +
       `This is only allowed when no attendance or payment history exists.`
@@ -340,15 +490,23 @@ export class App implements OnInit {
     if (!confirmed) return;
 
     await this.run(async () => {
-      await this.attendance.deleteEmployee(employee.id);
+      await this.attendance.deleteEmployee(
+        employee.id
+      );
+
       await this.refresh();
-      this.message.set('Employee profile deleted.');
+
+      this.message.set(
+        'Employee profile deleted.'
+      );
     });
   }
 
   shareCredentials(employee: Employee): void {
     if (!employee.mobile) {
-      this.error.set('This employee has no mobile number.');
+      this.error.set(
+        'This employee has no mobile number.'
+      );
       return;
     }
 
@@ -358,7 +516,8 @@ export class App implements OnInit {
       `Initial password: ${employee.mobile}\n` +
       `Please change your password after signing in.`;
 
-    window.location.href = `sms:${employee.mobile}?body=${encodeURIComponent(text)}`;
+    window.location.href =
+      `sms:${employee.mobile}?body=${encodeURIComponent(text)}`;
   }
 
   closeModal(): void {
@@ -368,13 +527,22 @@ export class App implements OnInit {
 
   today(): string {
     const now = new Date();
+
     const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(
+      now.getMonth() + 1
+    ).padStart(2, '0');
+
+    const day = String(
+      now.getDate()
+    ).padStart(2, '0');
+
     return `${year}-${month}-${day}`;
   }
 
-  private async run(action: () => Promise<void>): Promise<void> {
+  private async run(
+    action: () => Promise<void>
+  ): Promise<void> {
     if (this.busy()) return;
 
     this.busy.set(true);
@@ -384,13 +552,17 @@ export class App implements OnInit {
     try {
       await action();
     } catch (error) {
-      this.error.set(this.readError(error));
+      this.error.set(
+        this.readError(error)
+      );
     } finally {
       this.busy.set(false);
     }
   }
 
-  private readError(error: unknown): string {
+  private readError(
+    error: unknown
+  ): string {
     return error instanceof Error
       ? error.message
       : 'Something went wrong. Please try again.';

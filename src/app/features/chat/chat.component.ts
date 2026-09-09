@@ -108,7 +108,6 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   isOwnMessage(senderId: number): boolean { return this.currentUser()?.id === senderId; }
   formatTime(ts: string): string { return formatTime(ts); }
-  goBack(): void { this.router.navigate(['/']); }
 
   toggleEmojiPicker(): void { this.showEmojiPicker.update(v => !v); }
   closeEmojiPicker(): void  { this.showEmojiPicker.set(false); }
@@ -219,4 +218,8 @@ export class ChatComponent implements OnInit, OnDestroy {
   private focusInput(): void {
     setTimeout(() => this.messageInputRef?.nativeElement?.focus(), 50);
   }
+
+  goBack(): void {
+  this.router.navigate(['/']);
+}
 }
