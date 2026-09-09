@@ -2979,4 +2979,39 @@ code {
     width: 100% !important;
     height: 100% !important;
   }
+
+  /* =========================================================
+   Employee Attendance — Chat Shortcut
+   ========================================================= */
+
+.attendance-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.attendance-shortcut .chat-shortcut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.attendance-shortcut .chat-shortcut span:first-child {
+  font-size: 17px;
+  line-height: 1;
+}
+
+@media (max-width: 700px) {
+  .attendance-shortcut {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .attendance-shortcut button {
+    flex: 1 1 0;
+    min-height: 44px;
+  }
+}
 }

@@ -124,13 +124,19 @@
       <main class="page employee-page">
 
         <section class="attendance-shortcut">
-          <button
-            type="button"
-            class="outline"
-            (click)="selectTab('attendance')"
-          >
-            Open attendance
-          </button>
+            <button type="button" class="outline" (click)="selectTab('attendance')">
+              <span aria-hidden="true">📋</span>
+              Open attendance
+            </button>
+
+            <button
+              type="button"
+              class="outline chat-shortcut"
+              (click)="openCommunication()"
+            >
+              <span aria-hidden="true">💬</span>
+              Chat & calls
+            </button>
         </section>
 
         <app-attendance
