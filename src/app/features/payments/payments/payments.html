@@ -1,4 +1,4 @@
-﻿<section class="payments-page">
+<section class="payments-page">
   
   <div class="firm-balance-card">
     <div class="firm-balance-info">
@@ -30,8 +30,8 @@
     <button
       type="button"
       class="outline"
-      [disabled]="busy() || paymentAmountValue() <= 0 || paymentAmountValue() > firmBalance()"
-      (click)="refreshRequested.emit()"
+      [disabled]="busy() || firmBalanceLoading()"
+      (click)="loadFirmBalance(); refreshRequested.emit()"
     >
       Refresh
     </button>
@@ -93,7 +93,7 @@
           <button
             type="button"
             class="primary small-button"
-            [disabled]="busy() || paymentAmountValue() <= 0 || paymentAmountValue() > firmBalance()"
+            [disabled]="busy() || firmBalanceLoading() || firmBalance() <= 0"
             (click)="$event.stopPropagation(); openPayment(employee)"
           >
             Pay / advance
@@ -135,7 +135,7 @@
         <label>
           <span>Amount</span>
           <div class="input-with-prefix">
-            <b>ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¹</b>
+            <b>&#8377;</b>
             <input
               type="number"
               min="0"
@@ -181,7 +181,25 @@
           ></textarea>
         </label>
 
-        <div class="payment-balance-preview">`r`n          <div class="balance-preview-item">`r`n            <span>Available Firm Balance</span>`r`n            <strong>{{ currency(firmBalance()) }}</strong>`r`n          </div>`r`n          <div class="balance-preview-item">`r`n            <span>Balance after payment</span>`r`n            <strong>{{ currency(firmBalance() - paymentAmountValue()) }}</strong>`r`n          </div>`r`n        </div>`r`n`r`n        @if (paymentAmountValue() > firmBalance()) {`r`n          <div class="payment-balance-warning">`r`n            <strong>⚠ Insufficient firm balance</strong>`r`n            <span>Add {{ currency(paymentAmountValue() - firmBalance()) }} to the firm before making this payment.</span>`r`n          </div>`r`n        }`r`n`r`n        <div class="form-actions full-width">
+        <div class="payment-balance-preview">
+          <div class="balance-preview-item">
+            <span>Available Firm Balance</span>
+            <strong>{{ currency(firmBalance()) }}</strong>
+          </div>
+          <div class="balance-preview-item">
+            <span>Balance after payment</span>
+            <strong>{{ currency(firmBalance() - paymentAmountValue()) }}</strong>
+          </div>
+        </div>
+
+        @if (paymentAmountValue() > firmBalance()) {
+          <div class="payment-balance-warning">
+            <strong>⚠ Insufficient firm balance</strong>
+            <span>Add {{ currency(paymentAmountValue() - firmBalance()) }} to the firm before making this payment.</span>
+          </div>
+        }
+
+        <div class="form-actions full-width">
 
           <button
             type="button"
@@ -390,6 +408,10 @@
   }
 
 </section>
+
+
+
+
 
 
 

@@ -1200,3 +1200,82 @@
     font-size: 19px;
   }
 }
+
+
+/* =========================================================
+   FINAL MOBILE FIX — RECEIPT ROW / ACTION BUTTONS
+   Prevent View Receipt / PDF / WhatsApp from being cropped
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .receipt-row {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 10px !important;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .employee {
+    min-width: 0;
+  }
+
+  .employee > div:last-child,
+  .employee-copy {
+    min-width: 0;
+  }
+
+  .employee b,
+  .employee small {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .total {
+    min-width: max-content;
+    text-align: right !important;
+  }
+
+  .actions {
+    grid-column: 1 / -1 !important;
+    width: 100%;
+    min-width: 0;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .actions .small {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 7px 4px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .actions .ui-icon {
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .receipt-row {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  .actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+  }
+
+  .actions .small {
+    min-height: 40px !important;
+    padding: 7px 3px !important;
+    font-size: 10px !important;
+  }
+}

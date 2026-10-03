@@ -436,18 +436,36 @@ export class PartnerFinanceComponent
       return '';
     }
 
-    const date =
-      new Date(
-        `${value}-01T00:00:00`
-      );
+    const normalized = String(value).trim().slice(0, 7);
+    const match = normalized.match(/^(\d{4})-(\d{2})$/);
 
-    return date.toLocaleDateString(
-      'en-IN',
-      {
-        month: 'long',
-        year: 'numeric'
-      }
-    );
+    if (!match) {
+      return String(value);
+    }
+
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+
+    const monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+
+    if (month < 1 || month > 12) {
+      return String(value);
+    }
+
+    return `${monthNames[month - 1]} ${year}`;
   }
 
   formatDate(
@@ -504,3 +522,4 @@ export class PartnerFinanceComponent
       .slice(0, 10);
   }
 }
+

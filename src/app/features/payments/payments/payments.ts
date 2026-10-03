@@ -4,6 +4,7 @@ import {
   EventEmitter,
   Input,
   Output,
+  OnInit,
   inject,
   signal
 } from '@angular/core';
@@ -21,7 +22,7 @@ import { FirmFinanceService } from '../../../services/firm-finance.service';
   templateUrl: './payments.html',
   styleUrl: './payments.scss'
 })
-export class PaymentsComponent {
+export class PaymentsComponent implements OnInit {
   private readonly attendance = inject(AttendanceService);
   private readonly firmFinance = inject(FirmFinanceService);
 
@@ -38,6 +39,7 @@ export class PaymentsComponent {
   paymentAmountValue(): number {
     return Number(this.paymentAmount() || 0);
   }
+
   readonly paymentDate = signal(this.today());
   readonly paymentMethod = signal('cash');
   readonly paymentNote = signal('');
@@ -54,6 +56,10 @@ export class PaymentsComponent {
   readonly firmBalance = signal(0);
   readonly firmBalanceLoading = signal(false);
 
+  ngOnInit(): void {
+    void this.loadFirmBalance();
+  }
+
   async loadFirmBalance(): Promise<void> {
     this.firmBalanceLoading.set(true);
 
@@ -66,6 +72,7 @@ export class PaymentsComponent {
       this.firmBalanceLoading.set(false);
     }
   }
+
   selectEmployee(employee: Employee): void {
     void this.loadFirmBalance();
     this.selectedEmployee.set(employee);
@@ -219,6 +226,7 @@ export class PaymentsComponent {
       this.closePaymentEdit();
 
       const employee = this.selectedEmployee();
+
       if (employee) {
         await this.loadEmployeePayments(employee);
       }
@@ -340,10 +348,3 @@ export class PaymentsComponent {
     return 'Something went wrong. Please try again.';
   }
 }
-
-
-
-
-
-
-
