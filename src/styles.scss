@@ -4607,3 +4607,70 @@ app-root app-approvals .approvals-page {
   }
 }
 
+
+/* ============================================================
+   WORKLOG MOBILE NAVIGATION — COMPACT GRID
+   Keeps desktop/tablet navigation unchanged.
+   ============================================================ */
+
+@media (max-width: 700px) {
+
+  app-root .admin-page .tabs {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    padding: 10px !important;
+    margin: 0 0 18px 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  app-root .admin-page .tabs button {
+    min-width: 0 !important;
+    width: 100% !important;
+    min-height: 56px !important;
+    height: 56px !important;
+    padding: 8px 10px !important;
+    margin: 0 !important;
+    border-radius: 14px !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Keep the last navigation item balanced across the grid */
+  app-root .admin-page .tabs button:last-child {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* Compact pending-count badge */
+  app-root .admin-page .tabs button span {
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+  }
+}
+
+/* Small Android phones: keep the 2-column navigation */
+@media (max-width: 420px) {
+
+  app-root .admin-page .tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    padding: 8px !important;
+    margin-bottom: 16px !important;
+  }
+
+  app-root .admin-page .tabs button {
+    min-height: 52px !important;
+    height: 52px !important;
+    padding: 7px 8px !important;
+    border-radius: 13px !important;
+    font-size: 12px !important;
+  }
+}
+
