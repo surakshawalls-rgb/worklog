@@ -938,3 +938,1240 @@ button:disabled {
     font-size: 18px;
   }
 }
+/* ============================================================
+   WORKLOG ATTENDANCE — PREMIUM UI LAYER
+   Component-level enhancement
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   MAIN ATTENDANCE RAIL
+   ------------------------------------------------------------ */
+
+.attendance-page {
+  width: 100% !important;
+  max-width: 1380px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+
+  padding: 38px 0 86px !important;
+
+  color: var(--premium-text, #17241e);
+
+  box-sizing: border-box;
+}
+
+/* ------------------------------------------------------------
+   PREMIUM HEADER
+   ------------------------------------------------------------ */
+
+.attendance-header {
+  position: relative;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 28px;
+
+  margin-bottom: 28px !important;
+  padding: 4px 2px 24px;
+
+  border-bottom:
+    1px solid rgba(20, 58, 43, .09);
+}
+
+.attendance-header::after {
+  content: '';
+
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+
+  width: 82px;
+  height: 3px;
+
+  border-radius: 999px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--premium-green-700, #164936),
+      var(--premium-gold-500, #c99a3d)
+    );
+}
+
+.attendance-header h1 {
+  margin: 0 !important;
+
+  font-family:
+    'Cormorant Garamond',
+    Georgia,
+    serif !important;
+
+  font-size:
+    clamp(40px, 4vw, 58px) !important;
+
+  line-height: .92 !important;
+
+  font-weight: 600 !important;
+
+  letter-spacing: -.045em !important;
+
+  color:
+    var(--premium-green-950, #071d16) !important;
+}
+
+.attendance-header .muted {
+  max-width: 700px;
+
+  margin-top: 12px !important;
+
+  color:
+    var(--premium-text-secondary, #627068) !important;
+
+  font-size: 13px;
+
+  line-height: 1.65;
+}
+
+/* ------------------------------------------------------------
+   EMPLOYEE SELECTOR
+   ------------------------------------------------------------ */
+
+.employee-selector {
+  position: relative;
+
+  margin-bottom: 24px !important;
+
+  padding: 22px !important;
+
+  border:
+    1px solid rgba(20, 58, 43, .09) !important;
+
+  border-radius: 24px !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.98),
+      rgba(247,250,247,.96)
+    ) !important;
+
+  box-shadow:
+    0 14px 38px rgba(20, 58, 43, .065),
+    0 2px 8px rgba(20, 58, 43, .035) !important;
+
+  overflow: hidden;
+}
+
+.employee-selector::before {
+  content: '';
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 3px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--premium-green-700, #164936),
+      var(--premium-gold-500, #c99a3d),
+      transparent
+    );
+}
+
+.selector-heading {
+  margin-bottom: 18px !important;
+}
+
+.selector-heading h2 {
+  margin: 0 !important;
+
+  font-family:
+    'Cormorant Garamond',
+    Georgia,
+    serif !important;
+
+  font-size: 28px !important;
+
+  font-weight: 600 !important;
+
+  letter-spacing: -.025em;
+
+  color:
+    var(--premium-green-950, #071d16) !important;
+}
+
+.employee-list {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 12px !important;
+}
+
+.employee-card {
+  position: relative;
+
+  min-height: 72px !important;
+
+  padding: 12px 14px !important;
+
+  border:
+    1px solid rgba(20, 58, 43, .085) !important;
+
+  border-radius: 17px !important;
+
+  background:
+    rgba(255,255,255,.92) !important;
+
+  box-shadow:
+    0 3px 12px rgba(20, 58, 43, .035) !important;
+
+  transition:
+    transform .2s ease,
+    border-color .2s ease,
+    box-shadow .2s ease,
+    background .2s ease !important;
+}
+
+.employee-card::after {
+  content: '';
+
+  position: absolute;
+
+  left: 14px;
+  right: 14px;
+  bottom: 0;
+
+  height: 2px;
+
+  border-radius: 999px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(201,154,61,.30),
+      transparent
+    );
+
+  opacity: 0;
+
+  transition: opacity .2s ease;
+}
+
+.employee-card:hover {
+  transform: translateY(-3px) !important;
+
+  border-color:
+    rgba(29, 90, 67, .22) !important;
+
+  background: #fff !important;
+
+  box-shadow:
+    0 12px 25px rgba(20, 58, 43, .10) !important;
+}
+
+.employee-card:hover::after {
+  opacity: 1;
+}
+
+.employee-card.selected {
+  transform: translateY(-2px) !important;
+
+  border-color:
+    rgba(201,154,61,.65) !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      #fffdf7,
+      #fff7e5
+    ) !important;
+
+  box-shadow:
+    0 10px 25px rgba(154,111,30,.11),
+    inset 0 0 0 1px rgba(255,255,255,.65) !important;
+}
+
+.employee-card.selected::after {
+  opacity: 1;
+}
+
+.employee-avatar {
+  width: 44px !important;
+  height: 44px !important;
+  flex-basis: 44px !important;
+
+  border-radius: 14px !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #e7f1eb,
+      #cfe1d7
+    ) !important;
+
+  color:
+    var(--premium-green-800, #10382b) !important;
+
+  font-weight: 800;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9),
+    0 5px 12px rgba(20,58,43,.08);
+}
+
+.employee-card.selected .employee-avatar {
+  background:
+    linear-gradient(
+      145deg,
+      #f5dfaa,
+      #d7a642
+    ) !important;
+
+  color: #513b0e !important;
+}
+
+.employee-card-info strong {
+  font-size: 14px !important;
+
+  font-weight: 800 !important;
+
+  color:
+    var(--premium-green-900, #0b281f) !important;
+}
+
+.employee-card-info small {
+  color:
+    var(--premium-text-secondary, #627068) !important;
+}
+
+/* ------------------------------------------------------------
+   CALENDAR PANEL
+   ------------------------------------------------------------ */
+
+.calendar-panel {
+  position: relative;
+
+  padding: 24px !important;
+
+  border:
+    1px solid rgba(20,58,43,.09) !important;
+
+  border-radius: 26px !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f8faf7
+    ) !important;
+
+  box-shadow:
+    0 18px 45px rgba(20,58,43,.075),
+    0 3px 10px rgba(20,58,43,.035) !important;
+
+  overflow: hidden;
+}
+
+.calendar-panel::before {
+  content: '';
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 4px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--premium-green-800, #10382b),
+      var(--premium-gold-500, #c99a3d),
+      var(--premium-green-600, #1d5a43)
+    );
+}
+
+.calendar-employee-header {
+  padding-bottom: 22px !important;
+
+  margin-bottom: 22px !important;
+
+  border-bottom:
+    1px solid rgba(20,58,43,.075) !important;
+}
+
+.employee-detail-heading h2 {
+  margin: 0 !important;
+
+  font-family:
+    'Cormorant Garamond',
+    Georgia,
+    serif !important;
+
+  font-size:
+    clamp(28px, 3vw, 36px) !important;
+
+  font-weight: 600 !important;
+
+  letter-spacing: -.035em !important;
+
+  color:
+    var(--premium-green-950, #071d16) !important;
+}
+
+.employee-detail-heading .muted {
+  color:
+    var(--premium-text-secondary, #627068) !important;
+}
+
+/* ------------------------------------------------------------
+   MONTH NAVIGATION
+   ------------------------------------------------------------ */
+
+.month-controls {
+  gap: 10px !important;
+}
+
+.month-button {
+  width: 44px !important;
+  height: 44px !important;
+
+  border-radius: 13px !important;
+
+  border:
+    1px solid rgba(20,58,43,.11) !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f2f6f3
+    ) !important;
+
+  color:
+    var(--premium-green-800, #10382b) !important;
+
+  box-shadow:
+    0 4px 12px rgba(20,58,43,.055) !important;
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    border-color .18s ease !important;
+}
+
+.month-button:hover {
+  transform: translateY(-2px);
+
+  border-color:
+    rgba(201,154,61,.45) !important;
+
+  box-shadow:
+    0 8px 18px rgba(20,58,43,.10) !important;
+}
+
+.report-month {
+  min-width: 145px !important;
+
+  padding: 10px 18px;
+
+  border-radius: 999px;
+
+  background:
+    var(--premium-gold-soft, #fbf5e7);
+
+  color:
+    var(--premium-gold-700, #8c651c) !important;
+
+  font-weight: 800;
+
+  letter-spacing: .02em;
+
+  box-shadow:
+    inset 0 0 0 1px rgba(201,154,61,.10);
+}
+
+/* ------------------------------------------------------------
+   MONTH SUMMARY CARDS
+   ------------------------------------------------------------ */
+
+.report-stats {
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr)) !important;
+
+  gap: 12px !important;
+
+  margin: 22px 0 !important;
+}
+
+.report-stat {
+  position: relative;
+
+  min-height: 105px;
+
+  padding: 17px !important;
+
+  border:
+    1px solid rgba(20,58,43,.075) !important;
+
+  border-radius: 17px !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f7faf8
+    ) !important;
+
+  box-shadow:
+    0 5px 16px rgba(20,58,43,.045) !important;
+
+  overflow: hidden;
+
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease !important;
+}
+
+.report-stat::before {
+  content: '';
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 3px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--premium-green-600, #1d5a43),
+      var(--premium-gold-500, #c99a3d)
+    );
+
+  opacity: .65;
+}
+
+.report-stat:hover {
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 12px 25px rgba(20,58,43,.085) !important;
+}
+
+/* ------------------------------------------------------------
+   CALENDAR
+   ------------------------------------------------------------ */
+
+.calendar-grid {
+  gap: 9px !important;
+
+  margin: 22px 0 !important;
+}
+
+.calendar-header {
+  min-height: 38px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 10px;
+
+  background:
+    #eef3ef;
+
+  color:
+    var(--premium-green-700, #164936);
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: .12em;
+
+  text-transform: uppercase;
+}
+
+.calendar-cell {
+  position: relative;
+
+  min-height: 94px !important;
+
+  padding: 11px 9px !important;
+
+  border-radius: 15px !important;
+
+  border:
+    1px solid rgba(20,58,43,.075) !important;
+
+  background:
+    rgba(255,255,255,.92) !important;
+
+  box-shadow:
+    0 3px 9px rgba(20,58,43,.025) !important;
+
+  transition:
+    transform .18s ease,
+    border-color .18s ease,
+    box-shadow .18s ease !important;
+}
+
+.calendar-cell:not(.empty):hover {
+  transform: translateY(-2px);
+
+  border-color:
+    rgba(29,90,67,.18) !important;
+
+  box-shadow:
+    0 8px 18px rgba(20,58,43,.08) !important;
+
+  z-index: 2;
+}
+
+.calendar-cell.empty {
+  opacity: .38;
+  background:
+    rgba(241,245,242,.55) !important;
+}
+
+/* Today's date */
+.calendar-cell.today {
+  border-color:
+    rgba(201,154,61,.55) !important;
+
+  box-shadow:
+    inset 0 0 0 1px rgba(201,154,61,.15),
+    0 5px 15px rgba(154,111,30,.08) !important;
+}
+
+/* ------------------------------------------------------------
+   LEGEND
+   ------------------------------------------------------------ */
+
+.calendar-legend {
+  margin-top: 22px !important;
+
+  padding-top: 18px !important;
+
+  border-top:
+    1px solid rgba(20,58,43,.075) !important;
+
+  gap: 14px !important;
+}
+
+.legend-dot {
+  width: 10px !important;
+  height: 10px !important;
+
+  border-radius: 50% !important;
+
+  box-shadow:
+    0 0 0 3px rgba(20,58,43,.035);
+}
+
+/* ------------------------------------------------------------
+   ATTENDANCE MODAL
+   ------------------------------------------------------------ */
+
+.modal-backdrop {
+  backdrop-filter: blur(8px);
+
+  background:
+    rgba(4,20,14,.52) !important;
+}
+
+.modal {
+  width: min(600px, calc(100vw - 32px)) !important;
+
+  border:
+    1px solid rgba(255,255,255,.18) !important;
+
+  border-radius: 24px !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f8faf7
+    ) !important;
+
+  box-shadow:
+    0 30px 80px rgba(0,0,0,.22),
+    0 5px 20px rgba(20,58,43,.10) !important;
+}
+
+.modal-heading {
+  padding-bottom: 16px;
+
+  border-bottom:
+    1px solid rgba(20,58,43,.075);
+}
+
+.modal-heading h2 {
+  font-family:
+    'Cormorant Garamond',
+    Georgia,
+    serif !important;
+
+  font-size: 30px !important;
+
+  font-weight: 600 !important;
+
+  color:
+    var(--premium-green-950, #071d16) !important;
+}
+
+.icon-button {
+  border-radius: 12px !important;
+
+  transition:
+    transform .18s ease,
+    background .18s ease !important;
+}
+
+.icon-button:hover {
+  transform: rotate(4deg);
+
+  background:
+    #edf3ef !important;
+}
+
+/* ------------------------------------------------------------
+   ATTENDANCE CHOICE BUTTONS
+   ------------------------------------------------------------ */
+
+.choice-grid {
+  gap: 10px !important;
+
+  margin: 20px 0 !important;
+}
+
+.choice-grid button {
+  min-height: 78px !important;
+
+  border-radius: 16px !important;
+
+  border:
+    1px solid rgba(20,58,43,.10) !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f7faf8
+    ) !important;
+
+  box-shadow:
+    0 4px 12px rgba(20,58,43,.035) !important;
+
+  transition:
+    transform .18s ease,
+    border-color .18s ease,
+    box-shadow .18s ease,
+    background .18s ease !important;
+}
+
+.choice-grid button:hover {
+  transform: translateY(-2px);
+
+  border-color:
+    rgba(29,90,67,.25) !important;
+
+  box-shadow:
+    0 8px 18px rgba(20,58,43,.08) !important;
+}
+
+.choice-grid button.selected {
+  border-color:
+    rgba(201,154,61,.68) !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #fffdf7,
+      #fff4d9
+    ) !important;
+
+  box-shadow:
+    0 8px 20px rgba(154,111,30,.10),
+    inset 0 0 0 1px rgba(201,154,61,.10) !important;
+}
+
+.choice-grid b {
+  font-weight: 800 !important;
+
+  color:
+    var(--premium-green-900, #0b281f);
+}
+
+.choice-grid small {
+  color:
+    var(--premium-text-secondary, #627068) !important;
+}
+
+/* ------------------------------------------------------------
+   FORM CONTROLS
+   ------------------------------------------------------------ */
+
+.modal input,
+.modal select,
+.modal textarea {
+  border-radius: 12px !important;
+
+  border:
+    1px solid rgba(20,58,43,.13) !important;
+
+  background:
+    #ffffff !important;
+
+  transition:
+    border-color .18s ease,
+    box-shadow .18s ease !important;
+}
+
+.modal input:focus,
+.modal select:focus,
+.modal textarea:focus {
+  border-color:
+    rgba(29,90,67,.45) !important;
+
+  box-shadow:
+    0 0 0 4px rgba(29,90,67,.08) !important;
+
+  outline: none;
+}
+
+.modal-note {
+  border-radius: 14px !important;
+
+  border:
+    1px solid rgba(20,58,43,.06);
+
+  background:
+    linear-gradient(
+      145deg,
+      #f6f9f6,
+      #eef4f0
+    ) !important;
+}
+
+/* ------------------------------------------------------------
+   EMPLOYEE CHECK LIST
+   ------------------------------------------------------------ */
+
+.employee-check-list {
+  border-radius: 15px !important;
+
+  border:
+    1px solid rgba(20,58,43,.08) !important;
+
+  background:
+    #fbfcfb;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+.check-row {
+  transition:
+    background .16s ease !important;
+}
+
+.check-row:hover {
+  background:
+    #f3f7f4 !important;
+}
+
+/* ------------------------------------------------------------
+   RESPONSIVE — TABLET
+   ------------------------------------------------------------ */
+
+@media (max-width: 1050px) {
+
+  .attendance-page {
+    width: 100% !important;
+    max-width: 900px !important;
+    padding-top: 30px !important;
+  }
+
+  .employee-list {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .calendar-panel {
+    padding: 20px !important;
+  }
+
+  .calendar-cell {
+    min-height: 82px !important;
+  }
+}
+
+/* ------------------------------------------------------------
+   RESPONSIVE — MOBILE
+   ------------------------------------------------------------ */
+
+@media (max-width: 700px) {
+
+  .attendance-page {
+    width: 100% !important;
+    max-width: none !important;
+
+    padding:
+      24px 0
+      max(60px, env(safe-area-inset-bottom) + 42px)
+      !important;
+  }
+
+  .attendance-header {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 15px;
+
+    padding-bottom: 20px;
+  }
+
+  .attendance-header h1 {
+    font-size:
+      clamp(36px, 11vw, 48px) !important;
+  }
+
+  .employee-selector,
+  .calendar-panel {
+    padding: 16px !important;
+
+    border-radius: 20px !important;
+  }
+
+  .employee-list {
+    grid-template-columns: 1fr !important;
+
+    gap: 9px !important;
+  }
+
+  .employee-card {
+    min-height: 66px !important;
+  }
+
+  .calendar-employee-header {
+    gap: 16px;
+
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+  .employee-detail-heading h2 {
+    font-size: 29px !important;
+  }
+
+  .report-stats {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr)) !important;
+
+    gap: 9px !important;
+  }
+
+  .calendar-grid {
+    gap: 4px !important;
+  }
+
+  .calendar-header {
+    min-height: 32px;
+
+    font-size: 8px;
+  }
+
+  .calendar-cell {
+    min-height: 68px !important;
+
+    padding: 8px 4px !important;
+
+    border-radius: 10px !important;
+  }
+
+  .calendar-edit-btn {
+    width: 25px !important;
+    height: 25px !important;
+  }
+
+  .modal {
+    width: 100% !important;
+
+    max-height: 92dvh !important;
+
+    border-radius:
+      22px 22px 0 0 !important;
+  }
+}
+
+/* ------------------------------------------------------------
+   RESPONSIVE — SMALL ANDROID
+   ------------------------------------------------------------ */
+
+@media (max-width: 420px) {
+
+  .attendance-page {
+    width: 100% !important;
+  }
+
+  .employee-selector,
+  .calendar-panel {
+    padding: 13px !important;
+
+    border-radius: 17px !important;
+  }
+
+  .report-stats {
+    gap: 7px !important;
+  }
+
+  .calendar-cell {
+    min-height: 60px !important;
+
+    padding: 6px 3px !important;
+
+    border-radius: 8px !important;
+  }
+
+  .report-month {
+    min-width: 125px !important;
+
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+/* ------------------------------------------------------------
+   ACCESSIBILITY / REDUCED MOTION
+   ------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .employee-card,
+  .calendar-cell,
+  .report-stat,
+  .month-button,
+  .choice-grid button,
+  .icon-button {
+    transition: none !important;
+  }
+}
+
+/* END WORKLOG ATTENDANCE PREMIUM UI */
+/* ============================================================
+   RESTORE ATTENDANCE CATEGORY COLORS
+   Premium-compatible status system
+   ============================================================ */
+
+/* Calendar status colors */
+.calendar-cell.paid {
+  background: linear-gradient(
+    145deg,
+    #d7eee5,
+    #b9dcd0
+  ) !important;
+
+  border-color: rgba(52, 133, 101, .24) !important;
+  color: #173d2f;
+}
+
+.calendar-cell.unpaid {
+  background: linear-gradient(
+    145deg,
+    #e0f3e3,
+    #c7ebcd
+  ) !important;
+
+  border-color: rgba(70, 143, 86, .22) !important;
+  color: #244b2d;
+}
+
+.calendar-cell.partial {
+  background: linear-gradient(
+    145deg,
+    #eadff5,
+    #d8c5ee
+  ) !important;
+
+  border-color: rgba(117, 77, 157, .22) !important;
+  color: #49305f;
+}
+
+.calendar-cell.pending {
+  background: linear-gradient(
+    145deg,
+    #f9dfbd,
+    #f4c994
+  ) !important;
+
+  border-color: rgba(190, 127, 49, .25) !important;
+  color: #694719;
+}
+
+.calendar-cell.half {
+  background: linear-gradient(
+    145deg,
+    #f7ebae,
+    #f1dc88
+  ) !important;
+
+  border-color: rgba(172, 145, 42, .25) !important;
+  color: #625315;
+}
+
+.calendar-cell.leave {
+  background: linear-gradient(
+    145deg,
+    #f5c3bf,
+    #efa5a0
+  ) !important;
+
+  border-color: rgba(191, 91, 84, .25) !important;
+  color: #672c28;
+}
+
+.calendar-cell.denied {
+  background: linear-gradient(
+    145deg,
+    #ef918b,
+    #e5736d
+  ) !important;
+
+  border-color: #c94d47 !important;
+  color: #651f1c !important;
+}
+
+.calendar-cell.denied small {
+  color: #651f1c !important;
+  font-weight: 700;
+}
+
+/* Keep today's highlight visible on top of category colors */
+.calendar-cell.today {
+  box-shadow:
+    inset 0 0 0 2px rgba(201, 154, 61, .42),
+    0 7px 18px rgba(154, 111, 30, .12) !important;
+}
+
+/* Category legend */
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px !important;
+}
+
+.calendar-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #53665c;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  white-space: nowrap;
+}
+
+/* Premium status dots */
+.calendar-legend .legend-dot {
+  width: 11px !important;
+  height: 11px !important;
+  flex: 0 0 11px;
+  display: inline-block;
+  border-radius: 50% !important;
+  border: 2px solid rgba(255,255,255,.8);
+  box-shadow:
+    0 0 0 1px rgba(20,58,43,.10),
+    0 2px 5px rgba(20,58,43,.12);
+}
+
+/* Exact category mapping */
+.calendar-legend .legend-dot.paid {
+  background: #4fa878 !important;
+}
+
+.calendar-legend .legend-dot.unpaid {
+  background: #5d8fc7 !important;
+}
+
+.calendar-legend .legend-dot.partial {
+  background: #9462bd !important;
+}
+
+.calendar-legend .legend-dot.pending {
+  background: #e5aa5c !important;
+}
+
+.calendar-legend .legend-dot.half {
+  background: #d7bd54 !important;
+}
+
+.calendar-legend .legend-dot.leave {
+  background: #d67c76 !important;
+}
+
+.calendar-legend .legend-dot.denied {
+  background: #c94d47 !important;
+}
+
+/* Make status text inside calendar cells remain readable */
+.calendar-cell.paid small {
+  color: #285e49;
+}
+
+.calendar-cell.unpaid small {
+  color: #355f3c;
+}
+
+.calendar-cell.partial small {
+  color: #684b80;
+}
+
+.calendar-cell.pending small {
+  color: #805b25;
+}
+
+.calendar-cell.half small {
+  color: #75631d;
+}
+
+.calendar-cell.leave small {
+  color: #7c3c37;
+}
+
+/* Mobile legend */
+@media (max-width: 700px) {
+  .calendar-legend {
+    gap: 8px 12px !important;
+  }
+
+  .calendar-legend > span {
+    font-size: 10px;
+    gap: 5px;
+  }
+
+  .calendar-legend .legend-dot {
+    width: 9px !important;
+    height: 9px !important;
+    flex-basis: 9px;
+  }
+}
+
+/* END ATTENDANCE CATEGORY COLORS */

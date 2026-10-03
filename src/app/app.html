@@ -1,4 +1,4 @@
-@if (!session()) {
+﻿@if (!session()) {
 
   <app-login
     (loggedIn)="onLoggedIn($event)"
@@ -52,9 +52,7 @@
           (click)="modal.set('password')"
           aria-label="Change password"
           title="Change password"
-        >
-          🔒
-        </button>
+        >&#128274;</button>
 
         <button
           type="button"
@@ -62,48 +60,30 @@
           (click)="logout()"
           aria-label="Sign out"
           title="Sign out"
-        >
-          ↪
-        </button>
+        >&#8618;</button>
 
       </div>
     </header>
 
-    @if (announcement() || session()?.role === 'admin') {
+    @if (announcement() && session()?.role === 'employee') {
 
-      <section
-        class="daily-plan-banner"
-        [class.empty-plan]="!announcement()"
-      >
+  <section
+    class="daily-plan-banner employee-daily-plan"
+    [class.empty-plan]="!announcement()"
+  >
 
-        <div>
-          <p class="eyebrow">TODAY'S WORK PLAN</p>
+    <div>
+      <p class="eyebrow">TODAY'S WORK PLAN</p>
 
-          <p>
-            {{
-              announcement()?.message ||
-              'No work plan has been posted for today.'
-            }}
-          </p>
-        </div>
+      <p>
+        {{ announcement()?.message }}
+      </p>
+    </div>
 
-        @if (session()?.role === 'admin') {
+  </section>
 
-          <button
-            type="button"
-            class="outline plan-edit"
-            (click)="openAnnouncementEditor()"
-          >
-            {{ announcement() ? 'Update plan' : 'Post plan' }}
-          </button>
-
-        }
-
-      </section>
-
-    }
-
-    @if (message()) {
+}
+@if (message()) {
 
       <div class="alert success page-alert">
         {{ message() }}
@@ -125,7 +105,7 @@
 
         <section class="attendance-shortcut">
             <button type="button" class="outline" (click)="selectTab('attendance')">
-              <span aria-hidden="true">📋</span>
+              <span aria-hidden="true">Ã°Å¸â€œâ€¹</span>
               Open attendance
             </button>
 
@@ -134,7 +114,7 @@
               class="outline chat-shortcut"
               (click)="openCommunication()"
             >
-              <span aria-hidden="true">💬</span>
+              <span aria-hidden="true">Ã°Å¸â€™Â¬</span>
               Chat & calls
             </button>
         </section>
@@ -148,7 +128,8 @@
 
       <main class="page admin-page">
 
-        <nav
+
+<nav
           class="tabs"
           aria-label="Admin sections"
         >
@@ -202,6 +183,14 @@
             Receipts
           </button>
 
+          <button
+            type="button"
+            [class.active]="tab() === 'partner-finance'"
+            (click)="selectTab('partner-finance')"
+          >
+            Partner Finance
+          </button>
+
         </nav>
 
         @if (tab() === 'overview') {
@@ -211,6 +200,8 @@
             [records]="records()"
             [allPayments]="allPayments()"
             [pendingCount]="pendingRecords().length"
+            [announcement]="announcement()"
+            (announcementEditRequested)="openAnnouncementEditor()"
             (refreshRequested)="onDashboardRefresh()"
           />
 
@@ -268,6 +259,12 @@
 
         }
 
+        @if (tab() === 'partner-finance') {
+
+          <app-partner-finance />
+
+        }
+
       </main>
 
     }
@@ -297,7 +294,7 @@
               (click)="closeModal()"
               aria-label="Close"
             >
-              ×
+              Ãƒâ€”
             </button>
 
           </div>
@@ -372,7 +369,7 @@
               (click)="closeModal()"
               aria-label="Close"
             >
-              ×
+              &times;
             </button>
 
           </div>
@@ -407,7 +404,7 @@
             [disabled]="busy()"
             (click)="saveAnnouncement()"
           >
-            {{ busy() ? 'Posting...' : 'Post today’s plan' }}
+            {{ busy() ? 'Posting...' : "Post today's plan" }}
           </button>
 
         </section>
@@ -445,3 +442,6 @@
   </div>
 
 }
+
+
+

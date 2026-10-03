@@ -1,4 +1,4 @@
-<section class="dashboard">
+﻿<section class="dashboard">
   <section class="page-heading">
     <div>
       <p class="eyebrow">ADMIN CONSOLE</p>
@@ -14,6 +14,90 @@
     >
       {{ busy() ? 'Refreshing...' : 'Refresh' }}
     </button>
+  </section>
+
+  <section class="today-glance">
+
+    <div class="today-glance-heading">
+
+      <div>
+        <p class="eyebrow">TODAY AT A GLANCE</p>
+
+        <h2>Today's workspace</h2>
+
+        <p class="today-glance-subtitle">
+          Plan and cash at a glance.
+        </p>
+      </div>
+
+      <span class="today-glance-label">
+        ADMIN WORKSPACE
+      </span>
+
+    </div>
+
+    <div class="today-glance-grid">
+
+      <section class="today-plan-card">
+
+        <div class="today-plan-heading">
+
+          <div>
+            <p class="eyebrow">TODAY'S WORK PLAN</p>
+
+            <h3>
+              {{ announcement ? 'Team plan' : 'No plan posted' }}
+            </h3>
+          </div>
+
+          <span
+            class="today-status-dot"
+            [class.has-plan]="!!announcement"
+            aria-hidden="true"
+          ></span>
+
+        </div>
+
+        <p class="today-plan-message">
+          {{
+            announcement?.message ||
+            ''
+          }}
+        </p>
+
+        <button
+          type="button"
+          class="today-plan-action"
+          (click)="announcementEditRequested.emit()"
+        >
+          <span aria-hidden="true">+</span>
+
+          @if (announcement) {
+            Update plan
+          } @else {
+            Post today's plan
+          }
+        </button>
+
+      </section>
+
+      <section class="today-finance">
+
+        <div class="today-finance-header">
+          <div>
+            <p class="eyebrow">FIRM CASH</p>
+            <p class="today-finance-description">
+              
+            </p>
+          </div>
+        </div>
+
+        <app-firm-cash />
+
+      </section>
+
+    </div>
+
   </section>
 
   <section class="panel period-panel">
@@ -127,3 +211,7 @@
     </div>
   </section>
 </section>
+
+
+
+

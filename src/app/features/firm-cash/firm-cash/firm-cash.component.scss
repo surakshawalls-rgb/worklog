@@ -1,0 +1,822 @@
+﻿:host {
+  display: block;
+}
+
+/* =========================================================
+   FIRM CASH — PREMIUM DASHBOARD
+   ========================================================= */
+
+.firm-cash {
+  margin: 0 0 30px;
+}
+
+/* ---------------------------------------------------------
+   MAIN CASH HEADER
+   --------------------------------------------------------- */
+
+.cash-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+
+  min-height: 150px;
+  padding: 24px 26px;
+
+  border: 1px solid rgba(20, 58, 43, 0.10);
+  border-radius: 18px;
+
+  background:
+    radial-gradient(
+      circle at 88% 15%,
+      rgba(214, 184, 109, 0.10),
+      transparent 24%
+    ),
+    linear-gradient(
+      135deg,
+      #0b2d22 0%,
+      #123b2d 58%,
+      #194936 100%
+    );
+
+  box-shadow:
+    0 10px 28px rgba(20, 58, 43, 0.12);
+
+  overflow: hidden;
+}
+
+.cash-hero-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.cash-icon {
+  flex: 0 0 52px;
+
+  width: 52px;
+  height: 52px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+
+  background: rgba(255, 255, 255, 0.075);
+
+  color: #e4c778;
+
+  font-size: 24px;
+  font-weight: 800;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.cash-hero h2 {
+  margin: 5px 0 0;
+
+  color: #ffffff;
+
+  font-size: clamp(32px, 4vw, 42px);
+  font-weight: 750;
+  line-height: 1;
+
+  letter-spacing: -0.035em;
+}
+
+.cash-hero p {
+  margin: 7px 0 0;
+
+  color: rgba(255, 255, 255, 0.64);
+
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.eyebrow {
+  display: block;
+
+  color: rgba(255, 255, 255, 0.58);
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------
+   ACTIONS
+   --------------------------------------------------------- */
+
+.cash-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+
+  flex-wrap: wrap;
+}
+
+.cash-button {
+  min-height: 40px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  padding: 0 14px;
+
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.075);
+
+  color: #ffffff;
+
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.cash-button strong {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.cash-button:hover {
+  transform: translateY(-1px);
+
+  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(255, 255, 255, 0.23);
+}
+
+.cash-button:active {
+  transform: translateY(0);
+}
+
+.cash-button.gold {
+  border-color: rgba(239, 214, 148, 0.45);
+
+  background: #dfc27a;
+
+  color: #163528;
+}
+
+.cash-button.gold:hover {
+  background: #e8cd8e;
+}
+
+.cash-button.danger {
+  border-color: rgba(255, 170, 170, 0.20);
+
+  background: rgba(190, 64, 64, 0.10);
+
+  color: #ffffff;
+}
+
+/* ---------------------------------------------------------
+   METRICS
+   --------------------------------------------------------- */
+
+.cash-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  margin-top: 10px;
+
+  border: 1px solid #e3eae5;
+  border-radius: 14px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 5px 18px rgba(20, 58, 43, 0.055);
+
+  overflow: hidden;
+}
+
+.metric-card {
+  min-height: 76px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  padding: 14px 18px;
+
+  border-right: 1px solid #edf1ee;
+}
+
+.metric-card:last-child {
+  border-right: 0;
+}
+
+.metric-card span {
+  display: block;
+
+  color: #77847d;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 0.02em;
+}
+
+.metric-card strong {
+  display: block;
+
+  margin-top: 5px;
+
+  color: #163d2d;
+
+  font-size: 18px;
+  font-weight: 750;
+
+  line-height: 1.1;
+}
+
+.metric-card strong.negative {
+  color: #a13e3e;
+}
+
+/* ---------------------------------------------------------
+   ALERTS
+   --------------------------------------------------------- */
+
+.cash-alert {
+  margin-top: 10px;
+
+  padding: 10px 13px;
+
+  border-radius: 9px;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.cash-alert.success {
+  color: #17603e;
+  background: #edf8f1;
+  border: 1px solid #d0ead9;
+}
+
+.cash-alert.error {
+  color: #963939;
+  background: #fff2f2;
+  border: 1px solid #f0d0d0;
+}
+
+/* ---------------------------------------------------------
+   LIVE LEDGER
+   --------------------------------------------------------- */
+
+.cash-history {
+  margin-top: 12px;
+
+  border: 1px solid #e3eae5;
+  border-radius: 14px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 5px 18px rgba(20, 58, 43, 0.045);
+
+  overflow: hidden;
+}
+
+.history-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 18px;
+
+  padding: 17px 19px;
+
+  border-bottom: 1px solid #edf1ee;
+}
+
+.history-heading .eyebrow {
+  color: #89958f;
+}
+
+.history-heading h3 {
+  margin: 4px 0 3px;
+
+  color: #173b2d;
+
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.history-heading p {
+  margin: 0;
+
+  color: #7b8780;
+
+  font-size: 10px;
+}
+
+.refresh-button {
+  flex: 0 0 auto;
+
+  min-height: 34px;
+
+  padding: 0 12px;
+
+  border: 1px solid #dce5df;
+  border-radius: 8px;
+
+  background: #ffffff;
+
+  color: #244b3b;
+
+  font: inherit;
+  font-size: 10px;
+  font-weight: 750;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.refresh-button:hover {
+  background: #f5f8f6;
+  border-color: #cbd9d0;
+}
+
+.refresh-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* ---------------------------------------------------------
+   TABLE
+   --------------------------------------------------------- */
+
+.cash-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.cash-table-wrap table {
+  width: 100%;
+  min-width: 900px;
+
+  border-collapse: collapse;
+}
+
+.cash-table-wrap th {
+  padding: 10px 14px;
+
+  background: #f8faf9;
+
+  color: #718078;
+
+  text-align: left;
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cash-table-wrap td {
+  padding: 11px 14px;
+
+  border-top: 1px solid #edf1ee;
+
+  color: #3b4b43;
+
+  font-size: 11px;
+}
+
+.cash-table-wrap tbody tr {
+  transition: background 0.15s ease;
+}
+
+.cash-table-wrap tbody tr:hover {
+  background: #fafcfb;
+}
+
+.type-pill {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 23px;
+
+  padding: 0 8px;
+
+  border-radius: 6px;
+
+  background: #eef3f0;
+  color: #53655c;
+
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.type-pill.in {
+  background: #eaf7ef;
+  color: #17643f;
+}
+
+.type-pill.out {
+  background: #fff0f0;
+  color: #9b3d3d;
+}
+
+.type-pill.credit {
+  background: #fff7e5;
+  color: #73530e;
+}
+
+.amount {
+  text-align: right;
+
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+.amount-in {
+  color: #177047 !important;
+}
+
+.amount-out {
+  color: #a33e3e !important;
+}
+
+.cash-loading,
+.cash-empty {
+  padding: 28px;
+
+  color: #78857e;
+
+  text-align: center;
+
+  font-size: 11px;
+}
+
+/* ---------------------------------------------------------
+   MODAL
+   --------------------------------------------------------- */
+
+.finance-overlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 5000;
+
+  display: grid;
+  place-items: center;
+
+  padding: 18px;
+
+  background: rgba(6, 24, 16, 0.48);
+
+  backdrop-filter: blur(8px);
+}
+
+.finance-dialog {
+  width: min(500px, 100%);
+  max-height: calc(100vh - 36px);
+
+  overflow-y: auto;
+
+  padding: 22px;
+
+  border: 1px solid rgba(20, 58, 43, 0.08);
+  border-radius: 16px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 25px 70px rgba(0, 0, 0, 0.22);
+}
+
+.dialog-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 14px;
+
+  margin-bottom: 18px;
+}
+
+.dialog-heading .eyebrow {
+  color: #8a968f;
+}
+
+.dialog-heading h3 {
+  margin: 4px 0 0;
+
+  color: #173b2d;
+
+  font-size: 20px;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+}
+
+.dialog-close {
+  width: 34px;
+  height: 34px;
+
+  display: grid;
+  place-items: center;
+
+  border: 0;
+  border-radius: 8px;
+
+  background: #f3f6f4;
+
+  color: #405048;
+
+  font-size: 19px;
+
+  cursor: pointer;
+}
+
+.dialog-close:hover {
+  background: #e9efeb;
+}
+
+.finance-dialog label {
+  display: block;
+
+  margin-top: 12px;
+
+  color: #405048;
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.finance-dialog input,
+.finance-dialog select,
+.finance-dialog textarea {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  margin-top: 6px;
+
+  padding: 10px 11px;
+
+  border: 1px solid #dbe4de;
+  border-radius: 8px;
+
+  background: #ffffff;
+
+  color: #1d3027;
+
+  font: inherit;
+  font-size: 11px;
+
+  outline: none;
+
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.finance-dialog input:focus,
+.finance-dialog select:focus,
+.finance-dialog textarea:focus {
+  border-color: #789a87;
+
+  box-shadow:
+    0 0 0 3px rgba(62, 112, 86, 0.07);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  gap: 12px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+
+  gap: 8px;
+
+  margin-top: 19px;
+}
+
+.dialog-actions button {
+  min-height: 38px;
+
+  padding: 0 14px;
+
+  border: 0;
+  border-radius: 8px;
+
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.dialog-actions .secondary {
+  background: #edf2ef;
+  color: #34443b;
+}
+
+.dialog-actions .secondary:hover {
+  background: #e3ebe6;
+}
+
+.dialog-actions .primary {
+  background: #143a2b;
+  color: #ffffff;
+}
+
+.dialog-actions .primary:hover {
+  background: #1a4937;
+}
+
+.dialog-actions button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* ---------------------------------------------------------
+   TABLET
+   --------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .cash-hero {
+    align-items: flex-start;
+  }
+
+  .cash-actions {
+    max-width: 430px;
+  }
+
+  .cash-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metric-card:nth-child(2) {
+    border-right: 0;
+  }
+
+  .metric-card:nth-child(-n + 2) {
+    border-bottom: 1px solid #edf1ee;
+  }
+}
+
+/* ---------------------------------------------------------
+   MOBILE
+   --------------------------------------------------------- */
+
+@media (max-width: 650px) {
+  .firm-cash {
+    margin-bottom: 22px;
+  }
+
+  .cash-hero {
+    display: block;
+
+    min-height: auto;
+
+    padding: 18px;
+
+    border-radius: 14px;
+  }
+
+  .cash-hero-main {
+    gap: 12px;
+  }
+
+  .cash-icon {
+    flex-basis: 46px;
+
+    width: 46px;
+    height: 46px;
+
+    border-radius: 12px;
+
+    font-size: 21px;
+  }
+
+  .cash-hero h2 {
+    font-size: 32px;
+  }
+
+  .cash-actions {
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    max-width: none;
+
+    margin-top: 18px;
+  }
+
+  .cash-button {
+    width: 100%;
+
+    min-height: 38px;
+
+    padding: 0 7px;
+
+    font-size: 9px;
+  }
+
+  .cash-button strong {
+    font-size: 12px;
+  }
+
+  .cash-metrics {
+    grid-template-columns: 1fr 1fr;
+
+    margin-top: 8px;
+
+    border-radius: 11px;
+  }
+
+  .metric-card {
+    min-height: 68px;
+
+    padding: 11px 13px;
+  }
+
+  .metric-card strong {
+    font-size: 16px;
+  }
+
+  .history-heading {
+    align-items: flex-start;
+
+    padding: 15px;
+  }
+
+  .history-heading h3 {
+    font-size: 15px;
+  }
+
+  .history-heading p {
+    display: none;
+  }
+
+  .refresh-button {
+    min-height: 32px;
+  }
+
+  .cash-history {
+    border-radius: 12px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .finance-dialog {
+    padding: 18px;
+
+    border-radius: 14px;
+  }
+}
+
+/* ---------------------------------------------------------
+   SMALL MOBILE
+   --------------------------------------------------------- */
+
+@media (max-width: 420px) {
+  .cash-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .cash-button {
+    min-height: 40px;
+  }
+
+  .cash-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .metric-card {
+    min-height: 64px;
+  }
+}

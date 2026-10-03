@@ -1,7 +1,8 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">WorkLog</string>
     <string name="title_activity_main">WorkLog</string>
-    <string name="package_name">com.surakshagroup.surakshahub</string>
-    <string name="custom_url_scheme">com.surakshagroup.surakshahub</string>
+    <string name="package_name">com.surakshagroup.worklogattendance</string>
+    <string name="custom_url_scheme">com.surakshagroup.worklogattendance</string>
 </resources>
+

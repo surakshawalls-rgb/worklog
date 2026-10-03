@@ -504,3 +504,123 @@ textarea:focus {
     border-radius: 16px 16px 0 0;
   }
 }
+/* Firm finance balance */
+
+.firm-balance-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+  padding: 18px 22px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f8fafc, #eef6ff);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.firm-balance-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.firm-balance-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #475569;
+}
+
+.firm-balance-description {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.firm-balance-value {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 150px;
+}
+
+.firm-balance-value strong {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.firm-balance-loading {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.payment-balance-preview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 2px 0 4px;
+  padding: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.balance-preview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.balance-preview-item span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.balance-preview-item strong {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.payment-balance-warning {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  border-radius: 12px;
+  background: rgba(254, 242, 242, 0.95);
+}
+
+.payment-balance-warning strong {
+  font-size: 13px;
+  color: #b91c1c;
+}
+
+.payment-balance-warning span {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #991b1b;
+}
+
+@media (max-width: 640px) {
+  .firm-balance-card {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .firm-balance-value {
+    justify-content: flex-start;
+  }
+
+  .firm-balance-value strong {
+    font-size: 22px;
+  }
+
+  .payment-balance-preview {
+    grid-template-columns: 1fr;
+  }
+}
+

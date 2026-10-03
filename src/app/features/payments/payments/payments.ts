@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+﻿import { CommonModule } from '@angular/common';
 import {
   Component,
   EventEmitter,
@@ -13,6 +13,7 @@ import {
   Employee,
   Payment
 } from '../../../services/attendance.service';
+import { FirmFinanceService } from '../../../services/firm-finance.service';
 
 @Component({
   selector: 'app-payments',
@@ -22,6 +23,7 @@ import {
 })
 export class PaymentsComponent {
   private readonly attendance = inject(AttendanceService);
+  private readonly firmFinance = inject(FirmFinanceService);
 
   @Input() employees: Employee[] = [];
   @Input() payments: Payment[] = [];
@@ -32,6 +34,10 @@ export class PaymentsComponent {
   readonly selectedEmployee = signal<Employee | null>(null);
 
   readonly paymentAmount = signal(0);
+
+  paymentAmountValue(): number {
+    return Number(this.paymentAmount() || 0);
+  }
   readonly paymentDate = signal(this.today());
   readonly paymentMethod = signal('cash');
   readonly paymentNote = signal('');
@@ -45,8 +51,23 @@ export class PaymentsComponent {
   readonly busy = signal(false);
   readonly error = signal('');
   readonly message = signal('');
+  readonly firmBalance = signal(0);
+  readonly firmBalanceLoading = signal(false);
 
+  async loadFirmBalance(): Promise<void> {
+    this.firmBalanceLoading.set(true);
+
+    try {
+      const balance = await this.firmFinance.getCurrentBalance();
+      this.firmBalance.set(Number(balance || 0));
+    } catch (error) {
+      this.error.set(this.readError(error));
+    } finally {
+      this.firmBalanceLoading.set(false);
+    }
+  }
   selectEmployee(employee: Employee): void {
+    void this.loadFirmBalance();
     this.selectedEmployee.set(employee);
     this.error.set('');
     this.message.set('');
@@ -65,6 +86,7 @@ export class PaymentsComponent {
   readonly localPayments = signal<Payment[]>([]);
 
   openPayment(employee: Employee): void {
+    void this.loadFirmBalance();
     this.selectedEmployee.set(employee);
     this.paymentAmount.set(0);
     this.paymentDate.set(this.today());
@@ -283,7 +305,7 @@ export class PaymentsComponent {
   }
 
   currency(value: number | string): string {
-    return `₹${Number(value || 0).toLocaleString('en-IN', {
+    return `\u20B9${Number(value || 0).toLocaleString('en-IN', {
       maximumFractionDigits: 2
     })}`;
   }
@@ -318,3 +340,10 @@ export class PaymentsComponent {
     return 'Something went wrong. Please try again.';
   }
 }
+
+
+
+
+
+
+

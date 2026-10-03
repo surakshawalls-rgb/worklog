@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+﻿import { Injectable, inject } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import * as bcrypt from 'bcryptjs';
 import { environment } from '../../environments/environment';
@@ -11,7 +11,7 @@ export type PaymentStatus = 'completed' | 'reversed';
 export interface SessionUser { id: number; name: string; username: string; role: 'admin' | 'employee'; }
 export interface UserOption { id: number; username: string; display_name: string | null; role: string; }
 export interface Employee { id: number; user_id: number | null; employee_code: string; name: string; mobile: string | null; default_daily_rate: number; joining_date: string; status: 'active' | 'inactive'; }
-export interface AttendanceRecord { id: number; employee_id: number; attendance_date: string; attendance_type: AttendanceType; daily_rate: number; earned_amount: number; approval_status: ApprovalStatus; note: string | null; approved_by: number | null; approved_by_name: string | null; submitted_by: number | null; submitted_by_name: string | null; paid_amount: number; outstanding_amount: number; created_at?: string; }
+export interface AttendanceRecord { id: number; employee_id: number; attendance_date: string; attendance_type: AttendanceType; daily_rate: number; earned_amount: number; approval_status: ApprovalStatus; note: string | null; approved_by: number | null; approved_by_name: string | null; approved_at?: string | null; submitted_by: number | null; submitted_by_name: string | null; paid_amount: number; outstanding_amount: number; created_at?: string; }
 export interface Payment { id: number; employee_id: number; amount: number; payment_date: string; payment_method: string; note: string | null; status: PaymentStatus; created_by: number | null; created_at: string; }
 export interface DailyAnnouncement { id: number; message: string; published_at: string; expires_at: string; posted_by: number | null; }
 
@@ -262,3 +262,4 @@ export class AttendanceService {
     });
   }
 }
+

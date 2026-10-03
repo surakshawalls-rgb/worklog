@@ -1,0 +1,436 @@
+﻿<section class="firm-cash">
+
+  <div class="cash-hero">
+
+    <div class="cash-hero-main">
+
+      <div class="cash-icon">
+        ₹
+      </div>
+
+      <div>
+
+        <span class="eyebrow">
+          FIRM CASH
+        </span>
+
+        <h2>
+          {{ formatCurrency(dashboard.firm_balance) }}
+        </h2>
+
+        <p>
+          Available firm balance
+        </p>
+
+      </div>
+
+    </div>
+
+    <div class="cash-actions">
+
+      <button
+        type="button"
+        class="cash-button gold"
+        (click)="openPartnerLoan()"
+      >
+        <strong>+</strong>
+        Partner Loan
+      </button>
+
+      <button
+        type="button"
+        class="cash-button"
+        (click)="openIncome()"
+      >
+        <strong>+</strong>
+        Firm Income
+      </button>
+
+      <button
+        type="button"
+        class="cash-button danger"
+        (click)="openMoneyOut()"
+      >
+        <strong>−</strong>
+        Money Out
+      </button>
+
+    </div>
+
+  </div>
+
+  <div class="cash-metrics">
+
+    <div class="metric-card">
+      <span>Money In</span>
+      <strong>
+        {{ formatCurrency(dashboard.total_money_in) }}
+      </strong>
+    </div>
+
+    <div class="metric-card">
+      <span>Money Out</span>
+      <strong>
+        {{ formatCurrency(dashboard.total_money_out) }}
+      </strong>
+    </div>
+
+    <div class="metric-card">
+      <span>Net Movement</span>
+      <strong
+        [class.negative]="dashboard.net_movement < 0"
+      >
+        {{ formatCurrency(dashboard.net_movement) }}
+      </strong>
+    </div>
+
+    <div class="metric-card">
+      <span>Transactions</span>
+      <strong>
+        {{ dashboard.transaction_count }}
+      </strong>
+    </div>
+
+  </div>
+
+  @if (successMessage) {
+    <div class="cash-alert success">
+      {{ successMessage }}
+    </div>
+  }
+
+  @if (errorMessage && !modal) {
+    <div class="cash-alert error">
+      {{ errorMessage }}
+    </div>
+  }
+
+  <section class="cash-history">
+
+    <div class="history-heading">
+
+      <div>
+        <span class="eyebrow">
+          
+        </span>
+
+        <h3>
+          Recent activity
+        </h3>
+
+        
+      </div>
+
+      <button
+        type="button"
+        class="refresh-button"
+        (click)="refresh()"
+        [disabled]="loading"
+      >
+        Refresh
+      </button>
+
+    </div>
+
+    @if (loading) {
+
+      <div class="cash-loading">
+        Loading firm cash...
+      </div>
+
+    } @else if (transactions.length === 0) {
+
+      <div class="cash-empty">
+        No firm transactions recorded yet.
+      </div>
+
+    } @else {
+
+      <div class="cash-table-wrap">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Category</th>
+              <th>Person</th>
+              <th>Mode</th>
+              <th>Description</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            @for (
+              transaction of transactions;
+              track transaction.id
+            ) {
+
+              <tr>
+
+                <td>
+                  {{ formatDate(transaction.transaction_date) }}
+                </td>
+
+                <td>
+                  <span
+                    class="type-pill"
+                    [class.in]="transaction.transaction_type === 'money_in'"
+                    [class.out]="transaction.transaction_type === 'money_out'"
+                    [class.credit]="transaction.transaction_type === 'expense_on_credit'"
+                  >
+                    {{ transactionLabel(transaction) }}
+                  </span>
+                </td>
+
+                <td>
+                  {{ transaction.category }}
+                </td>
+
+                <td>
+                  {{
+                    transaction.partner_name ||
+                    transaction.employee_name ||
+                    '—'
+                  }}
+                </td>
+
+                <td>
+                  {{
+                    transaction.payment_mode
+                      ? transaction.payment_mode.replace('_', ' ')
+                      : '—'
+                  }}
+                </td>
+
+                <td>
+                  {{ transaction.description || '—' }}
+                </td>
+
+                <td
+                  class="amount"
+                  [class.amount-in]="transaction.transaction_type === 'money_in'"
+                  [class.amount-out]="transaction.transaction_type === 'money_out'"
+                >
+                  {{
+                    transaction.transaction_type === 'money_in'
+                      ? '+'
+                      : transaction.transaction_type === 'money_out'
+                        ? '-'
+                        : ''
+                  }}{{ formatCurrency(transaction.amount) }}
+                </td>
+
+              </tr>
+
+            }
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    }
+
+  </section>
+
+
+  @if (modal) {
+
+    <div
+      class="finance-overlay"
+      role="dialog"
+      aria-modal="true"
+      (click)="closeModal()"
+    >
+
+      <section
+        class="finance-dialog"
+        (click)="$event.stopPropagation()"
+      >
+
+        <div class="dialog-heading">
+
+          <div>
+            <span class="eyebrow">
+              FIRM CASH
+            </span>
+
+            <h3>
+              {{
+                modal === 'partner-loan'
+                  ? 'Add Partner Loan'
+                  : modal === 'income'
+                    ? 'Record Firm Income'
+                    : 'Record Money Out'
+              }}
+            </h3>
+          </div>
+
+          <button
+            type="button"
+            class="dialog-close"
+            (click)="closeModal()"
+            aria-label="Close"
+          >
+            &times;
+          </button>
+
+        </div>
+
+        @if (errorMessage) {
+          <div class="cash-alert error">
+            {{ errorMessage }}
+          </div>
+        }
+
+        @if (modal === 'partner-loan') {
+
+          <label>
+            Partner
+
+            <select
+              [(ngModel)]="partnerId"
+            >
+              <option [ngValue]="0">
+                Select partner
+              </option>
+
+              @for (
+                partner of partners;
+                track partner.id
+              ) {
+                <option
+                  [ngValue]="partner.id"
+                >
+                  {{ partner.partner_name }}
+                </option>
+              }
+
+            </select>
+          </label>
+
+        }
+
+        @if (
+          modal === 'income' ||
+          modal === 'money-out'
+        ) {
+
+          <label>
+            Category
+
+            <select
+              [(ngModel)]="category"
+            >
+
+              @for (
+                item of (
+                  modal === 'income'
+                    ? incomeCategories
+                    : expenseCategories
+                );
+                track item.id
+              ) {
+
+                <option
+                  [value]="item.category_name"
+                >
+                  {{ item.category_name }}
+                </option>
+
+              }
+
+            </select>
+
+          </label>
+
+        }
+
+        <div class="form-grid">
+
+          <label>
+            Amount
+
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              [(ngModel)]="amount"
+              placeholder="0.00"
+            />
+          </label>
+
+          <label>
+            Date
+
+            <input
+              type="date"
+              [(ngModel)]="transactionDate"
+            />
+          </label>
+
+        </div>
+
+        <label>
+          Payment Mode
+
+          <select
+            [(ngModel)]="paymentMode"
+          >
+            <option value="cash">Cash</option>
+            <option value="bank_transfer">Bank Transfer</option>
+            <option value="upi">UPI</option>
+            <option value="cheque">Cheque</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+
+        <label>
+          Description
+
+          <textarea
+            rows="3"
+            [(ngModel)]="description"
+            placeholder="Optional description"
+          ></textarea>
+        </label>
+
+        <div class="dialog-actions">
+
+          <button
+            type="button"
+            class="secondary"
+            (click)="closeModal()"
+            [disabled]="saving"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            class="primary"
+            (click)="save()"
+            [disabled]="saving"
+          >
+            {{
+              saving
+                ? 'Saving...'
+                : 'Save Transaction'
+            }}
+          </button>
+
+        </div>
+
+      </section>
+
+    </div>
+
+  }
+
+</section>
+

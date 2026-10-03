@@ -1,3 +1,4609 @@
-* { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100%; }
-body { font-family: 'Trebuchet MS', 'Segoe UI', sans-serif; }
+﻿@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --premium-bg: #f4f5f1;
+  --premium-bg-deep: #eef1ec;
+
+  --premium-surface: rgba(255,255,255,.94);
+  --premium-surface-solid: #ffffff;
+  --premium-surface-soft: #f8faf7;
+
+  --premium-green-950: #071d16;
+  --premium-green-900: #0b281f;
+  --premium-green-800: #10382b;
+  --premium-green-700: #164936;
+  --premium-green-600: #1d5a43;
+  --premium-green-500: #287356;
+
+  --premium-gold-700: #8c651c;
+  --premium-gold-600: #ad7d25;
+  --premium-gold-500: #c99a3d;
+  --premium-gold-400: #dfb75c;
+  --premium-gold-300: #efd38b;
+  --premium-gold-soft: #fbf5e7;
+
+  --premium-text: #17241e;
+  --premium-text-secondary: #627068;
+  --premium-text-muted: #8a958e;
+
+  --premium-border: rgba(21,54,40,.10);
+  --premium-border-strong: rgba(21,54,40,.18);
+
+  --premium-success: #247b58;
+  --premium-danger: #b84545;
+  --premium-warning: #a66c19;
+
+  --premium-radius-xs: 8px;
+  --premium-radius-sm: 12px;
+  --premium-radius-md: 16px;
+  --premium-radius-lg: 22px;
+  --premium-radius-xl: 28px;
+
+  --premium-shadow-xs:
+    0 2px 8px rgba(10,36,26,.035);
+
+  --premium-shadow-sm:
+    0 5px 18px rgba(10,36,26,.055),
+    0 1px 3px rgba(10,36,26,.035);
+
+  --premium-shadow-md:
+    0 14px 36px rgba(10,36,26,.085),
+    0 2px 8px rgba(10,36,26,.035);
+
+  --premium-shadow-lg:
+    0 28px 70px rgba(7,29,22,.16),
+    0 8px 22px rgba(7,29,22,.07);
+
+  --premium-shadow-gold:
+    0 10px 30px rgba(201,154,61,.18);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  margin: 0;
+  min-height: 100%;
+  background: var(--premium-bg);
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(201,154,61,.055),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 88% 12%,
+      rgba(29,90,67,.045),
+      transparent 30%
+    ),
+    var(--premium-bg);
+
+  color: var(--premium-text);
+
+  font-family:
+    'Manrope',
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  overflow-x: hidden;
+
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: rgba(201,154,61,.25);
+  color: var(--premium-green-950);
+}
+
+/* Premium scrollbar */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(29,90,67,.28) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(29,90,67,.25);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(29,90,67,.42);
+}
+
+/* Ionic visual integration */
+
+ion-icon {
+  vertical-align: middle;
+  --ionicon-stroke-width: 28px;
+}
+
+ion-spinner {
+  --color: var(--premium-green-600);
+}
+
+
+/* ============================================================
+   APP SHELL
+   ============================================================ */
+
+app-root {
+  display: block;
+  min-height: 100vh;
+}
+
+app-root .app-shell {
+  min-height: 100vh !important;
+
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(201,154,61,.055),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 100% 20%,
+      rgba(29,90,67,.045),
+      transparent 32%
+    ),
+    linear-gradient(
+      180deg,
+      #f8faf7 0%,
+      #f3f5f2 100%
+    ) !important;
+
+  color: var(--premium-text) !important;
+}
+
+
+/* ============================================================
+   PREMIUM TOP BAR
+   ============================================================ */
+
+app-root .topbar {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+
+  min-height: 72px !important;
+
+  padding-left:
+    max(20px, env(safe-area-inset-left)) !important;
+
+  padding-right:
+    max(20px, env(safe-area-inset-right)) !important;
+
+  background:
+    linear-gradient(
+      120deg,
+      #071d16 0%,
+      #0b281f 45%,
+      #10382b 100%
+    ) !important;
+
+  border-bottom:
+    1px solid rgba(255,255,255,.08) !important;
+
+  box-shadow:
+    0 10px 30px rgba(5,24,17,.16) !important;
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+app-root .topbar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(201,154,61,.65),
+      transparent
+    );
+
+  opacity: .55;
+}
+
+app-root .brand {
+  gap: 12px !important;
+}
+
+app-root .brand-mark {
+  width: 44px !important;
+  height: 44px !important;
+  flex-basis: 44px !important;
+
+  border-radius: 14px !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #efd38b,
+      #c99a3d
+    ) !important;
+
+  color: var(--premium-green-950) !important;
+
+  border:
+    1px solid rgba(255,255,255,.22) !important;
+
+  box-shadow:
+    0 6px 18px rgba(0,0,0,.18),
+    inset 0 1px 0 rgba(255,255,255,.38) !important;
+}
+
+app-root .brand-name {
+  font-size: 21px !important;
+  font-weight: 800 !important;
+  letter-spacing: -.035em !important;
+  color: #fff !important;
+}
+
+app-root .role-mark {
+  border:
+    1px solid rgba(255,255,255,.16) !important;
+
+  background:
+    rgba(255,255,255,.075) !important;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+app-root .topbar .text-button {
+  border-radius: 10px !important;
+  transition:
+    background .2s ease,
+    transform .2s ease !important;
+}
+
+app-root .topbar .text-button:hover {
+  background: rgba(255,255,255,.09) !important;
+  transform: translateY(-1px);
+}
+
+app-root .topbar .icon-button {
+  border-radius: 12px !important;
+  transition:
+    background .2s ease,
+    transform .2s ease !important;
+}
+
+app-root .topbar .icon-button:hover {
+  background: rgba(255,255,255,.09) !important;
+  transform: translateY(-1px);
+}
+
+
+/* ============================================================
+   PAGE CONTAINER
+   ============================================================ */
+
+app-root .page {
+  width:
+    min(1380px, calc(100% - 56px)) !important;
+
+  margin-left: auto !important;
+  margin-right: auto !important;
+
+  padding-top: 42px !important;
+  padding-bottom: 90px !important;
+}
+
+app-root .page-heading h1,
+app-root .attendance-header h1,
+app-root .page-header h1,
+app-root .feature-heading h1,
+app-root .finance-header h2,
+app-root .page-heading .heading-copy h1 {
+  font-family:
+    'Cormorant Garamond',
+    Georgia,
+    serif !important;
+
+  font-weight: 600 !important;
+
+  letter-spacing: -.035em !important;
+
+  color: var(--premium-green-950) !important;
+}
+
+app-root .page-heading h1 {
+  font-size: clamp(38px, 4vw, 56px) !important;
+  line-height: .98 !important;
+}
+
+app-root .eyebrow {
+  color: var(--premium-gold-600) !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: .19em !important;
+}
+
+app-root .muted,
+app-root .subtitle {
+  color: var(--premium-text-secondary) !important;
+}
+
+
+/* ============================================================
+   PREMIUM TABS
+   ============================================================ */
+
+app-root .tabs {
+  position: sticky !important;
+  top: 72px !important;
+  z-index: 100 !important;
+
+  display: flex !important;
+  gap: 5px !important;
+
+  padding: 6px !important;
+
+  margin-bottom: 30px !important;
+
+  border:
+    1px solid rgba(20,58,43,.10) !important;
+
+  border-radius: 17px !important;
+
+  background:
+    rgba(232,237,233,.82) !important;
+
+  box-shadow:
+    0 5px 20px rgba(12,42,29,.045) !important;
+
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+app-root .tabs button {
+  min-height: 43px !important;
+
+  padding:
+    9px 17px !important;
+
+  border-radius: 12px !important;
+
+  color: #647169 !important;
+
+  font-weight: 750 !important;
+
+  transition:
+    color .2s ease,
+    background .2s ease,
+    box-shadow .2s ease,
+    transform .2s ease !important;
+}
+
+app-root .tabs button:hover {
+  color: var(--premium-green-700) !important;
+  background: rgba(255,255,255,.65) !important;
+  transform: translateY(-1px);
+}
+
+app-root .tabs button.active {
+  color: var(--premium-green-900) !important;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff,
+      #f9fbf9
+    ) !important;
+
+  box-shadow:
+    0 4px 12px rgba(15,51,36,.10),
+    inset 0 1px 0 #fff !important;
+}
+
+app-root .tabs button span {
+  background: var(--premium-gold-soft) !important;
+  color: var(--premium-gold-700) !important;
+}
+
+
+/* ============================================================
+   UNIVERSAL PREMIUM PANELS
+   ============================================================ */
+
+app-root app-dashboard .panel,
+app-root app-attendance .panel,
+app-root app-employees .panel,
+app-root app-approvals .panel,
+app-root app-payments .panel,
+app-root app-receipts .panel,
+app-root app-partner-finance .panel {
+  border:
+    1px solid var(--premium-border) !important;
+
+  border-radius:
+    var(--premium-radius-lg) !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.98),
+      rgba(250,252,249,.94)
+    ) !important;
+
+  box-shadow:
+    var(--premium-shadow-sm) !important;
+
+  overflow: hidden;
+}
+
+app-root app-dashboard .panel:hover,
+app-root app-attendance .panel:hover,
+app-root app-employees .panel:hover,
+app-root app-approvals .panel:hover,
+app-root app-payments .panel:hover,
+app-root app-receipts .panel:hover,
+app-root app-partner-finance .panel:hover {
+  box-shadow: var(--premium-shadow-md) !important;
+}
+
+app-root .panel-title {
+  border-bottom:
+    1px solid rgba(20,58,43,.075) !important;
+}
+
+app-root .panel-title h2,
+app-root .section-heading h3 {
+  font-family:
+    'Cormorant Garamond',
+    Georgia,
+    serif !important;
+
+  font-weight: 600 !important;
+
+  color: var(--premium-green-950) !important;
+}
+
+
+/* ============================================================
+   PREMIUM BUTTONS
+   ============================================================ */
+
+app-root .primary,
+app-root .approve,
+app-root .deny,
+app-root .outline,
+app-root .add-money-button,
+app-root .money-out-button,
+app-root .profile-action {
+  position: relative !important;
+
+  min-height: 44px !important;
+
+  border-radius: 12px !important;
+
+  font-weight: 750 !important;
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    background .18s ease,
+    border-color .18s ease !important;
+}
+
+app-root .primary,
+app-root .approve {
+  border:
+    1px solid var(--premium-green-700) !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--premium-green-600),
+      var(--premium-green-800)
+    ) !important;
+
+  color: #fff !important;
+
+  box-shadow:
+    0 6px 18px rgba(18,72,52,.16) !important;
+}
+
+app-root .primary:hover:not(:disabled),
+app-root .approve:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+
+  box-shadow:
+    0 10px 25px rgba(18,72,52,.22) !important;
+}
+
+app-root .primary:active:not(:disabled),
+app-root .approve:active:not(:disabled) {
+  transform: translateY(0) scale(.985) !important;
+}
+
+app-root .outline {
+  border:
+    1px solid rgba(29,83,62,.18) !important;
+
+  background:
+    rgba(255,255,255,.90) !important;
+
+  color:
+    var(--premium-green-700) !important;
+
+  box-shadow:
+    0 2px 7px rgba(20,58,43,.035) !important;
+}
+
+app-root .outline:hover:not(:disabled) {
+  border-color:
+    rgba(29,83,62,.30) !important;
+
+  background:
+    var(--premium-green-soft, #f0f7f3) !important;
+
+  transform: translateY(-1px) !important;
+
+  box-shadow:
+    0 6px 15px rgba(20,58,43,.08) !important;
+}
+
+app-root .deny {
+  background: #fff7f7 !important;
+  color: var(--premium-danger) !important;
+  border-color: rgba(184,69,69,.18) !important;
+}
+
+app-root .deny:hover:not(:disabled) {
+  background: #fff0f0 !important;
+  transform: translateY(-1px);
+}
+
+
+/* ============================================================
+   DASHBOARD — PREMIUM
+   ============================================================ */
+
+app-root app-dashboard .dashboard {
+  gap: 26px !important;
+}
+
+app-root app-dashboard .stats-grid {
+  gap: 16px !important;
+}
+
+app-root app-dashboard .stat {
+  position: relative !important;
+  min-height: 150px !important;
+
+  padding: 21px !important;
+
+  border:
+    1px solid rgba(20,58,43,.09) !important;
+
+  border-radius: 19px !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff 0%,
+      #f8faf7 100%
+    ) !important;
+
+  box-shadow:
+    var(--premium-shadow-sm) !important;
+
+  overflow: hidden !important;
+
+  transition:
+    transform .22s ease,
+    box-shadow .22s ease !important;
+}
+
+app-root app-dashboard .stat::before {
+  content: '';
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 3px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--premium-green-700),
+      var(--premium-gold-500)
+    );
+
+  opacity: .75;
+}
+
+app-root app-dashboard .stat:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: var(--premium-shadow-md) !important;
+}
+
+app-root app-dashboard .stat-icon {
+  border-radius: 12px !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #f2f7f3,
+      #e5efe9
+    ) !important;
+
+  color: var(--premium-green-700) !important;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9),
+    0 4px 10px rgba(20,58,43,.05) !important;
+}
+
+app-root app-dashboard .stat strong {
+  color: var(--premium-green-900) !important;
+  font-size: clamp(25px, 2.5vw, 33px) !important;
+}
+
+app-root app-dashboard .quick-info {
+  border-radius: 22px !important;
+
+  background:
+    radial-gradient(
+      circle at 85% 10%,
+      rgba(201,154,61,.22),
+      transparent 32%
+    ),
+    linear-gradient(
+      135deg,
+      #071d16,
+      #123d2f 65%,
+      #164936
+    ) !important;
+
+  box-shadow:
+    var(--premium-shadow-lg) !important;
+
+  border:
+    1px solid rgba(255,255,255,.08) !important;
+}
+
+
+/* ============================================================
+   ATTENDANCE
+   ============================================================ */
+
+app-root app-attendance .attendance-page {
+  gap: 24px !important;
+}
+
+app-root app-attendance .employee-selector,
+app-root app-attendance .calendar-section,
+app-root app-attendance .employee-report {
+  border-radius: 22px !important;
+
+  border:
+    1px solid var(--premium-border) !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f8faf7
+    ) !important;
+
+  box-shadow:
+    var(--premium-shadow-sm) !important;
+}
+
+app-root app-attendance .employee-card {
+  border-radius: 15px !important;
+
+  border:
+    1px solid rgba(20,58,43,.08) !important;
+
+  background:
+    #fff !important;
+
+  box-shadow:
+    0 3px 12px rgba(15,50,35,.035) !important;
+
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease,
+    border-color .2s ease !important;
+}
+
+app-root app-attendance .employee-card:hover {
+  transform: translateY(-2px) !important;
+
+  border-color:
+    rgba(29,90,67,.20) !important;
+
+  box-shadow:
+    var(--premium-shadow-sm) !important;
+}
+
+app-root app-attendance .employee-card.selected {
+  border-color:
+    rgba(201,154,61,.48) !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      #fffdf7,
+      #ffffff
+    ) !important;
+
+  box-shadow:
+    0 8px 25px rgba(201,154,61,.11) !important;
+}
+
+app-root app-attendance .employee-avatar {
+  background:
+    linear-gradient(
+      145deg,
+      #eaf3ee,
+      #d9e9e1
+    ) !important;
+
+  color:
+    var(--premium-green-700) !important;
+
+  border:
+    1px solid rgba(29,90,67,.12) !important;
+}
+
+
+/* ============================================================
+   EMPLOYEES
+   ============================================================ */
+
+app-root app-employees .employee-card {
+  border-bottom:
+    1px solid rgba(20,58,43,.065) !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      #fff,
+      #fbfcfa
+    ) !important;
+
+  transition:
+    background .2s ease,
+    transform .2s ease,
+    box-shadow .2s ease !important;
+}
+
+app-root app-employees .employee-card:hover {
+  background:
+    linear-gradient(
+      90deg,
+      #fffdf8,
+      #ffffff
+    ) !important;
+
+  box-shadow:
+    inset 3px 0 0 var(--premium-gold-500) !important;
+}
+
+app-root app-employees .avatar {
+  border:
+    1px solid rgba(29,90,67,.13) !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #f1f7f3,
+      #dfede5
+    ) !important;
+
+  color:
+    var(--premium-green-700) !important;
+
+  box-shadow:
+    0 5px 13px rgba(20,58,43,.06) !important;
+}
+
+app-root app-employees .employee-rate,
+app-root app-employees .employee-balance {
+  border-radius: 12px !important;
+  background: #f8faf8 !important;
+  border: 1px solid rgba(20,58,43,.06) !important;
+}
+
+app-root app-employees .employee-balance.pending {
+  background: #fff8e9 !important;
+  border-color: rgba(201,154,61,.18) !important;
+}
+
+app-root app-employees .employee-balance.advance {
+  background: #f1f7ff !important;
+}
+
+app-root app-employees .employee-balance.settled {
+  background: #eef8f2 !important;
+}
+
+app-root app-employees .employee-actions button {
+  border-radius: 10px !important;
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease !important;
+}
+
+app-root app-employees .employee-actions button:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 5px 13px rgba(20,58,43,.09) !important;
+}
+
+
+/* ============================================================
+   APPROVALS
+   ============================================================ */
+
+app-root app-approvals .summary-card {
+  border-radius: 18px !important;
+
+  border:
+    1px solid rgba(20,58,43,.08) !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #fff,
+      #f8faf7
+    ) !important;
+
+  box-shadow:
+    var(--premium-shadow-sm) !important;
+
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease !important;
+}
+
+app-root app-approvals .summary-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--premium-shadow-md) !important;
+}
+
+app-root app-approvals .approval-card {
+  border:
+    1px solid rgba(20,58,43,.08) !important;
+
+  border-radius: 18px !important;
+
+  background:
+    #fff !important;
+
+  box-shadow:
+    0 4px 15px rgba(15,50,35,.045) !important;
+
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease,
+    border-color .2s ease !important;
+}
+
+app-root app-approvals .approval-card:hover {
+  transform: translateY(-2px) !important;
+
+  border-color:
+    rgba(201,154,61,.25) !important;
+
+  box-shadow:
+    var(--premium-shadow-sm) !important;
+}
+
+app-root app-approvals .date-block {
+  border-radius: 13px !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #f2f7f3,
+      #e7f0eb
+    ) !important;
+
+  color: var(--premium-green-700) !important;
+}
+
+
+/* ============================================================
+   PAYMENTS
+   ============================================================ */
+
+app-root app-payments .firm-balance-card {
+  position: relative !important;
+
+  border-radius: 24px !important;
+
+  border:
+    1px solid rgba(255,255,255,.10) !important;
+
+  background:
+    radial-gradient(
+      circle at 88% 10%,
+      rgba(201,154,61,.24),
+      transparent 30%
+    ),
+    linear-gradient(
+      135deg,
+      #071d16,
+      #10382b 60%,
+      #174936
+    ) !important;
+
+  box-shadow:
+    var(--premium-shadow-lg) !important;
+
+  overflow: hidden !important;
+}
+
+app-root app-payments .firm-balance-card::after {
+  content: '';
+
+  position: absolute;
+  right: -90px;
+  bottom: -120px;
+
+  width: 260px;
+  height: 260px;
+
+  border-radius: 50%;
+
+  border:
+    1px solid rgba(255,255,255,.08);
+
+  box-shadow:
+    0 0 0 35px rgba(255,255,255,.025),
+    0 0 0 70px rgba(255,255,255,.018);
+
+  pointer-events: none;
+}
+
+app-root app-payments .firm-balance-value strong {
+  color: #fff !important;
+
+  font-family:
+    'Cormorant Garamond',
+    Georgia,
+    serif !important;
+
+  font-size:
+    clamp(36px, 5vw, 58px) !important;
+
+  font-weight: 600 !important;
+
+  letter-spacing: -.025em !important;
+}
+
+app-root app-payments .employee-card {
+  border-radius: 17px !important;
+
+  border:
+    1px solid rgba(20,58,43,.08) !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f8faf7
+    ) !important;
+
+  box-shadow:
+    var(--premium-shadow-xs) !important;
+
+  transition:
+    transform .2s ease,
+    border-color .2s ease,
+    box-shadow .2s ease !important;
+}
+
+app-root app-payments .employee-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: var(--premium-shadow-sm) !important;
+}
+
+app-root app-payments .employee-card.selected {
+  border-color:
+    rgba(201,154,61,.55) !important;
+
+  box-shadow:
+    0 10px 30px rgba(201,154,61,.13) !important;
+}
+
+app-root app-payments .avatar {
+  background:
+    linear-gradient(
+      145deg,
+      #f1f7f3,
+      #deece4
+    ) !important;
+
+  color:
+    var(--premium-green-700) !important;
+}
+
+
+/* ============================================================
+   RECEIPTS
+   ============================================================ */
+
+app-root app-receipts .summary-card {
+  border-radius: 18px !important;
+
+  border:
+    1px solid rgba(20,58,43,.08) !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #fff,
+      #f8faf7
+    ) !important;
+
+  box-shadow:
+    var(--premium-shadow-sm) !important;
+
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease !important;
+}
+
+app-root app-receipts .summary-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: var(--premium-shadow-md) !important;
+}
+
+app-root app-receipts .receipt {
+  border-radius: 18px !important;
+
+  border:
+    1px solid rgba(20,58,43,.09) !important;
+
+  background:
+    #fff !important;
+
+  box-shadow:
+    var(--premium-shadow-sm) !important;
+}
+
+app-root app-receipts .receipt:hover {
+  box-shadow:
+    var(--premium-shadow-md) !important;
+}
+
+
+/* ============================================================
+   PARTNER FINANCE
+   ============================================================ */
+
+app-root app-partner-finance .partner-finance {
+  padding: 0 !important;
+}
+
+app-root app-partner-finance .summary-card {
+  position: relative !important;
+
+  border-radius: 19px !important;
+
+  border:
+    1px solid rgba(20,58,43,.08) !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f7faf7
+    ) !important;
+
+  box-shadow:
+    var(--premium-shadow-sm) !important;
+
+  overflow: hidden !important;
+
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease !important;
+}
+
+app-root app-partner-finance .summary-card::before {
+  content: '';
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 3px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--premium-green-600),
+      var(--premium-gold-500)
+    );
+}
+
+app-root app-partner-finance .summary-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--premium-shadow-md) !important;
+}
+
+app-root app-partner-finance .firm-balance-card {
+  border-radius: 24px !important;
+
+  background:
+    radial-gradient(
+      circle at 90% 5%,
+      rgba(201,154,61,.23),
+      transparent 28%
+    ),
+    linear-gradient(
+      135deg,
+      #071d16,
+      #10382b 65%,
+      #174936
+    ) !important;
+
+  box-shadow:
+    var(--premium-shadow-lg) !important;
+}
+
+app-root app-partner-finance .partner-table-wrapper {
+  border-radius: 20px !important;
+
+  border:
+    1px solid rgba(20,58,43,.08) !important;
+
+  box-shadow:
+    var(--premium-shadow-sm) !important;
+
+  overflow-x: auto !important;
+}
+
+app-root app-partner-finance .partner-table th {
+  background:
+    #f2f6f3 !important;
+
+  color:
+    var(--premium-green-700) !important;
+
+  font-weight: 800 !important;
+}
+
+app-root app-partner-finance .partner-table tbody tr:hover {
+  background:
+    #fcfdfb !important;
+}
+
+
+/* ============================================================
+   LOGIN — PREMIUM FIRST IMPRESSION
+   ============================================================ */
+
+app-root app-login .login-shell {
+  min-height: 100dvh !important;
+
+  display: grid !important;
+  place-items: center !important;
+
+  padding:
+    max(28px, env(safe-area-inset-top))
+    max(20px, env(safe-area-inset-right))
+    max(28px, env(safe-area-inset-bottom))
+    max(20px, env(safe-area-inset-left)) !important;
+
+  background:
+    radial-gradient(
+      circle at 15% 15%,
+      rgba(201,154,61,.18),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at 85% 80%,
+      rgba(29,90,67,.20),
+      transparent 35%
+    ),
+    linear-gradient(
+      135deg,
+      #071d16,
+      #0b281f 48%,
+      #10382b
+    ) !important;
+
+  position: relative;
+  overflow: hidden;
+}
+
+app-root app-login .login-shell::before {
+  content: '';
+
+  position: absolute;
+  width: 520px;
+  height: 520px;
+
+  border-radius: 50%;
+
+  border:
+    1px solid rgba(239,211,139,.14);
+
+  box-shadow:
+    0 0 0 60px rgba(239,211,139,.025),
+    0 0 0 120px rgba(239,211,139,.015);
+
+  top: -240px;
+  right: -160px;
+
+  pointer-events: none;
+}
+
+app-root app-login .login-card {
+  position: relative;
+  z-index: 1;
+
+  width:
+    min(470px, 100%) !important;
+
+  padding:
+    clamp(28px, 5vw, 48px) !important;
+
+  border:
+    1px solid rgba(255,255,255,.16) !important;
+
+  border-radius:
+    28px !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.98),
+      rgba(248,250,247,.96)
+    ) !important;
+
+  box-shadow:
+    0 35px 100px rgba(0,0,0,.28),
+    0 10px 30px rgba(0,0,0,.13) !important;
+
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+app-root app-login .login-brand-mark {
+  border-radius: 17px !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #efd38b,
+      #c99a3d
+    ) !important;
+
+  box-shadow:
+    0 10px 28px rgba(201,154,61,.22),
+    inset 0 1px 0 rgba(255,255,255,.45) !important;
+}
+
+app-root app-login .login-card h1 {
+  font-family:
+    'Cormorant Garamond',
+    Georgia,
+    serif !important;
+
+  font-size:
+    clamp(36px, 7vw, 48px) !important;
+
+  font-weight: 600 !important;
+
+  color:
+    var(--premium-green-950) !important;
+
+  letter-spacing:
+    -.035em !important;
+}
+
+app-root app-login input {
+  min-height: 48px !important;
+
+  border-radius: 13px !important;
+
+  border:
+    1px solid rgba(20,58,43,.14) !important;
+
+  background:
+    #fff !important;
+
+  transition:
+    border-color .2s ease,
+    box-shadow .2s ease,
+    transform .2s ease !important;
+}
+
+app-root app-login input:focus {
+  border-color:
+    var(--premium-gold-500) !important;
+
+  box-shadow:
+    0 0 0 4px rgba(201,154,61,.12) !important;
+
+  transform: translateY(-1px);
+}
+
+
+/* ============================================================
+   COMMUNICATION — CONVERSATIONS
+   ============================================================ */
+
+app-root app-conversations .app-layout,
+app-root app-people .app-layout {
+  min-height: 100dvh !important;
+
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(201,154,61,.055),
+      transparent 28%
+    ),
+    #f5f7f4 !important;
+}
+
+app-root app-conversations .app-header,
+app-root app-people .app-header {
+  background:
+    linear-gradient(
+      120deg,
+      #071d16,
+      #10382b
+    ) !important;
+
+  border-bottom:
+    1px solid rgba(255,255,255,.08) !important;
+
+  box-shadow:
+    0 8px 25px rgba(7,29,22,.15) !important;
+}
+
+app-root app-conversations .main-content,
+app-root app-people .main-content {
+  background: transparent !important;
+}
+
+app-root app-conversations .conv-item {
+  border:
+    1px solid rgba(20,58,43,.07) !important;
+
+  border-radius: 17px !important;
+
+  background:
+    rgba(255,255,255,.92) !important;
+
+  box-shadow:
+    0 4px 14px rgba(20,58,43,.045) !important;
+
+  margin-bottom: 9px !important;
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease !important;
+}
+
+app-root app-conversations .conv-item:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: var(--premium-shadow-sm) !important;
+}
+
+app-root app-conversations .conv-avatar {
+  background:
+    linear-gradient(
+      145deg,
+      #edf5f0,
+      #dcebe3
+    ) !important;
+
+  color:
+    var(--premium-green-700) !important;
+}
+
+app-root app-conversations .bottom-nav,
+app-root app-people .bottom-nav {
+  background:
+    rgba(255,255,255,.94) !important;
+
+  border-top:
+    1px solid rgba(20,58,43,.09) !important;
+
+  box-shadow:
+    0 -10px 30px rgba(20,58,43,.08) !important;
+
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  padding-bottom:
+    env(safe-area-inset-bottom) !important;
+}
+
+app-root app-conversations .bottom-nav .active,
+app-root app-people .bottom-nav .active {
+  color:
+    var(--premium-green-700) !important;
+}
+
+
+/* ============================================================
+   PEOPLE
+   ============================================================ */
+
+app-root app-people .search-bar {
+  border-radius: 15px !important;
+
+  border:
+    1px solid rgba(20,58,43,.10) !important;
+
+  background:
+    #fff !important;
+
+  box-shadow:
+    0 4px 15px rgba(20,58,43,.045) !important;
+}
+
+app-root app-people .search-input {
+  font-family: inherit !important;
+}
+
+app-root app-people .tab-btn {
+  border-radius: 12px !important;
+
+  transition:
+    background .2s ease,
+    color .2s ease,
+    transform .2s ease !important;
+}
+
+app-root app-people .tab-btn.active {
+  background:
+    linear-gradient(
+      135deg,
+      #174936,
+      #0d3024
+    ) !important;
+
+  color: #fff !important;
+
+  box-shadow:
+    0 6px 16px rgba(18,72,52,.16) !important;
+}
+
+app-root app-people .center-state {
+  color: var(--premium-text-secondary) !important;
+}
+
+
+/* ============================================================
+   CHAT
+   ============================================================ */
+
+app-root app-chat .chat-layout {
+  background:
+    linear-gradient(
+      180deg,
+      #f7faf8,
+      #f0f4f1
+    ) !important;
+
+  border-radius:
+    22px !important;
+}
+
+app-root app-chat .chat-header {
+  background:
+    rgba(255,255,255,.95) !important;
+
+  border-bottom:
+    1px solid rgba(20,58,43,.08) !important;
+
+  box-shadow:
+    0 7px 22px rgba(20,58,43,.06) !important;
+
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+app-root app-chat .peer-avatar,
+app-root app-chat .avatar {
+  background:
+    linear-gradient(
+      145deg,
+      #eaf4ee,
+      #d8e9e0
+    ) !important;
+
+  color:
+    var(--premium-green-700) !important;
+
+  box-shadow:
+    0 5px 13px rgba(20,58,43,.07) !important;
+}
+
+app-root app-chat .bubble {
+  border-radius:
+    17px !important;
+
+  box-shadow:
+    0 3px 10px rgba(20,58,43,.045) !important;
+}
+
+app-root app-chat .message-row.own .bubble {
+  background:
+    linear-gradient(
+      135deg,
+      #164936,
+      #10382b
+    ) !important;
+
+  color: #fff !important;
+
+  box-shadow:
+    0 7px 18px rgba(18,72,52,.13) !important;
+}
+
+app-root app-chat .input-area {
+  background:
+    rgba(255,255,255,.96) !important;
+
+  border-top:
+    1px solid rgba(20,58,43,.08) !important;
+
+  box-shadow:
+    0 -7px 20px rgba(20,58,43,.045) !important;
+
+  padding-bottom:
+    max(10px, env(safe-area-inset-bottom)) !important;
+}
+
+app-root app-chat textarea,
+app-root app-chat input {
+  border-radius:
+    15px !important;
+
+  border:
+    1px solid rgba(20,58,43,.11) !important;
+}
+
+
+/* ============================================================
+   CALL SCREEN
+   ============================================================ */
+
+app-root app-call .call-screen {
+  min-height: 100dvh !important;
+
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+      rgba(201,154,61,.16),
+      transparent 32%
+    ),
+    linear-gradient(
+      145deg,
+      #061710,
+      #0b281f 55%,
+      #10382b
+    ) !important;
+}
+
+app-root app-call .call-body {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+app-root app-call .peer-avatar {
+  background:
+    linear-gradient(
+      145deg,
+      #efd38b,
+      #c99a3d
+    ) !important;
+
+  color:
+    var(--premium-green-950) !important;
+
+  box-shadow:
+    0 18px 50px rgba(201,154,61,.18) !important;
+}
+
+app-root app-call .ctrl-btn {
+  border:
+    1px solid rgba(255,255,255,.13) !important;
+
+  background:
+    rgba(255,255,255,.09) !important;
+
+  backdrop-filter:
+    blur(12px);
+
+  box-shadow:
+    0 7px 22px rgba(0,0,0,.16) !important;
+
+  transition:
+    transform .2s ease,
+    background .2s ease !important;
+}
+
+app-root app-call .ctrl-btn:hover {
+  transform: translateY(-3px) !important;
+  background: rgba(255,255,255,.15) !important;
+}
+
+app-root app-call .end-btn {
+  box-shadow:
+    0 10px 30px rgba(184,69,69,.25) !important;
+}
+
+
+/* ============================================================
+   PROFILE
+   ============================================================ */
+
+app-root app-profile .profile-page {
+  min-height: 100dvh !important;
+
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(201,154,61,.08),
+      transparent 35%
+    ),
+    #f4f6f3 !important;
+}
+
+app-root app-profile .profile-header {
+  background:
+    linear-gradient(
+      120deg,
+      #071d16,
+      #10382b
+    ) !important;
+
+  box-shadow:
+    0 8px 24px rgba(7,29,22,.14) !important;
+}
+
+app-root app-profile .profile-content {
+  max-width: 620px !important;
+  padding-top: 70px !important;
+}
+
+app-root app-profile .profile-avatar {
+  width: 96px !important;
+  height: 96px !important;
+
+  border-radius: 28px !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #efd38b,
+      #c99a3d
+    ) !important;
+
+  color:
+    var(--premium-green-950) !important;
+
+  box-shadow:
+    0 15px 35px rgba(201,154,61,.18) !important;
+}
+
+app-root app-profile .profile-content h2 {
+  font-family:
+    'Cormorant Garamond',
+    Georgia,
+    serif !important;
+
+  font-size:
+    42px !important;
+
+  font-weight:
+    600 !important;
+}
+
+app-root app-profile .profile-card {
+  border:
+    1px solid rgba(20,58,43,.08) !important;
+
+  border-radius:
+    20px !important;
+
+  box-shadow:
+    var(--premium-shadow-sm) !important;
+
+  overflow: hidden !important;
+}
+
+app-root app-profile .profile-action {
+  background:
+    linear-gradient(
+      135deg,
+      #164936,
+      #0b281f
+    ) !important;
+
+  color: #fff !important;
+
+  box-shadow:
+    0 9px 22px rgba(18,72,52,.17) !important;
+}
+
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+
+app-root .modal-backdrop,
+app-root .dialog-backdrop {
+  background:
+    rgba(5,24,17,.64) !important;
+
+  backdrop-filter:
+    blur(9px) !important;
+
+  -webkit-backdrop-filter:
+    blur(9px) !important;
+}
+
+app-root .modal,
+app-root .dialog {
+  border:
+    1px solid rgba(255,255,255,.70) !important;
+
+  border-radius:
+    24px !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f8faf7
+    ) !important;
+
+  box-shadow:
+    0 30px 90px rgba(0,0,0,.22) !important;
+}
+
+app-root .modal-heading,
+app-root .dialog-head {
+  border-bottom:
+    1px solid rgba(20,58,43,.07) !important;
+}
+
+app-root .modal h2,
+app-root .dialog h2 {
+  font-family:
+    'Cormorant Garamond',
+    Georgia,
+    serif !important;
+
+  font-size:
+    30px !important;
+
+  font-weight:
+    600 !important;
+}
+
+
+/* ============================================================
+   FORMS
+   ============================================================ */
+
+app-root input,
+app-root select,
+app-root textarea {
+  font-family: inherit !important;
+
+  border-radius:
+    12px !important;
+
+  border:
+    1px solid rgba(20,58,43,.13) !important;
+
+  background:
+    rgba(255,255,255,.96) !important;
+
+  color:
+    var(--premium-text) !important;
+
+  box-shadow:
+    0 2px 6px rgba(20,58,43,.025) !important;
+
+  transition:
+    border-color .2s ease,
+    box-shadow .2s ease,
+    background .2s ease !important;
+}
+
+app-root input:focus,
+app-root select:focus,
+app-root textarea:focus {
+  border-color:
+    rgba(29,90,67,.42) !important;
+
+  background:
+    #fff !important;
+
+  box-shadow:
+    0 0 0 4px rgba(29,90,67,.08) !important;
+
+  outline:
+    none !important;
+}
+
+app-root label {
+  color:
+    #3e5148 !important;
+
+  font-weight:
+    700 !important;
+}
+
+
+/* ============================================================
+   ALERTS / FEEDBACK
+   ============================================================ */
+
+app-root .alert,
+app-root .feedback {
+  border-radius:
+    14px !important;
+
+  border:
+    1px solid rgba(20,58,43,.08) !important;
+
+  box-shadow:
+    0 4px 14px rgba(20,58,43,.035) !important;
+}
+
+app-root .alert.success,
+app-root .feedback.success {
+  background:
+    linear-gradient(
+      135deg,
+      #f1faf5,
+      #e8f6ee
+    ) !important;
+
+  color:
+    #216a4c !important;
+}
+
+app-root .alert.error,
+app-root .feedback.error {
+  background:
+    linear-gradient(
+      135deg,
+      #fff7f7,
+      #fff0f0
+    ) !important;
+
+  color:
+    #a13939 !important;
+}
+
+
+/* ============================================================
+   NOTIFICATIONS
+   ============================================================ */
+
+app-root app-notification-center .notification-trigger {
+  border-radius:
+    12px !important;
+
+  transition:
+    transform .2s ease,
+    background .2s ease !important;
+}
+
+app-root app-notification-center .notification-trigger:hover {
+  transform: translateY(-1px);
+}
+
+app-root app-notification-center .notification-panel {
+  border:
+    1px solid rgba(20,58,43,.10) !important;
+
+  border-radius:
+    20px !important;
+
+  box-shadow:
+    0 24px 70px rgba(7,29,22,.18) !important;
+
+  backdrop-filter:
+    blur(20px) !important;
+}
+
+
+/* ============================================================
+   TOUCH / ACCESSIBILITY
+   ============================================================ */
+
+app-root button,
+app-root a,
+app-root input,
+app-root select,
+app-root textarea {
+  touch-action: manipulation;
+}
+
+app-root button:focus-visible,
+app-root a:focus-visible,
+app-root input:focus-visible,
+app-root select:focus-visible,
+app-root textarea:focus-visible {
+  outline:
+    3px solid rgba(201,154,61,.28) !important;
+
+  outline-offset:
+    3px !important;
+}
+
+
+/* ============================================================
+   TABLET
+   ============================================================ */
+
+@media (max-width: 1050px) {
+
+  app-root .page {
+    width:
+      min(100% - 36px, 900px) !important;
+
+    padding-top: 32px !important;
+  }
+
+  app-root .tabs {
+    top: 68px !important;
+  }
+
+  app-root app-dashboard .stats-grid {
+    grid-template-columns:
+      repeat(2, minmax(0,1fr)) !important;
+  }
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 700px) {
+
+  body {
+    background:
+      #f4f6f3;
+  }
+
+  app-root .topbar {
+    position: sticky !important;
+    min-height: 62px !important;
+
+    padding-left:
+      max(13px, env(safe-area-inset-left)) !important;
+
+    padding-right:
+      max(13px, env(safe-area-inset-right)) !important;
+  }
+
+  app-root .brand-mark {
+    width: 39px !important;
+    height: 39px !important;
+    flex-basis: 39px !important;
+    border-radius: 12px !important;
+  }
+
+  app-root .brand-name {
+    font-size: 18px !important;
+  }
+
+  app-root .page {
+    width:
+      calc(100% - 20px) !important;
+
+    padding-top: 24px !important;
+
+    padding-bottom:
+      max(60px, env(safe-area-inset-bottom) + 42px) !important;
+  }
+
+  app-root .page-heading {
+    gap: 14px !important;
+    margin-bottom: 20px !important;
+  }
+
+  app-root .page-heading h1,
+  app-root .attendance-header h1,
+  app-root .page-header h1,
+  app-root .feature-heading h1 {
+    font-size:
+      clamp(34px, 10vw, 44px) !important;
+  }
+
+  app-root .tabs {
+    position: relative !important;
+    top: auto !important;
+
+    margin-bottom: 18px !important;
+
+    border-radius: 15px !important;
+
+    overflow-x: auto !important;
+
+    -webkit-overflow-scrolling: touch;
+  }
+
+  app-root .tabs button {
+    min-height: 44px !important;
+    padding: 9px 14px !important;
+  }
+
+  app-root .panel,
+  app-root app-dashboard .panel,
+  app-root app-attendance .panel,
+  app-root app-employees .panel,
+  app-root app-approvals .panel,
+  app-root app-payments .panel,
+  app-root app-receipts .panel {
+    border-radius: 18px !important;
+  }
+
+  app-root app-dashboard .stats-grid {
+    grid-template-columns:
+      repeat(2, minmax(0,1fr)) !important;
+
+    gap: 10px !important;
+  }
+
+  app-root app-dashboard .stat {
+    min-height: 125px !important;
+    padding: 15px !important;
+    border-radius: 16px !important;
+  }
+
+  app-root app-dashboard .stat strong {
+    font-size: 22px !important;
+  }
+
+  app-root .primary,
+  app-root .outline,
+  app-root .approve,
+  app-root .deny {
+    min-height: 46px !important;
+  }
+
+  app-root app-employees .employee-card {
+    border-radius: 16px !important;
+    margin-bottom: 8px !important;
+  }
+
+  app-root app-employees .employee-financial {
+    grid-template-columns:
+      repeat(2, minmax(0,1fr)) !important;
+  }
+
+  app-root app-employees .employee-actions {
+    grid-template-columns:
+      repeat(2, minmax(0,1fr)) !important;
+
+    gap: 7px !important;
+  }
+
+  app-root app-payments .firm-balance-card {
+    border-radius: 20px !important;
+  }
+
+  app-root app-payments .firm-balance-value strong {
+    font-size: 42px !important;
+  }
+
+  app-root app-partner-finance .summary-grid {
+    grid-template-columns:
+      repeat(2, minmax(0,1fr)) !important;
+  }
+
+  app-root app-partner-finance .partner-table {
+    min-width: 850px !important;
+  }
+
+  app-root app-login .login-card {
+    width:
+      min(100%, 440px) !important;
+
+    padding:
+      28px 22px !important;
+
+    border-radius:
+      23px !important;
+  }
+
+  app-root app-login .login-card h1 {
+    font-size: 40px !important;
+  }
+
+  app-root app-conversations .conv-item {
+    border-radius: 15px !important;
+  }
+
+  app-root app-chat .chat-layout {
+    border-radius: 18px !important;
+  }
+
+  app-root app-call .call-controls {
+    padding-bottom:
+      max(18px, env(safe-area-inset-bottom)) !important;
+  }
+
+  app-root app-profile .profile-content {
+    padding:
+      45px 18px
+      max(55px, env(safe-area-inset-bottom) + 30px) !important;
+  }
+}
+
+
+/* ============================================================
+   SMALL ANDROID PHONES
+   ============================================================ */
+
+@media (max-width: 420px) {
+
+  app-root .page {
+    width:
+      calc(100% - 14px) !important;
+  }
+
+  app-root .brand-name {
+    font-size: 17px !important;
+  }
+
+  app-root app-dashboard .stats-grid {
+    gap: 8px !important;
+  }
+
+  app-root app-dashboard .stat {
+    min-height: 116px !important;
+    padding: 13px !important;
+  }
+
+  app-root app-dashboard .stat-label {
+    font-size: 10px !important;
+  }
+
+  app-root app-dashboard .stat strong {
+    font-size: 20px !important;
+  }
+
+  app-root .tabs button {
+    padding-left: 11px !important;
+    padding-right: 11px !important;
+    font-size: 11px !important;
+  }
+
+  app-root app-employees .employee-financial {
+    grid-template-columns: 1fr !important;
+  }
+
+  app-root app-employees .employee-actions {
+    grid-template-columns:
+      repeat(2, minmax(0,1fr)) !important;
+  }
+
+  app-root app-partner-finance .summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* ============================================================
+   WORKLOG CONSISTENT CONTENT WIDTH SYSTEM
+   Keeps all primary admin pages aligned to the same content rail.
+   ============================================================ */
+
+/* Primary application content rail */
+app-root .page {
+  width: min(1380px, calc(100% - 56px)) !important;
+  max-width: 1380px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Every feature component fills the page rail.
+   Individual components must not create a narrower desktop page. */
+app-root .admin-page > app-dashboard,
+app-root .admin-page > app-attendance,
+app-root .admin-page > app-employees,
+app-root .admin-page > app-approvals,
+app-root .admin-page > app-payments,
+app-root .admin-page > app-receipts,
+app-root .admin-page > app-partner-finance {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+}
+
+/* Receipts previously had an independent 1180px content limit. */
+app-root app-receipts .receipts-feature {
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Daily announcement must align with the same page rail. */
+app-root .daily-plan-banner {
+  width: min(1380px, calc(100% - 56px)) !important;
+  max-width: 1380px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Success/error messages use the same rail too. */
+app-root .page-alert {
+  width: min(1380px, calc(100% - 56px)) !important;
+  max-width: 1380px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Feature roots should never introduce horizontal overflow. */
+app-root app-dashboard,
+app-root app-attendance,
+app-root app-employees,
+app-root app-approvals,
+app-root app-payments,
+app-root app-receipts,
+app-root app-partner-finance {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+/* Tablet */
+@media (max-width: 1050px) {
+
+  app-root .page {
+    width: min(calc(100% - 36px), 900px) !important;
+    max-width: 900px !important;
+  }
+
+  app-root .daily-plan-banner,
+  app-root .page-alert {
+    width: min(calc(100% - 36px), 900px) !important;
+    max-width: 900px !important;
+  }
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+
+  app-root .page {
+    width: calc(100% - 20px) !important;
+    max-width: none !important;
+  }
+
+  app-root .daily-plan-banner,
+  app-root .page-alert {
+    width: calc(100% - 20px) !important;
+    max-width: none !important;
+  }
+}
+
+/* Small Android phones */
+@media (max-width: 420px) {
+
+  app-root .page {
+    width: calc(100% - 14px) !important;
+  }
+
+  app-root .daily-plan-banner,
+  app-root .page-alert {
+    width: calc(100% - 14px) !important;
+  }
+}
+
+/* WORKLOG CONSISTENT CONTENT WIDTH SYSTEM */
+
+
+/* ============================================================
+   WORKLOG FINAL ADMIN CONTENT RAIL
+   One consistent desktop shell for:
+   announcement
+   firm cash
+   tabs
+   active feature
+   ============================================================ */
+
+app-root .admin-page {
+
+  display: block !important;
+
+  width:
+    min(1380px, calc(100% - 56px)) !important;
+
+  max-width:
+    1380px !important;
+
+  margin-left:
+    auto !important;
+
+  margin-right:
+    auto !important;
+
+  box-sizing:
+    border-box !important;
+
+  min-width:
+    0 !important;
+}
+
+
+/* Everything inside the admin shell uses the same rail. */
+
+app-root .admin-page > * {
+
+  box-sizing:
+    border-box !important;
+
+  min-width:
+    0 !important;
+}
+
+
+/* Feature components fill the shell. */
+
+app-root .admin-page > app-dashboard,
+app-root .admin-page > app-attendance,
+app-root .admin-page > app-employees,
+app-root .admin-page > app-approvals,
+app-root .admin-page > app-payments,
+app-root .admin-page > app-receipts,
+app-root .admin-page > app-partner-finance,
+app-root .admin-page > app-firm-cash {
+
+  display:
+    block !important;
+
+  width:
+    100% !important;
+
+  max-width:
+    none !important;
+
+  margin-left:
+    0 !important;
+
+  margin-right:
+    0 !important;
+}
+
+
+/* Announcement */
+
+app-root .admin-page .daily-plan-banner {
+
+  width:
+    100% !important;
+
+  max-width:
+    none !important;
+
+  margin-left:
+    0 !important;
+
+  margin-right:
+    0 !important;
+
+  box-sizing:
+    border-box !important;
+}
+
+
+/* Alerts */
+
+app-root .admin-page .page-alert {
+
+  width:
+    100% !important;
+
+  max-width:
+    none !important;
+
+  margin-left:
+    0 !important;
+
+  margin-right:
+    0 !important;
+
+  box-sizing:
+    border-box !important;
+}
+
+
+/* ============================================================
+   FIRM CASH - COMPACT PREMIUM ADMIN CARD
+   ============================================================ */
+
+app-root app-firm-cash {
+
+  display:
+    block !important;
+
+  width:
+    100% !important;
+
+  max-width:
+    none !important;
+
+  margin:
+    0 !important;
+
+  padding:
+    0 !important;
+
+  box-sizing:
+    border-box !important;
+}
+
+
+app-root app-firm-cash .firm-cash {
+
+  width:
+    100% !important;
+
+  max-width:
+    none !important;
+
+  margin:
+    0 0 22px !important;
+
+  padding:
+    0 !important;
+
+  box-sizing:
+    border-box !important;
+}
+
+
+/* Main balance card */
+
+app-root app-firm-cash .cash-hero {
+
+  width:
+    100% !important;
+
+  min-height:
+    118px !important;
+
+  display:
+    flex !important;
+
+  align-items:
+    center !important;
+
+  justify-content:
+    space-between !important;
+
+  gap:
+    24px !important;
+
+  padding:
+    24px 28px !important;
+
+  border-radius:
+    20px !important;
+
+  box-sizing:
+    border-box !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      #0b3d2d 0%,
+      #123f31 55%,
+      #1b4e3b 100%
+    ) !important;
+
+  border:
+    1px solid rgba(255,255,255,.10) !important;
+
+  box-shadow:
+    0 14px 35px rgba(12,52,39,.14) !important;
+
+}
+
+
+/* Balance section */
+
+app-root app-firm-cash .cash-hero-main {
+
+  display:
+    flex !important;
+
+  align-items:
+    center !important;
+
+  gap:
+    16px !important;
+
+  min-width:
+    0 !important;
+}
+
+
+app-root app-firm-cash .cash-icon {
+
+  width:
+    48px !important;
+
+  height:
+    48px !important;
+
+  flex:
+    0 0 48px !important;
+
+  display:
+    grid !important;
+
+  place-items:
+    center !important;
+
+  border-radius:
+    14px !important;
+
+  background:
+    rgba(255,255,255,.10) !important;
+
+  border:
+    1px solid rgba(255,255,255,.14) !important;
+
+  color:
+    #f4d48b !important;
+
+  font-size:
+    20px !important;
+
+  font-weight:
+    700 !important;
+
+}
+
+
+app-root app-firm-cash .cash-hero .eyebrow {
+
+  display:
+    block !important;
+
+  margin-bottom:
+    4px !important;
+
+  color:
+    #d7b45f !important;
+
+  font-size:
+    9px !important;
+
+  font-weight:
+    800 !important;
+
+  letter-spacing:
+    .16em !important;
+
+}
+
+
+app-root app-firm-cash .cash-hero h2 {
+
+  margin:
+    0 !important;
+
+  color:
+    #ffffff !important;
+
+  font-size:
+    clamp(30px, 3vw, 42px) !important;
+
+  line-height:
+    1 !important;
+
+  font-weight:
+    700 !important;
+
+}
+
+
+app-root app-firm-cash .cash-hero p {
+
+  margin:
+    5px 0 0 !important;
+
+  color:
+    rgba(255,255,255,.62) !important;
+
+  font-size:
+    11px !important;
+
+}
+
+
+/* Actions */
+
+app-root app-firm-cash .cash-actions {
+
+  display:
+    flex !important;
+
+  align-items:
+    center !important;
+
+  justify-content:
+    flex-end !important;
+
+  gap:
+    8px !important;
+
+  flex-wrap:
+    wrap !important;
+}
+
+
+app-root app-firm-cash .cash-button {
+
+  min-height:
+    36px !important;
+
+  padding:
+    0 13px !important;
+
+  border-radius:
+    9px !important;
+
+  font-size:
+    10px !important;
+
+  font-weight:
+    700 !important;
+
+  white-space:
+    nowrap !important;
+
+}
+
+
+app-root app-firm-cash .cash-metrics {
+
+  width:
+    100% !important;
+
+  display:
+    grid !important;
+
+  grid-template-columns:
+    repeat(4, minmax(0,1fr)) !important;
+
+  gap:
+    10px !important;
+
+  margin-top:
+    10px !important;
+
+}
+
+
+app-root app-firm-cash .metric-card {
+
+  min-width:
+    0 !important;
+
+  padding:
+    14px 16px !important;
+
+  border-radius:
+    14px !important;
+
+  background:
+    #ffffff !important;
+
+  border:
+    1px solid rgba(20,58,43,.08) !important;
+
+  box-shadow:
+    0 5px 18px rgba(20,58,43,.055) !important;
+
+}
+
+
+app-root app-firm-cash .cash-history {
+
+  margin-top:
+    10px !important;
+
+  border-radius:
+    16px !important;
+
+}
+
+
+/* ============================================================
+   MAIN TABS
+   ============================================================ */
+
+app-root .admin-page .tabs {
+
+  width:
+    100% !important;
+
+  max-width:
+    none !important;
+
+  margin-left:
+    0 !important;
+
+  margin-right:
+    0 !important;
+
+  box-sizing:
+    border-box !important;
+}
+
+
+/* ============================================================
+   ACTIVE FEATURE
+   ============================================================ */
+
+app-root .admin-page > app-attendance,
+app-root .admin-page > app-dashboard,
+app-root .admin-page > app-employees,
+app-root .admin-page > app-approvals,
+app-root .admin-page > app-payments,
+app-root .admin-page > app-receipts,
+app-root .admin-page > app-partner-finance {
+
+  margin-top:
+    0 !important;
+
+}
+
+
+/* ============================================================
+   TABLET
+   ============================================================ */
+
+@media (max-width: 1050px) {
+
+  app-root .admin-page {
+
+    width:
+      min(calc(100% - 36px), 900px) !important;
+
+    max-width:
+      900px !important;
+
+  }
+
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 700px) {
+
+  app-root .admin-page {
+
+    width:
+      calc(100% - 20px) !important;
+
+    max-width:
+      none !important;
+
+  }
+
+
+  app-root app-firm-cash .cash-hero {
+
+    align-items:
+      flex-start !important;
+
+    flex-direction:
+      column !important;
+
+    padding:
+      20px !important;
+
+  }
+
+
+  app-root app-firm-cash .cash-actions {
+
+    width:
+      100% !important;
+
+    display:
+      grid !important;
+
+    grid-template-columns:
+      repeat(3, minmax(0,1fr)) !important;
+
+  }
+
+
+  app-root app-firm-cash .cash-button {
+
+    width:
+      100% !important;
+
+    padding:
+      0 8px !important;
+
+  }
+
+
+  app-root app-firm-cash .cash-metrics {
+
+    grid-template-columns:
+      repeat(2, minmax(0,1fr)) !important;
+
+  }
+
+}
+
+
+@media (max-width: 480px) {
+
+  app-root .admin-page {
+
+    width:
+      calc(100% - 14px) !important;
+
+  }
+
+
+  app-root app-firm-cash .cash-actions {
+
+    grid-template-columns:
+      1fr !important;
+
+  }
+
+
+  app-root app-firm-cash .cash-button {
+
+    min-height:
+      40px !important;
+
+  }
+
+}
+
+/* ============================================================
+   WORKLOG PREMIUM COMMAND MENU V1
+   ============================================================ */
+
+app-root .tabs {
+
+  position: relative !important;
+
+  width: 100% !important;
+  min-height: 64px !important;
+
+  display: flex !important;
+  align-items: center !important;
+
+  gap: 5px !important;
+
+  padding: 6px !important;
+
+  box-sizing: border-box !important;
+
+  border: 1px solid rgba(21, 62, 45, 0.10) !important;
+  border-radius: 17px !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(246, 250, 247, 0.98),
+      rgba(235, 243, 238, 0.96)
+    ) !important;
+
+  box-shadow:
+    0 10px 28px rgba(18, 55, 40, 0.07),
+    inset 0 1px 0 rgba(255,255,255,.9) !important;
+
+}
+
+
+/* ------------------------------------------------------------
+   NAVIGATION BUTTONS
+   ------------------------------------------------------------ */
+
+app-root .tabs button {
+
+  position: relative !important;
+
+  flex: 1 1 0 !important;
+
+  min-width: 0 !important;
+  min-height: 50px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  gap: 8px !important;
+
+  padding: 0 11px !important;
+
+  border: 1px solid transparent !important;
+  border-radius: 11px !important;
+
+  background: transparent !important;
+
+  color: #64736c !important;
+
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif !important;
+
+  font-size: 11px !important;
+  font-weight: 750 !important;
+
+  white-space: nowrap !important;
+
+  cursor: pointer !important;
+
+  transition:
+    all .18s ease !important;
+
+}
+
+
+/* ------------------------------------------------------------
+   ICON
+   ------------------------------------------------------------ */
+
+app-root .tabs button::before {
+
+  width: 27px !important;
+  height: 27px !important;
+
+  flex: 0 0 27px !important;
+
+  display: inline-flex !important;
+
+  align-items: center !important;
+  justify-content: center !important;
+
+  border-radius: 8px !important;
+
+  background: rgba(255,255,255,.70) !important;
+
+  color: #587266 !important;
+
+  font-size: 13px !important;
+  font-weight: 800 !important;
+
+  line-height: 1 !important;
+
+  box-shadow:
+    inset 0 0 0 1px rgba(20,58,43,.045) !important;
+
+  transition:
+    all .18s ease !important;
+
+}
+
+
+/* Overview */
+
+app-root .tabs button:nth-child(1)::before {
+  content: "⌂" !important;
+}
+
+
+/* Attendance */
+
+app-root .tabs button:nth-child(2)::before {
+  content: "◷" !important;
+}
+
+
+/* Employees */
+
+app-root .tabs button:nth-child(3)::before {
+  content: "♙" !important;
+}
+
+
+/* Approval */
+
+app-root .tabs button:nth-child(4)::before {
+  content: "✓" !important;
+}
+
+
+/* Payments */
+
+app-root .tabs button:nth-child(5)::before {
+  content: "₹" !important;
+}
+
+
+/* Receipts */
+
+app-root .tabs button:nth-child(6)::before {
+  content: "▤" !important;
+}
+
+
+/* Partner Finance */
+
+app-root .tabs button:nth-child(7)::before {
+  content: "♧" !important;
+}
+
+
+/* ------------------------------------------------------------
+   GROUP DIVIDERS
+   ------------------------------------------------------------ */
+
+app-root .tabs button:nth-child(2) {
+
+  margin-left: 8px !important;
+
+  border-left:
+    1px solid rgba(20,58,43,.10) !important;
+
+}
+
+
+app-root .tabs button:nth-child(5) {
+
+  margin-left: 8px !important;
+
+  border-left:
+    1px solid rgba(20,58,43,.10) !important;
+
+}
+
+
+/* ------------------------------------------------------------
+   HOVER
+   ------------------------------------------------------------ */
+
+app-root .tabs button:hover {
+
+  color: #164a36 !important;
+
+  background: rgba(255,255,255,.72) !important;
+
+  border-color:
+    rgba(20,58,43,.07) !important;
+
+  box-shadow:
+    0 5px 14px rgba(20,58,43,.06) !important;
+
+  transform: translateY(-1px) !important;
+
+}
+
+
+app-root .tabs button:hover::before {
+
+  color: #164a36 !important;
+
+  background: #edf5ef !important;
+
+  transform: scale(1.05) !important;
+
+}
+
+
+/* ------------------------------------------------------------
+   ACTIVE
+   ------------------------------------------------------------ */
+
+app-root .tabs button.active {
+
+  color: #123c2d !important;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #f7faf8 100%
+    ) !important;
+
+  border-color:
+    rgba(20,58,43,.08) !important;
+
+  box-shadow:
+    0 7px 18px rgba(20,58,43,.10),
+    inset 0 1px 0 #ffffff !important;
+
+  transform: translateY(-1px) !important;
+
+}
+
+
+app-root .tabs button.active::before {
+
+  color: #ffffff !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #1d5b43,
+      #0c3325
+    ) !important;
+
+  box-shadow:
+    0 4px 10px rgba(20,58,43,.18) !important;
+
+}
+
+
+/* Gold active indicator */
+
+app-root .tabs button.active::after {
+
+  content: "" !important;
+
+  position: absolute !important;
+
+  left: 20px !important;
+  right: 20px !important;
+
+  bottom: 3px !important;
+
+  height: 2px !important;
+
+  border-radius: 999px !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      #c49b43,
+      #e2c77c
+    ) !important;
+
+}
+
+
+/* ------------------------------------------------------------
+   APPROVAL BADGE
+   ------------------------------------------------------------ */
+
+app-root .tabs button span {
+
+  display: inline-flex !important;
+
+  align-items: center !important;
+  justify-content: center !important;
+
+  min-width: 18px !important;
+  height: 18px !important;
+
+  padding: 0 5px !important;
+
+  border-radius: 999px !important;
+
+  background: #f5e9c8 !important;
+
+  color: #87651e !important;
+
+  font-size: 9px !important;
+  font-weight: 850 !important;
+
+}
+
+
+/* ------------------------------------------------------------
+   FINANCE ITEMS
+   ------------------------------------------------------------ */
+
+app-root .tabs button:nth-child(5)::before,
+app-root .tabs button:nth-child(6)::before,
+app-root .tabs button:nth-child(7)::before {
+
+  color: #98742b !important;
+
+  background: #fbf5e6 !important;
+
+}
+
+
+/* ------------------------------------------------------------
+   WORKSPACE LABEL
+   ------------------------------------------------------------ */
+
+app-root .tabs::before {
+
+  content: "WORKSPACE" !important;
+
+  position: absolute !important;
+
+  top: -8px !important;
+  left: 15px !important;
+
+  padding: 0 6px !important;
+
+  background: #f5f8f6 !important;
+
+  color: #8c9b93 !important;
+
+  font-size: 7px !important;
+  font-weight: 850 !important;
+
+  letter-spacing: .14em !important;
+
+  line-height: 1 !important;
+
+}
+
+
+/* ------------------------------------------------------------
+   MOBILE
+   ------------------------------------------------------------ */
+
+@media (max-width: 700px) {
+
+  app-root .tabs {
+
+    display: grid !important;
+
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr)) !important;
+
+    gap: 6px !important;
+
+    min-height: auto !important;
+
+    padding: 8px !important;
+
+    border-radius: 15px !important;
+
+  }
+
+
+  app-root .tabs button {
+
+    width: 100% !important;
+
+    min-height: 46px !important;
+
+    justify-content: flex-start !important;
+
+    padding: 0 10px !important;
+
+    border:
+      1px solid rgba(20,58,43,.06) !important;
+
+    border-radius: 10px !important;
+
+    background:
+      rgba(255,255,255,.45) !important;
+
+  }
+
+
+  app-root .tabs button:nth-child(2),
+  app-root .tabs button:nth-child(5) {
+
+    margin-left: 0 !important;
+
+    border-left:
+      1px solid rgba(20,58,43,.06) !important;
+
+  }
+
+
+  app-root .tabs::before {
+
+    display: none !important;
+
+  }
+
+}
+
+
+@media (max-width: 420px) {
+
+  app-root .tabs {
+
+    grid-template-columns: 1fr !important;
+
+  }
+
+}
+
+/* ============================================================
+   WORKLOG UNIFIED OVERVIEW V2
+   ============================================================ */
+
+app-root .overview-workspace {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+app-root .overview-heading {
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+  gap: 20px !important;
+  margin: 0 0 18px !important;
+}
+
+app-root .overview-kicker {
+  margin: 0 0 5px !important;
+  color: #b0842d !important;
+  font-size: 9px !important;
+  font-weight: 850 !important;
+  letter-spacing: .17em !important;
+}
+
+app-root .overview-heading h1 {
+  margin: 0 !important;
+  color: #123c2d !important;
+  font-size: clamp(24px, 3vw, 34px) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -.035em !important;
+}
+
+app-root .overview-subtitle {
+  margin: 7px 0 0 !important;
+  color: #718078 !important;
+  font-size: 11px !important;
+}
+
+app-root .overview-date {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  padding: 8px 12px !important;
+  border-left: 1px solid rgba(20,58,43,.10) !important;
+}
+
+app-root .overview-date-label {
+  color: #a2874d !important;
+  font-size: 8px !important;
+  font-weight: 850 !important;
+  letter-spacing: .14em !important;
+}
+
+app-root .overview-date-value {
+  margin-top: 3px !important;
+  color: #456156 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+app-root .overview-finance-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, .7fr) !important;
+  gap: 14px !important;
+  align-items: stretch !important;
+  margin-bottom: 18px !important;
+}
+
+app-root .overview-finance-card {
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+app-root .overview-finance-card app-firm-cash {
+  display: block !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+app-root .overview-side-panel {
+  min-width: 0 !important;
+  padding: 18px !important;
+  border: 1px solid rgba(20,58,43,.085) !important;
+  border-radius: 18px !important;
+  background: linear-gradient(145deg,#ffffff,#f6faf7) !important;
+  box-shadow: 0 9px 25px rgba(20,58,43,.055) !important;
+}
+
+app-root .side-panel-heading {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding-bottom: 13px !important;
+  border-bottom: 1px solid rgba(20,58,43,.07) !important;
+}
+
+app-root .side-panel-kicker {
+  display: block !important;
+  color: #b0842d !important;
+  font-size: 8px !important;
+  font-weight: 850 !important;
+  letter-spacing: .14em !important;
+}
+
+app-root .side-panel-heading h3 {
+  margin: 4px 0 0 !important;
+  color: #173d2e !important;
+  font-size: 16px !important;
+}
+
+app-root .side-panel-dot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: #d2ad59 !important;
+  box-shadow: 0 0 0 5px rgba(210,173,89,.12) !important;
+}
+
+app-root .side-panel-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+  gap: 1px !important;
+  margin-top: 12px !important;
+  overflow: hidden !important;
+  border-radius: 11px !important;
+  background: rgba(20,58,43,.07) !important;
+}
+
+app-root .side-stat {
+  min-width: 0 !important;
+  padding: 12px !important;
+  background: rgba(255,255,255,.90) !important;
+}
+
+app-root .side-stat-label {
+  display: block !important;
+  color: #77857e !important;
+  font-size: 9px !important;
+}
+
+app-root .side-stat strong {
+  display: block !important;
+  margin-top: 4px !important;
+  color: #173d2e !important;
+  font-size: 20px !important;
+}
+
+app-root .side-stat-meta {
+  display: block !important;
+  margin-top: 3px !important;
+  color: #a0aaa4 !important;
+  font-size: 8px !important;
+}
+
+app-root .overview-dashboard {
+  width: 100% !important;
+  margin-top: 18px !important;
+}
+
+app-root .overview-dashboard app-dashboard {
+  display: block !important;
+  width: 100% !important;
+}
+
+@media (max-width: 1000px) {
+  app-root .overview-finance-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 700px) {
+  app-root .overview-heading {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  app-root .overview-date {
+    align-items: flex-start !important;
+    padding: 0 !important;
+    border-left: 0 !important;
+  }
+
+  app-root .overview-finance-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* WORKLOG OVERVIEW FINANCE WORKSPACE V1 */
+
+.overview-workspace {
+  width: 100%;
+  margin: 0 0 1.25rem;
+}
+
+.overview-finance {
+  width: 100%;
+  min-width: 0;
+}
+
+/*
+ * Firm Cash becomes part of the Overview workspace instead
+ * of behaving like a separate page section.
+ */
+.overview-finance .firm-cash {
+  width: 100%;
+  margin: 0;
+}
+
+/* Compact financial header */
+.overview-finance .cash-hero {
+  padding: 1rem 1.15rem;
+  border-radius: 18px;
+}
+
+.overview-finance .cash-hero-main {
+  gap: 0.75rem;
+}
+
+.overview-finance .cash-icon {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  font-size: 1rem;
+}
+
+.overview-finance .cash-hero h2 {
+  margin: 0.1rem 0 0;
+  font-size: clamp(1.45rem, 2.2vw, 2rem);
+  line-height: 1.05;
+}
+
+.overview-finance .cash-hero p {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+}
+
+/* Keep finance actions compact and aligned */
+.overview-finance .cash-actions {
+  gap: 0.5rem;
+}
+
+.overview-finance .cash-button {
+  min-height: 38px;
+  padding: 0.55rem 0.8rem;
+  border-radius: 10px;
+  font-size: 0.78rem;
+}
+
+/* Compact metric strip */
+.overview-finance .cash-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.65rem;
+}
+
+.overview-finance .metric-card {
+  padding: 0.7rem 0.8rem;
+  border-radius: 12px;
+}
+
+.overview-finance .metric-card span {
+  font-size: 0.7rem;
+}
+
+.overview-finance .metric-card strong {
+  font-size: 0.95rem;
+}
+
+/* Ledger is still available, but visually subordinate */
+.overview-finance .cash-history {
+  margin-top: 0.7rem;
+  border-radius: 16px;
+}
+
+.overview-finance .history-heading {
+  padding: 0.8rem 1rem;
+}
+
+.overview-finance .history-heading h3 {
+  margin: 0.1rem 0;
+  font-size: 1rem;
+}
+
+.overview-finance .history-heading p {
+  margin: 0;
+  font-size: 0.72rem;
+}
+
+.overview-finance .refresh-button {
+  min-height: 34px;
+  padding: 0.45rem 0.7rem;
+  border-radius: 9px;
+}
+
+/* Prevent the overview from becoming visually fragmented */
+.overview-workspace + app-dashboard {
+  display: block;
+  width: 100%;
+  margin-top: 0.9rem;
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  .overview-finance .cash-hero {
+    padding: 0.9rem;
+  }
+
+  .overview-finance .cash-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .overview-finance .cash-hero {
+    display: block;
+  }
+
+  .overview-finance .cash-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 0.8rem;
+  }
+
+  .overview-finance .cash-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .overview-finance .cash-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .overview-finance .cash-history {
+    overflow: hidden;
+  }
+
+  .overview-finance .cash-table-wrap {
+    overflow-x: auto;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 420px) {
+  .overview-finance .cash-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-finance .cash-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+
+/* ============================================================
+   WORKLOG ADMIN HEADER FLOW FIX V1
+   ============================================================ */
+
+/*
+ * The command navigation must participate in normal document flow.
+ * It must never sit over the Overview heading.
+ */
+app-root .admin-page > .tabs {
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+
+  z-index: 20 !important;
+
+  width: 100% !important;
+  max-width: none !important;
+
+  margin: 0 0 24px !important;
+
+  transform: none !important;
+}
+
+/*
+ * Keep the page heading below the command navigation.
+ */
+app-root .admin-page .page-heading {
+  position: relative !important;
+  z-index: 1 !important;
+
+  margin-top: 0 !important;
+}
+
+/*
+ * Make sure the heading itself cannot slide underneath
+ * the command navigation.
+ */
+app-root .admin-page .page-heading h1 {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/*
+ * Overview dashboard begins after the header area.
+ */
+app-root .admin-page > .overview-workspace {
+  position: relative !important;
+  z-index: 1 !important;
+
+  margin-top: 0 !important;
+}
+
+/*
+ * Prevent the navigation from creating a stacking overlap
+ * with the first dashboard section.
+ */
+app-root .admin-page > .tabs + .overview-workspace,
+app-root .admin-page > .tabs + app-dashboard {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/*
+ * Navigation should visually belong to the same workspace
+ * instead of looking like a floating foreign object.
+ */
+app-root .admin-page > .tabs {
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+/*
+ * The decorative WORKSPACE label should stay inside the
+ * navigation boundary.
+ */
+app-root .admin-page > .tabs::before {
+  z-index: 2 !important;
+  pointer-events: none !important;
+}
+
+/* ============================================================
+   DESKTOP HEADER RHYTHM
+   ============================================================ */
+
+@media (min-width: 1001px) {
+
+  app-root .admin-page {
+    padding-top: 30px !important;
+  }
+
+  app-root .admin-page > .tabs {
+    min-height: 74px !important;
+  }
+
+}
+
+/* ============================================================
+   TABLET
+   ============================================================ */
+
+@media (max-width: 1000px) {
+
+  app-root .admin-page {
+    padding-top: 24px !important;
+  }
+
+  app-root .admin-page > .tabs {
+    margin-bottom: 18px !important;
+  }
+
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 700px) {
+
+  app-root .admin-page {
+    padding-top: 16px !important;
+  }
+
+  app-root .admin-page > .tabs {
+    margin-bottom: 16px !important;
+  }
+
+}
+
+
+/* ============================================================
+   WORKLOG TODAY AT A GLANCE V1
+   ============================================================ */
+
+/*
+ * Main combined operational workspace.
+ */
+.today-glance {
+  position: relative;
+  width: 100%;
+  margin: 0 0 1.15rem;
+  padding: 1.25rem;
+  border: 1px solid rgba(19, 63, 50, 0.10);
+  border-radius: 24px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.98),
+      rgba(247, 250, 247, 0.96)
+    );
+  box-shadow:
+    0 14px 40px rgba(18, 53, 42, 0.07);
+}
+
+/*
+ * Workspace heading.
+ */
+.today-glance-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.today-glance-heading .eyebrow {
+  margin: 0 0 0.25rem;
+}
+
+.today-glance-heading h2 {
+  margin: 0;
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.today-glance-subtitle {
+  margin: 0.3rem 0 0;
+  color: var(--muted, #66746e);
+  font-size: 0.82rem;
+}
+
+.today-glance-context {
+  display: flex;
+  align-items: center;
+}
+
+.today-date-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid rgba(19, 63, 50, 0.10);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  color: #63716b;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+/*
+ * Work Plan + Firm Cash.
+ */
+.today-glance-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.6fr);
+  gap: 0.85rem;
+  align-items: stretch;
+}
+
+/*
+ * Work Plan card.
+ */
+.today-plan-card {
+  min-width: 0;
+  min-height: 220px;
+  padding: 1.15rem;
+  border: 1px solid rgba(19, 63, 50, 0.10);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+
+  display: flex;
+  flex-direction: column;
+}
+
+.today-plan-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.today-plan-heading .eyebrow {
+  margin: 0 0 0.3rem;
+}
+
+.today-plan-heading h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+.today-status-dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 0.3rem;
+  border-radius: 50%;
+  background: #c7d0cb;
+  box-shadow: 0 0 0 5px rgba(199, 208, 203, 0.18);
+}
+
+.today-status-dot.has-plan {
+  background: #17785c;
+  box-shadow: 0 0 0 5px rgba(23, 120, 92, 0.12);
+}
+
+.today-plan-message {
+  flex: 1;
+  margin: 1rem 0;
+  color: #465750;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.today-plan-action {
+  width: fit-content;
+  min-height: 38px;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid rgba(19, 63, 50, 0.15);
+  border-radius: 10px;
+  background: #ffffff;
+  color: #073f31;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.today-plan-action:hover {
+  transform: translateY(-1px);
+  border-color: rgba(19, 63, 50, 0.28);
+  box-shadow: 0 8px 18px rgba(19, 63, 50, 0.08);
+}
+
+.today-plan-action span {
+  margin-right: 0.25rem;
+  font-size: 1rem;
+}
+
+/*
+ * Firm Cash becomes the primary financial area.
+ */
+.today-finance {
+  min-width: 0;
+}
+
+/*
+ * The existing Firm Cash component fills its allocated area.
+ */
+.today-finance app-firm-cash {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/*
+ * Compact Firm Cash hero.
+ */
+.today-finance .cash-hero {
+  min-height: 118px;
+  padding: 1rem 1.1rem;
+  border-radius: 18px 18px 12px 12px;
+}
+
+.today-finance .cash-hero h2 {
+  font-size: clamp(1.55rem, 3vw, 2.15rem);
+}
+
+.today-finance .cash-actions {
+  gap: 0.45rem;
+}
+
+.today-finance .cash-button {
+  min-height: 36px;
+  padding: 0.5rem 0.7rem;
+  border-radius: 9px;
+  font-size: 0.75rem;
+}
+
+/*
+ * Finance metrics become a compact strip.
+ */
+.today-finance .cash-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.55rem;
+}
+
+.today-finance .metric-card {
+  padding: 0.65rem 0.7rem;
+  border-radius: 11px;
+}
+
+.today-finance .metric-card span {
+  font-size: 0.66rem;
+}
+
+.today-finance .metric-card strong {
+  font-size: 0.9rem;
+}
+
+/*
+ * Keep detailed ledger visually secondary.
+ */
+.today-finance .cash-history {
+  margin-top: 0.55rem;
+  border-radius: 14px;
+}
+
+.today-finance .history-heading {
+  padding: 0.7rem 0.85rem;
+}
+
+.today-finance .history-heading h3 {
+  font-size: 0.95rem;
+}
+
+.today-finance .history-heading p {
+  font-size: 0.68rem;
+}
+
+/*
+ * Give the overall workspace a little separation from
+ * the attendance dashboard underneath.
+ */
+.today-glance + app-dashboard {
+  margin-top: 1rem;
+}
+
+/* ============================================================
+   TABLET
+   ============================================================ */
+
+@media (max-width: 1000px) {
+
+  .today-glance-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .today-plan-card {
+    min-height: 0;
+  }
+
+  .today-finance .cash-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 640px) {
+
+  .today-glance {
+    padding: 0.85rem;
+    border-radius: 18px;
+  }
+
+  .today-glance-heading {
+    display: block;
+  }
+
+  .today-glance-context {
+    margin-top: 0.65rem;
+  }
+
+  .today-glance-grid {
+    gap: 0.7rem;
+  }
+
+  .today-plan-card {
+    padding: 0.9rem;
+    border-radius: 14px;
+  }
+
+  .today-plan-action {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .today-finance .cash-hero {
+    padding: 0.85rem;
+  }
+
+  .today-finance .cash-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .today-finance .cash-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+}
+
+/* ============================================================
+   SMALL PHONES
+   ============================================================ */
+
+@media (max-width: 420px) {
+
+  .today-finance .cash-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .today-finance .cash-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+}
+
+
+/* ============================================================
+   WORKLOG TODAY AT A GLANCE FIRM CASH V2
+   ============================================================ */
+
+.today-finance .cash-hero {
+  border-radius: 16px 16px 12px 12px !important;
+}
+
+.today-finance .cash-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+}
+
+.today-finance .metric-card {
+  border-radius: 10px !important;
+  padding: 9px 10px !important;
+}
+
+.today-finance .cash-history {
+  border-radius: 12px !important;
+}
+
+@media (max-width: 700px) {
+
+  .today-finance .cash-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+}
+
+
+/* APPROVAL UNIFIED WORKSPACE V2 */
+
+/*
+   Attendance Approval page:
+   Summary
+      ↓
+   Pending / All caught up
+      ↓
+   Approval history
+
+   The three areas visually read as one workspace.
+*/
+
+app-root app-approvals .summary-card {
+  position: relative !important;
+
+  margin-bottom: 0 !important;
+
+  border-radius: 20px 20px 0 0 !important;
+
+  border-bottom:
+    1px solid rgba(20,58,43,.07) !important;
+
+  box-shadow: none !important;
+
+  z-index: 3 !important;
+}
+
+/* Pending / empty region directly under summary */
+
+app-root app-approvals .approval-list {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+
+  border-radius: 0 !important;
+
+  border-top: 0 !important;
+
+  border-bottom:
+    1px solid rgba(20,58,43,.07) !important;
+
+  box-shadow: none !important;
+
+  overflow: hidden !important;
+}
+
+/* All caught up */
+
+app-root app-approvals .approval-list > .empty-state {
+  min-height: 0 !important;
+  height: auto !important;
+
+  margin: 0 !important;
+
+  padding:
+    18px 24px !important;
+
+  display: grid !important;
+
+  grid-template-columns:
+    38px auto !important;
+
+  grid-template-rows:
+    auto auto !important;
+
+  column-gap: 12px !important;
+
+  row-gap: 2px !important;
+
+  align-items: center !important;
+
+  justify-content: center !important;
+
+  text-align: left !important;
+
+  border: 0 !important;
+
+  border-radius: 0 !important;
+
+  background:
+    linear-gradient(
+      180deg,
+      #fbfdfb,
+      #f8fbf9
+    ) !important;
+}
+
+app-root app-approvals .approval-list > .empty-state .empty-icon {
+  grid-column: 1 !important;
+  grid-row: 1 / 3 !important;
+
+  width: 38px !important;
+  height: 38px !important;
+
+  min-width: 38px !important;
+
+  margin: 0 !important;
+
+  display: grid !important;
+
+  place-items: center !important;
+
+  border-radius: 50% !important;
+
+  font-size: 18px !important;
+
+  font-weight: 800 !important;
+}
+
+app-root app-approvals .approval-list > .empty-state h2 {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+
+  margin: 0 !important;
+
+  font-size: 15px !important;
+
+  line-height: 1.25 !important;
+
+  font-weight: 800 !important;
+
+  text-align: left !important;
+}
+
+app-root app-approvals .approval-list > .empty-state p {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+
+  margin: 0 !important;
+
+  font-size: 11px !important;
+
+  line-height: 1.35 !important;
+
+  text-align: left !important;
+}
+
+/* ------------------------------------------------------------
+   APPROVAL HISTORY
+   ------------------------------------------------------------ */
+
+app-root app-approvals .approval-history {
+  margin-top: 0 !important;
+
+  border-radius:
+    0 0 20px 20px !important;
+
+  border-top: 0 !important;
+
+  box-shadow: none !important;
+
+  overflow: hidden !important;
+}
+
+app-root app-approvals .approval-history .history-header {
+  padding:
+    18px 22px !important;
+
+  border-top:
+    0 !important;
+
+  border-bottom:
+    1px solid rgba(20,58,43,.07) !important;
+}
+
+app-root app-approvals .approval-history .history-row {
+  padding:
+    12px 22px !important;
+}
+
+/* ------------------------------------------------------------
+   REMOVE THE VISUAL GAP BETWEEN THE THREE SECTIONS
+   ------------------------------------------------------------ */
+
+app-root app-approvals .summary-card + .approval-list {
+  margin-top: 0 !important;
+}
+
+app-root app-approvals .approval-list + .approval-history {
+  margin-top: 0 !important;
+}
+
+/* ------------------------------------------------------------
+   MOBILE
+   ------------------------------------------------------------ */
+
+@media (max-width: 640px) {
+
+  app-root app-approvals .summary-card {
+    border-radius:
+      14px 14px 0 0 !important;
+  }
+
+  app-root app-approvals .approval-history {
+    border-radius:
+      0 0 14px 14px !important;
+  }
+
+  app-root app-approvals .approval-list > .empty-state {
+    grid-template-columns:
+      32px minmax(0, 1fr) !important;
+
+    padding:
+      15px 16px !important;
+
+    column-gap:
+      9px !important;
+  }
+
+  app-root app-approvals .approval-list > .empty-state .empty-icon {
+    width: 32px !important;
+    height: 32px !important;
+
+    min-width: 32px !important;
+
+    font-size: 16px !important;
+  }
+
+  app-root app-approvals .approval-list > .empty-state h2 {
+    font-size: 14px !important;
+  }
+
+  app-root app-approvals .approval-list > .empty-state p {
+    font-size: 10px !important;
+  }
+
+  app-root app-approvals .approval-history .history-header {
+    padding:
+      15px 16px !important;
+  }
+
+  app-root app-approvals .approval-history .history-row {
+    padding:
+      11px 16px !important;
+  }
+}
+
+
+/* ============================================================
+   APPROVAL UNIFIED WORKSPACE V3
+   Compact dashboard presentation
+   ============================================================ */
+
+app-root app-approvals .summary-card {
+  margin-top: 22px !important;
+  min-height: 0 !important;
+
+  padding-top: 22px !important;
+  padding-bottom: 20px !important;
+
+  border-radius: 18px 18px 0 0 !important;
+}
+
+/* Make the waiting area substantially shorter */
+
+app-root app-approvals .summary-card h2,
+app-root app-approvals .summary-card h3 {
+  margin-top: 0 !important;
+}
+
+app-root app-approvals .approval-list > .empty-state {
+  padding: 13px 22px !important;
+
+  min-height: 0 !important;
+
+  grid-template-columns: 34px auto !important;
+
+  column-gap: 11px !important;
+}
+
+app-root app-approvals .approval-list > .empty-state .empty-icon {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+
+  font-size: 16px !important;
+}
+
+app-root app-approvals .approval-list > .empty-state h2 {
+  font-size: 14px !important;
+}
+
+app-root app-approvals .approval-list > .empty-state p {
+  font-size: 10px !important;
+}
+
+/* History comes immediately after the status area */
+
+app-root app-approvals .approval-history {
+  margin-top: 0 !important;
+
+  border-radius: 0 0 18px 18px !important;
+
+  box-shadow: none !important;
+}
+
+app-root app-approvals .approval-history .history-header {
+  padding: 16px 22px !important;
+}
+
+app-root app-approvals .approval-history .history-row {
+  padding: 11px 22px !important;
+}
+
+/* Reduce page-level gap before workspace */
+
+app-root app-approvals .approvals-page {
+  gap: 0 !important;
+}
+
+/* ------------------------------------------------------------
+   MOBILE
+   ------------------------------------------------------------ */
+
+@media (max-width: 640px) {
+
+  app-root app-approvals .summary-card {
+    margin-top: 16px !important;
+
+    padding-top: 18px !important;
+    padding-bottom: 16px !important;
+
+    border-radius: 14px 14px 0 0 !important;
+  }
+
+  app-root app-approvals .approval-list > .empty-state {
+    padding: 12px 16px !important;
+
+    grid-template-columns: 30px minmax(0, 1fr) !important;
+
+    column-gap: 9px !important;
+  }
+
+  app-root app-approvals .approval-list > .empty-state .empty-icon {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+  }
+
+  app-root app-approvals .approval-history {
+    border-radius: 0 0 14px 14px !important;
+  }
+
+  app-root app-approvals .approval-history .history-header {
+    padding: 14px 16px !important;
+  }
+
+  app-root app-approvals .approval-history .history-row {
+    padding: 10px 16px !important;
+  }
+}
+

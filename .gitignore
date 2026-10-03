@@ -1,45 +1,66 @@
-# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+﻿# Dependencies
+node_modules/
 
-# Compiled output
-/dist
-/tmp
-/out-tsc
-/bazel-out
+# Angular builds
+dist/
+.angular/
+.cache/
 
-# Node
-/node_modules
-npm-debug.log
-yarn-error.log
+# Capacitor / Android generated files
+android/.gradle/
+android/build/
+android/app/build/
+android/.idea/
+android/local.properties
 
-# IDEs and editors
+# Android signing - NEVER commit
+android/keystore.properties
+*.jks
+*.keystore
+
+# Firebase / local backups
+android/app/google-services.json.before-worklog
+
+# IDE
+.vscode/
 .idea/
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
 
-# Visual Studio Code
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-.history/*
+# Logs
+*.log
 
-# Miscellaneous
-/.angular/cache
-.sass-cache/
-/connect.lock
-/coverage
-/libpeerconnection.log
-testem.log
-/typings
-__screenshots__/
+# Temporary / backup files
+*.backup
+*.bak
+*.tmp
+*.before-*
+*-backup*
+*-backup*/
+*.safe-fix-backup
+*.finance-backup
+*.encoding-fix-backup
 
-# System files
+# ZIP/source snapshots
+*.zip
+
+# Local scripts and temporary files
+temp-method.txt
+worklog-ui-fix.ps1
+worklog-ui-fix-fixed.ps1
+
+# Finance backup folders
+finance-backup-*/
+finance-fix-backup-*/
+supabase-backup/
+
+# OS
 .DS_Store
 Thumbs.db
-.vercel
-.env*
+
+# Environment / deployment secrets
+.env
+.env.*
+!.env.example
+.vercel/
+
+# Source snapshot
+src.zip

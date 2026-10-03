@@ -1,0 +1,474 @@
+﻿
+/* =========================================================
+   EMPLOYEES — PROFESSIONAL UI REDESIGN
+   ========================================================= */
+
+.employees {
+  gap: 22px;
+}
+
+
+/* HEADER */
+
+.employee-heading-actions {
+  gap: 10px;
+}
+
+.employee-heading-actions .action-button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 9px;
+}
+
+
+/* EMPLOYEE PANEL */
+
+.employees .panel {
+  overflow: hidden;
+}
+
+.employees .panel-title {
+  padding: 20px 22px;
+  margin-bottom: 0;
+}
+
+.employees .panel-title h2 {
+  font-size: 18px;
+}
+
+.employee-count {
+  min-width: 34px;
+  height: 30px;
+
+  border: 1px solid #d4e3da;
+  border-radius: 9px;
+
+  background: #f0f6f2;
+  color: #245d45;
+
+  font-size: 12px;
+}
+
+
+/* EMPLOYEE CARD */
+
+.employee-card {
+  position: relative;
+
+  grid-template-columns:
+    minmax(260px, 1fr)
+    minmax(190px, auto)
+    auto;
+
+  gap: 22px;
+
+  min-height: 92px;
+
+  padding: 18px 22px;
+
+  border-bottom: 1px solid #edf1ee;
+
+  transition:
+    background-color .18s ease,
+    box-shadow .18s ease;
+}
+
+.employee-card:hover {
+  background: #fbfcfb;
+}
+
+
+/* EMPLOYEE IDENTITY */
+
+.employee-main {
+  gap: 13px;
+}
+
+.avatar {
+  width: 46px;
+  height: 46px;
+  flex-basis: 46px;
+
+  border: 1px solid #cfe0d6;
+  border-radius: 13px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #eef7f1,
+      #e1eee6
+    );
+
+  color: #246047;
+
+  font-size: 15px;
+
+  box-shadow:
+    0 2px 5px rgba(25,70,50,.05);
+}
+
+.employee-info {
+  gap: 4px;
+}
+
+.employee-info strong {
+  color: #18352a;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.employee-info small {
+  font-size: 11px;
+}
+
+.employee-code {
+  color: #65776d !important;
+  font-weight: 650 !important;
+}
+
+.employee-mobile {
+  color: #87938d !important;
+}
+
+
+/* FINANCIAL AREA */
+
+.employee-financial {
+  min-width: 220px;
+  gap: 28px;
+}
+
+.employee-rate,
+.employee-balance {
+  min-width: 88px;
+}
+
+.employee-rate span,
+.employee-balance span {
+  font-size: 10px;
+  letter-spacing: .01em;
+}
+
+.employee-rate strong,
+.employee-balance strong {
+  font-size: 14px;
+  font-weight: 750;
+}
+
+
+/* STATUS */
+
+.employee-balance.pending {
+  padding-left: 12px;
+
+  border-left: 2px solid #d99b35;
+}
+
+.employee-balance.advance {
+  padding-left: 12px;
+
+  border-left: 2px solid #4e83d7;
+}
+
+.employee-balance.settled {
+  padding-left: 12px;
+
+  border-left: 2px solid #3b9a70;
+}
+
+
+/* ACTIONS */
+
+.employee-actions {
+  gap: 7px;
+}
+
+.mark-button,
+.share-button,
+.delete-button,
+.chat-button {
+  min-height: 40px;
+
+  padding: 8px 11px;
+
+  border-radius: 8px;
+
+  font-size: 11px;
+  font-weight: 750;
+
+  white-space: nowrap;
+
+  transition:
+    background-color .16s ease,
+    border-color .16s ease,
+    color .16s ease,
+    transform .12s ease,
+    box-shadow .16s ease;
+}
+
+.mark-button:hover,
+.share-button:hover,
+.delete-button:hover,
+.chat-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(20,45,32,.07);
+}
+
+.chat-button {
+  border: 1px solid #d5e1da;
+  background: #f8fbf9;
+  color: #2c6049;
+}
+
+.chat-button:hover {
+  background: #edf6f1;
+  border-color: #b9d1c3;
+}
+
+.mark-button {
+  border-color: #bfd8c8;
+  background: #edf7f1;
+  color: #226246;
+}
+
+.mark-button:hover {
+  background: #e2f1e8;
+}
+
+.share-button {
+  border-color: #d7dfda;
+  background: #fff;
+  color: #50675b;
+}
+
+.share-button:hover {
+  background: #f5f8f6;
+}
+
+.delete-button {
+  border-color: #ecd4d4;
+  background: #fffafa;
+  color: #ae4141;
+}
+
+.delete-button:hover {
+  background: #fff1f1;
+  border-color: #e2bcbc;
+}
+
+
+/* EMPTY STATE */
+
+.empty-state {
+  padding: 72px 20px;
+}
+
+.empty-icon {
+  width: 58px;
+  height: 58px;
+
+  border-radius: 16px;
+
+  background: #edf6f1;
+  color: #276247;
+
+  box-shadow:
+    inset 0 0 0 1px #dcebe2;
+}
+
+.empty-state h2 {
+  color: #1d3d30;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+
+/* ADD EMPLOYEE MODAL */
+
+.employees .modal {
+  width: min(680px, 100%);
+  padding: 28px;
+}
+
+.employees .modal-heading {
+  margin-bottom: 24px;
+}
+
+.employees .modal-heading h2 {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.employees .form-grid {
+  gap: 17px;
+}
+
+.employees .form-grid label {
+  gap: 7px;
+
+  color: #41584c;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.employees .form-grid input,
+.employees .form-grid select {
+  min-height: 46px;
+
+  padding: 11px 13px;
+
+  border-radius: 9px !important;
+
+  background: #fff !important;
+}
+
+.employees .login-info {
+  margin-top: 20px;
+
+  padding: 15px;
+
+  border-radius: 12px;
+
+  background: #f4f8f5;
+  border-color: #dce8e0;
+}
+
+
+/* =========================================================
+   EMPLOYEE MOBILE
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+  .employee-card {
+    grid-template-columns: 1fr;
+    gap: 15px;
+
+    padding: 17px 16px;
+  }
+
+  .employee-main {
+    grid-column: auto;
+  }
+
+  .employee-financial {
+    display: grid;
+
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    min-width: 0;
+
+    gap: 12px;
+
+    justify-content: stretch;
+  }
+
+  .employee-rate,
+  .employee-balance {
+    text-align: left;
+  }
+
+  .employee-actions {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr));
+
+    gap: 7px;
+  }
+
+  .employee-actions button {
+    width: 100%;
+    min-width: 0;
+  }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 560px) {
+
+  .employees {
+    gap: 16px;
+  }
+
+  .employee-heading-actions {
+    display: grid;
+    grid-template-columns: 1fr 1.25fr;
+
+    width: 100%;
+  }
+
+  .employee-heading-actions .action-button {
+    width: 100%;
+  }
+
+  .employees .panel-title {
+    padding: 17px 15px;
+  }
+
+  .employee-card {
+    padding: 16px 14px;
+  }
+
+  .employee-actions {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .employee-actions button {
+    min-height: 42px;
+
+    font-size: 11px;
+  }
+
+  .employee-actions .action-icon {
+    font-size: 14px;
+  }
+
+  .employees .modal {
+    width: 100%;
+
+    padding:
+      21px 16px
+      calc(20px + env(safe-area-inset-bottom));
+
+    border-radius: 18px 18px 10px 10px;
+  }
+
+}
+
+
+/* =========================================================
+   VERY SMALL PHONE
+   ========================================================= */
+
+@media (max-width: 380px) {
+
+  .employee-financial {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .employee-actions {
+    gap: 6px;
+  }
+
+  .employee-actions button {
+    min-height: 40px;
+    padding-left: 5px;
+    padding-right: 5px;
+
+    font-size: 10px;
+  }
+
+  .employee-actions .action-icon {
+    font-size: 13px;
+  }
+
+}
+

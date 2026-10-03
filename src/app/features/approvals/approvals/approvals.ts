@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+﻿import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
 import {
   AttendanceRecord,
@@ -106,4 +106,91 @@ export class ApprovalsComponent {
       maximumFractionDigits: 2
     })}`;
   }
+
+  /* APPROVAL HISTORY METHODS START */
+
+  approvalHistory(): AttendanceRecord[] {
+
+    type ApprovalRecord = AttendanceRecord & {
+      approved_at?: string | null;
+    };
+
+    return this.records
+      .filter(
+        record =>
+          record.approval_status === 'approved' ||
+          record.approval_status === 'denied'
+      )
+      .map(record => record as ApprovalRecord)
+      .sort((a, b) => {
+
+        const aDate =
+          a.approved_at ||
+          a.attendance_date ||
+          '';
+
+        const bDate =
+          b.approved_at ||
+          b.attendance_date ||
+          '';
+
+        const aTime =
+          new Date(aDate).getTime() || 0;
+
+        const bTime =
+          new Date(bDate).getTime() || 0;
+
+        if (bTime !== aTime) {
+          return bTime - aTime;
+        }
+
+        return b.id - a.id;
+      })
+      .slice(0, 10);
+  }
+
+  approvalDate(record: AttendanceRecord): string {
+
+    const value =
+      (record as AttendanceRecord & {
+        approved_at?: string | null;
+      }).approved_at ||
+      record.attendance_date;
+
+    if (!value) {
+      return '-';
+    }
+
+    return new Date(value).toLocaleDateString(
+      'en-IN',
+      {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      }
+    );
+  }
+
+  approvalTime(record: AttendanceRecord): string {
+
+    const value =
+      (record as AttendanceRecord & {
+        approved_at?: string | null;
+      }).approved_at;
+
+    if (!value) {
+      return '';
+    }
+
+    return new Date(value).toLocaleTimeString(
+      'en-IN',
+      {
+        hour: 'numeric',
+        minute: '2-digit'
+      }
+    );
+  }
+
+  /* APPROVAL HISTORY METHODS END */
 }
+

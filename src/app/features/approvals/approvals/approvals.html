@@ -1,4 +1,4 @@
-<section class="approvals-page">
+﻿<section class="approvals-page">
   <header class="page-header">
     <div>
       <p class="eyebrow">ATTENDANCE REVIEW</p>
@@ -92,5 +92,97 @@
         <p>There are no attendance records waiting for approval.</p>
       </div>
     }
+  <section class="approval-history" aria-label="Recent approval history">
+    <div class="history-header">
+      <div>
+        <p class="eyebrow">RECENT ACTIVITY</p>
+        <h2>Approval history</h2>
+        <p>Latest 10 attendance approval decisions.</p>
+      </div>
+
+      <span class="history-count">
+        {{ approvalHistory().length }} of 10
+      </span>
+    </div>
+
+    @if (approvalHistory().length > 0) {
+
+      <div class="history-list">
+        @for (record of approvalHistory(); track record.id) {
+
+          <article class="history-row">
+
+            <div class="history-status"
+              [class.approved]="record.approval_status === 'approved'"
+              [class.denied]="record.approval_status === 'denied'"
+              aria-hidden="true"
+            >
+              @if (record.approval_status === 'approved') {
+                ✓
+              } @else {
+                ×
+              }
+            </div>
+
+            <div class="history-main">
+
+              <div class="history-employee">
+                <strong>
+                  {{ employeeName(record.employee_id) }}
+                </strong>
+
+                <span>
+                  {{ formatDate(record.attendance_date) }}
+                  ·
+                  {{ attendanceTypeLabel(record.attendance_type) }}
+                </span>
+              </div>
+
+              <div class="history-meta">
+                <span>
+                  Decision:
+                  <b
+                    [class.text-approved]="record.approval_status === 'approved'"
+                    [class.text-denied]="record.approval_status === 'denied'"
+                  >
+                    {{ record.approval_status === 'approved' ? 'Approved' : 'Denied' }}
+                  </b>
+                </span>
+
+                <span>
+                  By:
+                  <b>{{ record.approved_by_name || 'Admin' }}</b>
+                </span>
+
+                <span>
+                  Amount:
+                  <b>{{ currency(record.earned_amount) }}</b>
+                </span>
+
+                <span>
+                  {{ approvalDate(record) }}
+                  @if (approvalTime(record)) {
+                    · {{ approvalTime(record) }}
+                  }
+                </span>
+              </div>
+
+            </div>
+
+          </article>
+
+        }
+      </div>
+
+    } @else {
+
+      <div class="history-empty">
+        <div class="history-empty-icon">✓</div>
+        <strong>No approval history yet</strong>
+        <span>Approved or denied attendance decisions will appear here.</span>
+      </div>
+
+    }
+
   </section>
 </section>

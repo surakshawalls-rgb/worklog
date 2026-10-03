@@ -1,7 +1,7 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+﻿import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.surakshagroup.surakshahub',
+  appId: 'com.surakshagroup.worklogattendance',
   appName: 'WorkLog',
   webDir: 'dist/attendance-maintenance/browser'
 };

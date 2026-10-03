@@ -1,10 +1,17 @@
-import { CommonModule } from '@angular/common';
+﻿import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
-import { AttendanceRecord, Employee, Payment } from '../../../services/attendance.service';
+import { FirmCashComponent } from '../../firm-cash/firm-cash/firm-cash.component';
+import {
+  AttendanceRecord,
+  Employee,
+  Payment
+} from '../../../services/attendance.service';
+
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule],
+  imports: [
+    FirmCashComponent,CommonModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
 })
@@ -13,6 +20,10 @@ export class DashboardComponent {
   @Input() records: AttendanceRecord[] = [];
   @Input() allPayments: Payment[] = [];
   @Input() pendingCount = 0;
+
+  @Input() announcement: { message?: string } | null = null;
+
+  @Output() announcementEditRequested = new EventEmitter<void>();
 
   @Output() refreshRequested = new EventEmitter<void>();
 
@@ -170,3 +181,6 @@ export class DashboardComponent {
     }).format(value || 0);
   }
 }
+
+
+

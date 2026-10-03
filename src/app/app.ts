@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+﻿import { CommonModule } from '@angular/common';
 import {
   Component,
   OnInit,
@@ -32,6 +32,7 @@ import { EmployeesComponent } from './features/employees/employees/employees';
 import { ApprovalsComponent } from './features/approvals/approvals/approvals';
 import { PaymentsComponent } from './features/payments/payments/payments';
 import { ReceiptsComponent } from './features/receipts/receipts/receipts';
+import { PartnerFinanceComponent } from './features/partner-finance/partner-finance.component';
 import { NotificationCenterComponent } from './features/notifications/notification-center/notification-center';
 import {
   AppNotification,
@@ -52,6 +53,7 @@ import {
     ApprovalsComponent,
     PaymentsComponent,
     ReceiptsComponent,
+    PartnerFinanceComponent,
     NotificationCenterComponent
   ],
   templateUrl: './app.html',
@@ -89,7 +91,8 @@ export class App implements OnInit {
     'employees' |
     'approval' |
     'payments' |
-    'receipts'
+    'receipts' |
+    'partner-finance'
   >('overview');
 
   readonly modal = signal<'password' | 'announcement' | null>(null);
@@ -296,7 +299,7 @@ export class App implements OnInit {
 
     if (!text) {
       this.error.set(
-        'Enter today’s work plan before posting.'
+        'Enter todayâ€™s work plan before posting.'
       );
       return;
     }
@@ -314,7 +317,7 @@ export class App implements OnInit {
       this.closeModal();
 
       this.message.set(
-        'Today’s work plan is visible until 8:00 PM.'
+        'Todayâ€™s work plan is visible until 8:00 PM.'
       );
     });
   }
@@ -388,6 +391,7 @@ export class App implements OnInit {
       | 'approval'
       | 'payments'
       | 'receipts'
+      | 'partner-finance'
   ): void {
     this.tab.set(tab);
     this.error.set('');
@@ -568,3 +572,5 @@ export class App implements OnInit {
       : 'Something went wrong. Please try again.';
   }
 }
+
+
