@@ -110,15 +110,9 @@
     <div class="history-heading">
 
       <div>
-        <span class="eyebrow">
-          
-        </span>
-
         <h3>
           Recent activity
         </h3>
-
-        
       </div>
 
       <button
@@ -232,6 +226,51 @@
 
         </table>
 
+      </div>
+
+      <div class="history-pagination">
+        <span class="pagination-count">
+          Showing {{ pageStart() }}–{{ pageEnd() }} of {{ dashboard.transaction_count }}
+        </span>
+
+        <nav class="pagination-controls" aria-label="Recent activity pagination">
+          <label>
+            Rows
+            <select
+              [value]="pageSize"
+              (change)="changePageSize(+$any($event.target).value)"
+              aria-label="Rows per page"
+            >
+              @for (size of pageSizeOptions; track size) {
+                <option [value]="size">{{ size }}</option>
+              }
+            </select>
+          </label>
+
+          <button
+            type="button"
+            class="page-button"
+            (click)="changePage(currentPage - 1)"
+            [disabled]="currentPage <= 1 || loading"
+            aria-label="Previous page"
+          >
+            Previous
+          </button>
+
+          <span class="page-number">
+            Page {{ currentPage }} of {{ pageCount() }}
+          </span>
+
+          <button
+            type="button"
+            class="page-button"
+            (click)="changePage(currentPage + 1)"
+            [disabled]="currentPage >= pageCount() || loading"
+            aria-label="Next page"
+          >
+            Next
+          </button>
+        </nav>
       </div>
 
     }
@@ -433,4 +472,3 @@
   }
 
 </section>
-

@@ -16,88 +16,50 @@
     </button>
   </section>
 
-  <section class="today-glance">
+  <section class="firm-cash-summary" aria-label="Firm cash summary">
+    <div class="firm-cash-summary-icon" aria-hidden="true">₹</div>
+    <div class="firm-cash-summary-copy">
+      <p class="eyebrow">FIRM CASH</p>
+      @if (firmBalance() !== null) {
+        <strong>{{ currency(firmBalance()!) }}</strong>
+        <span>Available firm balance</span>
+      } @else if (firmBalanceError()) {
+        <span class="firm-cash-summary-error">{{ firmBalanceError() }}</span>
+      } @else {
+        <span>Loading current balance…</span>
+      }
+    </div>
+    <button
+      type="button"
+      class="firm-cash-summary-action"
+      (click)="scrollToFirmCash()"
+    >
+      View details
+      <span aria-hidden="true">↓</span>
+    </button>
+  </section>
 
-    <div class="today-glance-heading">
-
-      <div>
-        <p class="eyebrow">TODAY AT A GLANCE</p>
-
-        <h2>Today's workspace</h2>
-
-        <p class="today-glance-subtitle">
-          Plan and cash at a glance.
-        </p>
-      </div>
-
-      <span class="today-glance-label">
-        ADMIN WORKSPACE
-      </span>
-
+  <section class="today-plan-strip">
+    <div class="today-plan-strip-copy">
+      <p class="eyebrow">TODAY'S WORK PLAN</p>
+      <h2>{{ announcement ? 'Team plan' : 'No plan posted' }}</h2>
+      @if (announcement?.message) {
+        <p>{{ announcement?.message }}</p>
+      }
     </div>
 
-    <div class="today-glance-grid">
-
-      <section class="today-plan-card">
-
-        <div class="today-plan-heading">
-
-          <div>
-            <p class="eyebrow">TODAY'S WORK PLAN</p>
-
-            <h3>
-              {{ announcement ? 'Team plan' : 'No plan posted' }}
-            </h3>
-          </div>
-
-          <span
-            class="today-status-dot"
-            [class.has-plan]="!!announcement"
-            aria-hidden="true"
-          ></span>
-
-        </div>
-
-        <p class="today-plan-message">
-          {{
-            announcement?.message ||
-            ''
-          }}
-        </p>
-
-        <button
-          type="button"
-          class="today-plan-action"
-          (click)="announcementEditRequested.emit()"
-        >
-          <span aria-hidden="true">+</span>
-
-          @if (announcement) {
-            Update plan
-          } @else {
-            Post today's plan
-          }
-        </button>
-
-      </section>
-
-      <section class="today-finance">
-
-        <div class="today-finance-header">
-          <div>
-            <p class="eyebrow">FIRM CASH</p>
-            <p class="today-finance-description">
-              
-            </p>
-          </div>
-        </div>
-
-        <app-firm-cash />
-
-      </section>
-
-    </div>
-
+    <button
+      type="button"
+      class="today-plan-action"
+      (click)="announcementEditRequested.emit()"
+    >
+      <span aria-hidden="true">+</span>
+      @if (announcement) {
+        Update plan
+      } @else {
+        Post today's plan
+      }
+    </button>
   </section>
 
   <section class="panel period-panel">
@@ -201,6 +163,73 @@
     </section>
   </section>
 
+  <section class="panel employee-balances">
+    <div class="panel-title">
+      <div>
+        <p class="eyebrow">EMPLOYEE BALANCES</p>
+        <h2>Advances &amp; settled</h2>
+        <p class="balance-subtitle">
+          Employees with an advance or no outstanding wage balance.
+        </p>
+      </div>
+      <span class="balance-count">
+        {{ employeeBalanceRows().length }}
+        {{ employeeBalanceRows().length === 1 ? 'employee' : 'employees' }}
+      </span>
+    </div>
+
+    @if (employeeBalanceRows().length > 0) {
+      <div class="employee-balance-table-wrap">
+        <table class="employee-balance-table">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Employee ID</th>
+              <th class="numeric">Earned</th>
+              <th class="numeric">Paid</th>
+              <th>Status</th>
+              <th class="numeric">Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of employeeBalanceRows(); track row.employee.id) {
+              <tr>
+                <td>
+                  <strong>{{ row.employee.name }}</strong>
+                  @if (row.employee.mobile) {
+                    <small>{{ row.employee.mobile }}</small>
+                  }
+                </td>
+                <td>{{ row.employee.employee_code }}</td>
+                <td class="numeric">{{ currency(row.earned) }}</td>
+                <td class="numeric">{{ currency(row.paid) }}</td>
+                <td>
+                  <span
+                    class="balance-status"
+                    [class.advance]="row.balance < 0"
+                    [class.settled]="row.balance === 0"
+                  >
+                    {{ row.balance < 0 ? 'Advance' : 'Settled' }}
+                  </span>
+                </td>
+                <td
+                  class="numeric balance-value"
+                  [class.advance]="row.balance < 0"
+                >
+                  {{ currency(row.balance < 0 ? -row.balance : row.balance) }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="balance-empty">
+        No employees currently have an advance or a settled wage balance.
+      </div>
+    }
+  </section>
+
   <section class="panel quick-info">
     <div>
       <p class="eyebrow">PENDING WORK</p>
@@ -210,8 +239,12 @@
       </p>
     </div>
   </section>
+
+  <section class="firm-cash-overview" id="firm-cash-details">
+    <div class="firm-cash-overview-heading">
+      <p class="eyebrow">FIRM FINANCES</p>
+      <h2>Firm cash</h2>
+    </div>
+    <app-firm-cash (balanceChanged)="firmBalance.set($event)" />
+  </section>
 </section>
-
-
-
-

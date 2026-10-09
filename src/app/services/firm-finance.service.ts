@@ -63,7 +63,8 @@ export class FirmFinanceService {
   }
 
   async getTransactions(
-    limit = 100
+    limit = 100,
+    offset = 0
   ): Promise<FirmFinanceTransaction[]> {
 
     const { data, error } =
@@ -76,7 +77,7 @@ export class FirmFinanceService {
         .order('created_at', {
           ascending: false
         })
-        .limit(limit);
+        .range(offset, offset + limit - 1);
 
     if (error) {
       throw error;

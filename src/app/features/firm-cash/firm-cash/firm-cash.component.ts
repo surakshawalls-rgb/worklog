@@ -1,5 +1,7 @@
 ﻿import {
   Component,
+  EventEmitter,
+  Output,
   OnInit,
   ChangeDetectorRef,
   inject
@@ -44,6 +46,8 @@ import {
   styleUrl: './firm-cash.component.scss'
 })
 export class FirmCashComponent implements OnInit {
+  @Output() balanceChanged = new EventEmitter<number>();
+
   private readonly finance =
     inject(FirmFinanceService);
 
@@ -66,6 +70,10 @@ export class FirmCashComponent implements OnInit {
 
   transactions:
     FirmFinanceTransaction[] = [];
+
+  readonly pageSizeOptions = [10, 25, 50];
+  pageSize = this.pageSizeOptions[0];
+  currentPage = 1;
 
   partners:
     FinancePartner[] = [];
@@ -109,13 +117,11 @@ export class FirmCashComponent implements OnInit {
 
       const [
         dashboard,
-        transactions,
         partners,
         incomeCategories,
         expenseCategories
       ] = await Promise.all([
         this.finance.getDashboard(),
-        this.finance.getTransactions(30),
         this.funding.getActivePartners(),
         this.loadIncomeCategories(),
         this.expenses.getCategories()
@@ -123,9 +129,16 @@ export class FirmCashComponent implements OnInit {
 
       this.dashboard =
         dashboard;
+      this.balanceChanged.emit(dashboard.firm_balance);
 
-      this.transactions =
-        transactions;
+      this.currentPage = Math.min(
+        this.currentPage,
+        this.pageCount()
+      );
+      this.transactions = await this.finance.getTransactions(
+        this.pageSize,
+        (this.currentPage - 1) * this.pageSize
+      );
 
       this.partners =
         partners;
@@ -427,6 +440,54 @@ export class FirmCashComponent implements OnInit {
     void this.load();
   }
 
+  pageCount(): number {
+    return Math.max(1, Math.ceil(this.dashboard.transaction_count / this.pageSize));
+  }
+
+  pageStart(): number {
+    return this.dashboard.transaction_count === 0
+      ? 0
+      : (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  pageEnd(): number {
+    return Math.min(
+      this.currentPage * this.pageSize,
+      this.dashboard.transaction_count
+    );
+  }
+
+  changePage(page: number): void {
+    if (this.loading || page < 1 || page > this.pageCount()) return;
+    this.currentPage = page;
+    void this.loadTransactions();
+  }
+
+  changePageSize(pageSize: number): void {
+    if (!this.pageSizeOptions.includes(pageSize)) return;
+    this.pageSize = pageSize;
+    this.currentPage = 1;
+    void this.loadTransactions();
+  }
+
+  private async loadTransactions(): Promise<void> {
+    this.loading = true;
+    this.errorMessage = '';
+
+    try {
+      this.transactions = await this.finance.getTransactions(
+        this.pageSize,
+        (this.currentPage - 1) * this.pageSize
+      );
+    } catch (error) {
+      console.error('[FirmCash] transaction page load error', error);
+      this.errorMessage = 'Unable to load firm cash activity.';
+    } finally {
+      this.loading = false;
+      this.cdr.detectChanges();
+    }
+  }
+
   formatCurrency(
     value: number
   ): string {
@@ -507,8 +568,5 @@ export class FirmCashComponent implements OnInit {
       .slice(0, 10);
   }
 }
-
-
-
 
 

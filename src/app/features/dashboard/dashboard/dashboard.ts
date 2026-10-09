@@ -1,12 +1,19 @@
 ﻿import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 import { FirmCashComponent } from '../../firm-cash/firm-cash/firm-cash.component';
+import { FirmFinanceService } from '../../../services/firm-finance.service';
 import {
   AttendanceRecord,
   Employee,
   Payment
 } from '../../../services/attendance.service';
 
+interface EmployeeBalanceRow {
+  employee: Employee;
+  earned: number;
+  paid: number;
+  balance: number;
+}
 
 @Component({
   selector: 'app-dashboard',
@@ -15,7 +22,9 @@ import {
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
+  private readonly firmFinance = inject(FirmFinanceService);
+
   @Input() employees: Employee[] = [];
   @Input() records: AttendanceRecord[] = [];
   @Input() allPayments: Payment[] = [];
@@ -28,7 +37,31 @@ export class DashboardComponent {
   @Output() refreshRequested = new EventEmitter<void>();
 
   readonly busy = signal(false);
+  readonly firmBalance = signal<number | null>(null);
+  readonly firmBalanceError = signal('');
   readonly month = signal(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+
+  ngOnInit(): void {
+    void this.loadFirmBalance();
+  }
+
+  async loadFirmBalance(): Promise<void> {
+    this.firmBalanceError.set('');
+
+    try {
+      this.firmBalance.set(await this.firmFinance.getCurrentBalance());
+    } catch (error) {
+      console.error('[Dashboard] firm balance load error', error);
+      this.firmBalanceError.set('Unable to load the current firm balance.');
+    }
+  }
+
+  scrollToFirmCash(): void {
+    document.getElementById('firm-cash-details')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+  }
 
   monthLabel(): string {
     return this.month().toLocaleDateString('en-IN', {
@@ -93,6 +126,14 @@ export class DashboardComponent {
   }
 
   totalAdvance(): number {
+    return this.employeeBalanceRows()
+      .reduce(
+        (advance, row) => advance + Math.max(0, -row.balance),
+        0
+      );
+  }
+
+  employeeBalanceRows(): EmployeeBalanceRow[] {
     const earned = new Map<number, number>();
     const paid = new Map<number, number>();
 
@@ -112,13 +153,26 @@ export class DashboardComponent {
       );
     }
 
-    let advance = 0;
-    for (const employee of this.employees) {
-      const balance = (earned.get(employee.id) || 0) - (paid.get(employee.id) || 0);
-      if (balance < 0) advance += Math.abs(balance);
-    }
+    return this.employees
+      .map(employee => {
+        const employeeEarned = earned.get(employee.id) || 0;
+        const employeePaid = paid.get(employee.id) || 0;
 
-    return advance;
+        return {
+          employee,
+          earned: employeeEarned,
+          paid: employeePaid,
+          balance: employeeEarned - employeePaid
+        };
+      })
+      .filter(row =>
+        row.balance < 0 ||
+        (row.balance === 0 && (row.earned > 0 || row.paid > 0))
+      )
+      .sort((first, second) =>
+        first.balance - second.balance ||
+        first.employee.name.localeCompare(second.employee.name)
+      );
   }
 
   approvedDays(): number {
@@ -169,6 +223,7 @@ export class DashboardComponent {
     if (this.busy()) return;
 
     this.busy.set(true);
+    void this.loadFirmBalance();
     this.refreshRequested.emit();
     setTimeout(() => this.busy.set(false), 300);
   }
@@ -181,6 +236,3 @@ export class DashboardComponent {
     }).format(value || 0);
   }
 }
-
-
-
