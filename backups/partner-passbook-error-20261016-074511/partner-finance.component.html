@@ -1,0 +1,508 @@
+﻿<section class="partner-finance">
+
+  <header class="finance-header">
+
+    <div>
+      <span class="eyebrow">PARTNER ACCOUNTING</span>
+      <h2>Partner Finance</h2>
+      <p>
+        Partner loans, personally paid firm expenses, repayments and passbooks.
+      </p>
+    </div>
+
+    <div class="month-selector">
+
+      <label>
+        Finance Month
+
+        <select
+          [value]="selectedMonth"
+          (change)="onMonthChange($event)"
+        >
+          <option value="">
+            Select month
+          </option>
+
+          @for (
+            month of months;
+            track month
+          ) {
+            <option [value]="month">
+              {{ formatMonth(month) }}
+            </option>
+          }
+
+        </select>
+      </label>
+
+    </div>
+
+  </header>
+
+
+  @if (!loading && selectedPartner()) {
+
+    <section class="partner-hero">
+
+      <div>
+
+        <span class="eyebrow">
+          SELECTED PARTNER
+        </span>
+
+        <h3>
+          {{ selectedPartner()?.partner_name }}
+        </h3>
+
+        <p>
+          {{ selectedPartner()?.role }}
+          ·
+          {{ selectedPartner()?.share_percentage }}% share
+        </p>
+
+      </div>
+
+      <div class="partner-actions">
+
+        <button
+          type="button"
+          class="primary-button"
+          (click)="openRepayment()"
+        >
+          Repay Partner
+        </button>
+
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="openPartnerExpense()"
+        >
+          Partner Paid Expense
+        </button>
+
+      </div>
+
+    </section>
+
+  }
+
+
+  @if (!loading) {
+
+    <section class="partner-selector">
+
+      <label>
+        Partner Passbook
+
+        <select
+          [(ngModel)]="selectedPartnerId"
+          (ngModelChange)="onPartnerChange()"
+        >
+
+          @for (
+            partner of partners;
+            track partner.id
+          ) {
+            <option [ngValue]="partner.id">
+              {{ partner.partner_name }}
+            </option>
+          }
+
+        </select>
+
+      </label>
+
+    </section>
+
+  }
+
+
+  @if (selectedLedger()) {
+
+    <section class="balance-grid">
+
+      <div class="balance-card">
+        <span>Loan Received</span>
+        <strong>
+          {{
+            formatCurrency(
+              selectedLedger()?.loan_received || 0
+            )
+          }}
+        </strong>
+      </div>
+
+      <div class="balance-card">
+        <span>Partner Expenses</span>
+        <strong>
+          {{
+            formatCurrency(
+              selectedLedger()?.partner_expense || 0
+            )
+          }}
+        </strong>
+      </div>
+
+      <div class="balance-card">
+        <span>Repayment</span>
+        <strong>
+          {{
+            formatCurrency(
+              selectedLedger()?.repayment || 0
+            )
+          }}
+        </strong>
+      </div>
+
+      <div class="balance-card outstanding">
+        <span>Outstanding</span>
+        <strong>
+          {{
+            formatCurrency(
+              selectedLedger()?.closing_balance || 0
+            )
+          }}
+        </strong>
+      </div>
+
+    </section>
+
+  }
+
+
+  @if (errorMessage) {
+
+    <div class="finance-alert error">
+      {{ errorMessage }}
+    </div>
+
+  }
+
+  @if (successMessage) {
+
+    <div class="finance-alert success">
+      {{ successMessage }}
+    </div>
+
+  }
+
+
+  <section class="passbook">
+
+    <div class="passbook-heading">
+
+      <div>
+        <span class="eyebrow">
+          PASSBOOK
+        </span>
+
+        <h3>
+          Partner Transaction History
+        </h3>
+
+        <p>
+          Every loan, expense and repayment is linked to its firm transaction.
+        </p>
+      </div>
+
+    </div>
+
+
+    @if (transactionsLoading) {
+
+      <div class="empty-state">
+        Loading passbook...
+      </div>
+
+    } @else if (transactions.length === 0) {
+
+      <div class="empty-state">
+        No transactions recorded for this partner.
+      </div>
+
+    } @else {
+
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Payment Mode</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            @for (
+              transaction of transactions;
+              track transaction.id
+            ) {
+
+              <tr>
+
+                <td>
+                  {{ formatDate(transaction.transaction_date) }}
+                </td>
+
+                <td>
+                  <span
+                    class="transaction-pill"
+                    [class.loan]="transaction.transaction_type === 'loan_received'"
+                    [class.expense]="transaction.transaction_type === 'expense_paid_by_partner'"
+                    [class.repayment]="transaction.transaction_type === 'repayment'"
+                  >
+                    {{ transactionLabel(transaction) }}
+                  </span>
+                </td>
+
+                <td>
+                  {{ transaction.description || '—' }}
+                </td>
+
+                <td>
+                  {{
+                    transaction.payment_mode
+                      ? transaction.payment_mode.replace('_', ' ')
+                      : '—'
+                  }}
+                </td>
+
+                <td
+                  class="amount"
+                  [class.negative]="transaction.transaction_type === 'repayment'"
+                >
+                  {{
+                    transaction.transaction_type === 'repayment'
+                      ? '-'
+                      : '+'
+                  }}{{ formatCurrency(transaction.amount) }}
+                </td>
+
+              </tr>
+
+            }
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    }
+
+  </section>
+
+
+  @if (repaymentOpen || expenseOpen) {
+
+    <div
+      class="finance-overlay"
+      role="dialog"
+      aria-modal="true"
+      (click)="closeDialogs()"
+    >
+
+      <section
+        class="finance-dialog"
+        (click)="$event.stopPropagation()"
+      >
+
+        <div class="dialog-heading">
+
+          <div>
+            <span class="eyebrow">
+              PARTNER ACCOUNTING
+            </span>
+
+            <h3>
+              {{
+                repaymentOpen
+                  ? 'Repay Partner'
+                  : 'Partner Paid Firm Expense'
+              }}
+            </h3>
+          </div>
+
+          <button
+            type="button"
+            class="dialog-close"
+            (click)="closeDialogs()"
+            aria-label="Close"
+          >
+            &times;
+          </button>
+
+        </div>
+
+
+        @if (errorMessage) {
+
+          <div class="finance-alert error">
+            {{ errorMessage }}
+          </div>
+
+        }
+
+
+        @if (expenseOpen) {
+
+          <label>
+            Partner
+
+            <select
+              [(ngModel)]="expensePartnerId"
+            >
+
+              @for (
+                partner of partners;
+                track partner.id
+              ) {
+
+                <option
+                  [ngValue]="partner.id"
+                >
+                  {{ partner.partner_name }}
+                </option>
+
+              }
+
+            </select>
+
+          </label>
+
+          <label>
+            Expense Category
+
+            <input
+              type="text"
+              [(ngModel)]="expenseCategory"
+              placeholder="Example: Material, Travel, Office"
+            />
+          </label>
+
+        }
+
+
+        <div class="form-grid">
+
+          <label>
+            Amount
+
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              [(ngModel)]="amount"
+              placeholder="0.00"
+            />
+          </label>
+
+          <label>
+            Date
+
+            <input
+              type="date"
+              [(ngModel)]="transactionDate"
+            />
+          </label>
+
+        </div>
+
+
+        <label>
+          Payment Mode
+
+          <select
+            [(ngModel)]="paymentMode"
+          >
+            <option value="cash">
+              Cash
+            </option>
+
+            <option value="bank_transfer">
+              Bank Transfer
+            </option>
+
+            <option value="upi">
+              UPI
+            </option>
+
+            <option value="cheque">
+              Cheque
+            </option>
+
+            <option value="other">
+              Other
+            </option>
+          </select>
+        </label>
+
+
+        <label>
+          Description
+
+          <textarea
+            rows="3"
+            [(ngModel)]="description"
+            placeholder="Optional description"
+          ></textarea>
+        </label>
+
+
+        <div class="dialog-actions">
+
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="closeDialogs()"
+            [disabled]="saving"
+          >
+            Cancel
+          </button>
+
+          @if (repaymentOpen) {
+
+            <button
+              type="button"
+              class="primary-button"
+              (click)="saveRepayment()"
+              [disabled]="saving"
+            >
+              {{
+                saving
+                  ? 'Saving...'
+                  : 'Record Repayment'
+              }}
+            </button>
+
+          } @else {
+
+            <button
+              type="button"
+              class="primary-button"
+              (click)="savePartnerExpense()"
+              [disabled]="saving"
+            >
+              {{
+                saving
+                  ? 'Saving...'
+                  : 'Record Expense'
+              }}
+            </button>
+
+          }
+
+        </div>
+
+      </section>
+
+    </div>
+
+  }
+
+</section>

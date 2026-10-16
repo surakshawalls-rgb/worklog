@@ -6,6 +6,8 @@ This is the standalone Angular frontend for the attendance app. It shares the ex
 
 Run [008_attendance_maintenance.sql](../SurakshaChat/Sync%20Point/syncpoint/supabase/migrations/008_attendance_maintenance.sql) in the Supabase Dashboard SQL Editor after the existing Sync Point migrations. The migration creates employee, attendance, payment, and FIFO allocation tables, plus transactional payment and reversal RPCs. It also marks the existing `pradeep` account as an attendance admin.
 
+To allow payments above wages currently owed to be recorded as employee advances and track employee payouts in firm cash, also run [017_allow_employee_advances.sql](./supabase/migrations/017_allow_employee_advances.sql) and [018_track_employee_payments_in_firm_cash.sql](./supabase/migrations/018_track_employee_payments_in_firm_cash.sql) in the Supabase Dashboard SQL Editor. The latter backfills existing completed employee payments into firm cash; future payments are written to both ledgers atomically. Firm-balance validation still applies.
+
 The app cannot apply DDL remotely because the browser only uses the Supabase anon key. Do not put a service-role key in this frontend.
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.1.
@@ -48,7 +50,7 @@ This will compile your project and store the build artifacts in the `dist/` dire
 
 - Attendance starts as pending and only approved records earn money.
 - Full day, half day, and leave use the historical rate stored on each record.
-- Payments are validated against outstanding earnings and allocated FIFO in one database transaction.
+- Payments are allocated FIFO against outstanding earnings in one database transaction; any remainder is recorded as an employee advance. Employee payments are also recorded as firm-cash outflows.
 - Payment history is preserved; reversal marks a payment reversed and restores its outstanding amounts.
 - Attendance payment status is derived independently from approval status.
 

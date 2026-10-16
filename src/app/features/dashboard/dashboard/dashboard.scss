@@ -655,3 +655,120 @@
     width: 100%;
   }
 }
+
+
+/* Overview refinement: compact empty plan and content-led published plan */
+.today-plan-strip.no-plan {
+  min-height: 0;
+  padding: 10px 14px;
+  align-items: center;
+  gap: 12px;
+}
+
+.today-plan-strip.no-plan .today-plan-strip-copy {
+  gap: 2px;
+}
+
+.today-plan-strip.no-plan .today-plan-strip-copy .eyebrow {
+  margin-bottom: 2px;
+}
+
+.today-plan-strip.no-plan .today-plan-strip-copy h2 {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.today-plan-strip.no-plan .today-plan-strip-copy > p:not(.eyebrow) {
+  margin: 2px 0 0;
+}
+
+.today-plan-strip.no-plan .today-plan-action {
+  width: auto;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.today-plan-strip.has-plan {
+  min-height: 104px;
+  padding: 16px 18px;
+  align-items: flex-start;
+}
+
+.today-plan-strip.has-plan .today-plan-strip-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.today-plan-strip.has-plan .today-plan-strip-copy > p:not(.eyebrow) {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.firm-cash-overview {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .today-plan-strip.no-plan {
+    padding: 10px 12px;
+  }
+
+  .today-plan-strip.no-plan .today-plan-action {
+    width: auto;
+    max-width: 48%;
+    white-space: normal;
+  }
+
+  .today-plan-strip.has-plan {
+    min-height: 0;
+    padding: 14px;
+    flex-direction: column;
+  }
+
+  .today-plan-strip.has-plan .today-plan-action {
+    width: 100%;
+  }
+}
+
+
+/* Unified Overview: work plan and firm cash */
+.overview-top-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid var(--border-color, #dce6df);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.overview-top-card .today-plan-strip {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.overview-finance-content {
+  width: 100%;
+  min-width: 0;
+}
+
+.overview-finance-content app-firm-cash {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .overview-top-card {
+    gap: 10px;
+    padding: 8px;
+    border-radius: 18px;
+  }
+}

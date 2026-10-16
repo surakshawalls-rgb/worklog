@@ -1,10 +1,8 @@
-﻿<section class="dashboard">
+
+
+  
+<section class="dashboard">
   <section class="page-heading">
-    <div>
-      <p class="eyebrow">ADMIN CONSOLE</p>
-      <h1>Overview</h1>
-      <p class="muted">A clear view of attendance, wages and payments.</p>
-    </div>
 
     <button
       type="button"
@@ -16,33 +14,13 @@
     </button>
   </section>
 
-  <section class="firm-cash-summary" aria-label="Firm cash summary">
-    <div class="firm-cash-summary-icon" aria-hidden="true">₹</div>
-    <div class="firm-cash-summary-copy">
-      <p class="eyebrow">FIRM CASH</p>
-      @if (firmBalance() !== null) {
-        <strong>{{ currency(firmBalance()!) }}</strong>
-        <span>Available firm balance</span>
-      } @else if (firmBalanceError()) {
-        <span class="firm-cash-summary-error">{{ firmBalanceError() }}</span>
-      } @else {
-        <span>Loading current balance…</span>
-      }
-    </div>
-    <button
-      type="button"
-      class="firm-cash-summary-action"
-      (click)="scrollToFirmCash()"
-    >
-      View details
-      <span aria-hidden="true">↓</span>
-    </button>
-  </section>
+  
 
-  <section class="today-plan-strip">
+  <section class="overview-top-card">
+  <section class="today-plan-strip" [class.no-plan]="!announcement?.message" [class.has-plan]="!!announcement?.message">
     <div class="today-plan-strip-copy">
       <p class="eyebrow">TODAY'S WORK PLAN</p>
-      <h2>{{ announcement ? 'Team plan' : 'No plan posted' }}</h2>
+      <h2>{{ announcement?.message ? 'Team plan' : 'No plan posted' }}</h2>
       @if (announcement?.message) {
         <p>{{ announcement?.message }}</p>
       }
@@ -61,6 +39,11 @@
       }
     </button>
   </section>
+  <div class="overview-finance-content">
+    <app-firm-cash (balanceChanged)="firmBalance.set($event)" />
+  </div>
+</section>
+
 
   <section class="panel period-panel">
     <div class="panel-title">
@@ -240,11 +223,5 @@
     </div>
   </section>
 
-  <section class="firm-cash-overview" id="firm-cash-details">
-    <div class="firm-cash-overview-heading">
-      <p class="eyebrow">FIRM FINANCES</p>
-      <h2>Firm cash</h2>
-    </div>
-    <app-firm-cash (balanceChanged)="firmBalance.set($event)" />
-  </section>
+  
 </section>

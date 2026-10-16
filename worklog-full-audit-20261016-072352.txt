@@ -1,0 +1,4761 @@
+﻿
+==========================================================================================
+1. PROJECT AND GIT STATUS
+==========================================================================================
+Project: D:\All Projects\attendence maintenance
+Audit time: 2026-10-16 07:23:52
+GIT:  M README.md
+GIT:  M src/app/services/firm-expense.service.ts
+GIT:  M src/app/services/firm-finance.service.ts
+GIT:  M src/app/services/partner-finance.service.ts
+GIT: ?? backups/
+
+==========================================================================================
+2. RELEVANT APPLICATION FILES
+==========================================================================================
+
+--- FILE: src\app\services\attendance.service.ts ---
+   1: import { Injectable, inject } from '@angular/core';
+   2: import { createClient, SupabaseClient } from '@supabase/supabase-js';
+   3: import * as bcrypt from 'bcryptjs';
+   4: import { environment } from '../../environments/environment';
+   5: import { NotificationService } from './notification.service';
+   6: 
+   7: export type AttendanceType = 'full_day' | 'half_day' | 'leave' | 'custom';
+   8: export type ApprovalStatus = 'pending' | 'approved' | 'denied';
+   9: export type PaymentStatus = 'completed' | 'reversed';
+  10: 
+  11: export interface SessionUser { id: number; name: string; username: string; role: 'admin' | 'employee'; }
+  12: export interface UserOption { id: number; username: string; display_name: string | null; role: string; }
+  13: export interface Employee { id: number; user_id: number | null; employee_code: string; name: string; mobile: string | null; default_daily_rate: number; joining_date: string; status: 'active' | 'inactive'; }
+  14: export interface AttendanceRecord { id: number; employee_id: number; attendance_date: string; attendance_type: AttendanceType; daily_rate: number; earned_amount: number; approval_status: ApprovalStatus; note: string | null; approved_by: number | null; approved_by_name: string | null; approved_at?: string | null; submitted_by: number | null; submitted_by_name: string | null; paid_amount: number; outstanding_amount: number; created_at?: string; }
+  15: export interface Payment { id: number; employee_id: number; amount: number; payment_date: string; payment_method: string; note: string | null; status: PaymentStatus; created_by: number | null; created_at: string; }
+  16: export interface DailyAnnouncement { id: number; message: string; published_at: string; expires_at: string; posted_by: number | null; }
+  17: 
+  18: @Injectable({ providedIn: 'root' })
+  19: export class AttendanceService {
+  20:   private readonly client: SupabaseClient = createClient(environment.supabase.url, environment.supabase.anonKey);
+  21:   private readonly sessionKey = 'attendance_maintenance_user';
+  22:   private readonly notificationService = inject(NotificationService);
+  23: 
+  24:   async login(username: string, password: string): Promise<{ user?: SessionUser; error?: string }> {
+  25:     const identifier = username.trim().toLowerCase();
+  26:     const { data, error } = await this.client.from('users').select('id, username, password, display_name, role, is_active').or(`username.eq.${identifier},email.eq.${identifier}`).maybeSingle();
+  27:     if (error || !data || !data.is_active) return { error: 'Invalid username or password.' };
+  28:     const valid = data.password?.startsWith('$2') ? await bcrypt.compare(password, data.password) : data.password === password;
+  29:     if (!valid) return { error: 'Invalid username or password.' };
+  30:     const user: SessionUser = { id: data.id, username: data.username, name: data.display_name || data.username, role: data.role === 'admin' ? 'admin' : 'employee' };
+  31:     localStorage.setItem(this.sessionKey, JSON.stringify(user));
+  32:     return { user };
+  33:   }
+  34: 
+  35:   getSession(): SessionUser | null {
+  36:     try { return JSON.parse(localStorage.getItem(this.sessionKey) || 'null') as SessionUser | null; } catch { return null; }
+  37:   }
+  38:   logout(): void { localStorage.removeItem(this.sessionKey); }
+  39: 
+  40:   async loadEmployees(): Promise<Employee[]> {
+  41:     const { data, error } = await this.client.from('attendance_employees').select('*').order('name');
+  42:     if (error) throw error;
+  43:     return (data || []) as Employee[];
+  44:   }
+  45:   async loadUsers(): Promise<UserOption[]> {
+  46:     const { data, error } = await this.client.from('users').select('id, username, display_name, role').eq('is_active', true).order('username');
+  47:     if (error) throw error;
+  48:     return (data || []) as UserOption[];
+  49:   }
+  50:   async createEmployeeLogin(username: string, password: string, displayName: string): Promise<number> {
+  51:     const cleanUsername = username.trim().toLowerCase();
+  52:     if (cleanUsername.length < 3 || password.length < 4) throw new Error('Labour username must be at least 3 characters and password at least 4 characters.');
+  53:     const passwordHash = await bcrypt.hash(password, 10);
+  54:     const { data, error } = await this.client.from('users').insert({ username: cleanUsername, password: passwordHash, display_name: displayName.trim(), is_active: true, role: 'employee' }).select('id').single();
+  55:     if (error) {
+  56:       if (error.code === '23505') throw new Error('That labour username is already in use. Choose another username.');
+  57:       throw error;
+  58:     }
+  59:     return data.id as number;
+  60:   }
+  61:   async updatePassword(userId: number, currentPassword: string, newPassword: string): Promise<void> {
+  62:     if (newPassword.length < 4) throw new Error('Password must be at least 4 characters.');
+  63:     const { data, error } = await this.client.from('users').select('password').eq('id', userId).single();
+  64:     if (error || !data) throw new Error('User account not found.');
+  65:     const valid = data.password?.startsWith('$2') ? await bcrypt.compare(currentPassword, data.password) : data.password === currentPassword;
+  66:     if (!valid) throw new Error('Current password is incorrect.');
+  67:     const { error: updateError } = await this.client.from('users').update({ password: await bcrypt.hash(newPassword, 10) }).eq('id', userId);
+  68:     if (updateError) throw updateError;
+  69:   }
+  70:   async resetPassword(username: string, newPassword: string): Promise<void> {
+  71:     if (newPassword.length < 4) throw new Error('Password must be at least 4 characters.');
+  72:     const { error } = await this.client.from('users').update({ password: await bcrypt.hash(newPassword, 10) }).eq('username', username.trim().toLowerCase()).eq('is_active', true);
+  73:     if (error) throw error;
+  74:   }
+  75:   async saveEmployee(payload: Partial<Employee>): Promise<void> {
+  76:     const { error } = await this.client.from('attendance_employees').upsert(payload, { onConflict: 'id' });
+  77:     if (error) {
+  78:       if (error.code === '23505' && error.message.includes('attendance_employees_user_id_key')) {
+  79:         throw new Error('This Sync Point account is already linked to another employee. Choose “Not linked yet” or use a different account.');
+  80:       }
+  81:       if (error.code === '23505' && error.message.includes('attendance_employees_employee_code_key')) {
+  82:         throw new Error('That employee ID is already in use. Enter a different employee ID.');
+  83:       }
+  84:       throw error;
+  85:     }
+  86:   }
+  87:   async deleteEmployee(employeeId: number): Promise<void> {
+  88:     const [{ data: attendance, error: attendanceError }, { data: payments, error: paymentError }] = await Promise.all([
+  89:       this.client.from('attendance_records').select('id').eq('employee_id', employeeId).limit(1),
+  90:       this.client.from('attendance_payments').select('id').eq('employee_id', employeeId).limit(1)
+  91:     ]);
+  92:     if (attendanceError) throw attendanceError;
+  93:     if (paymentError) throw paymentError;
+  94:     if ((attendance?.length ?? 0) > 0 || (payments?.length ?? 0) > 0) {
+  95:       throw new Error('This employee has attendance or payment history and cannot be deleted. Keep the record for audit history.');
+  96:     }
+  97:     const { error } = await this.client.from('attendance_employees').delete().eq('id', employeeId);
+  98:     if (error) throw error;
+  99:   }
+ 100:   async loadAttendance(employeeId: number): Promise<AttendanceRecord[]> {
+ 101:     const { data, error } = await this.client.from('attendance_payment_summary').select('*').eq('employee_id', employeeId).order('attendance_date');
+ 102:     if (error) throw error;
+ 103:     return this.mapAttendanceRows(data);
+ 104:   }
+ 105:   async loadAllAttendance(): Promise<AttendanceRecord[]> {
+ 106:     const { data, error } = await this.client.from('attendance_payment_summary').select('*').order('attendance_date');
+ 107:     if (error) throw error;
+ 108:     return this.mapAttendanceRows(data);
+ 109:   }
+ 110:   async submitAttendance(employeeId: number, userId: number, date: string, type: AttendanceType, note: string, customWage = 0): Promise<void> {
+ 111:     this.assertAttendanceDateAllowed(date, userId);
+ 112: 
+ 113:     const { data: employee } = await this.client.from('attendance_employees').select('default_daily_rate').eq('id', employeeId).single();
+ 114:     if (!employee) throw new Error('Employee not found.');
+ 115:     const rate = Number(employee.default_daily_rate);
+ 116:     const earned = type === 'full_day' ? rate : type === 'half_day' ? rate / 2 : type === 'custom' ? customWage : 0;
+ 117:     if (type === 'custom' && customWage <= 0) throw new Error('Enter a custom wage greater than zero.');
+ 118:     const { data: inserted, error } = await this.client.from('attendance_records').insert({
+ 119:       employee_id: employeeId, attendance_date: date, attendance_type: type, daily_rate: rate,
+ 120:       earned_amount: earned, note: note.trim() || null, submitted_by: userId
+ 121:     }).select('id').single();
+ 122:     if (error) throw new Error(error.code === '23505' ? 'Attendance already submitted for this date.' : error.message);
+ 123:     await this.notifyAttendanceAction(employeeId, userId, date, type, inserted?.id ?? null);
+ 124:   }
+ 125:   async updateApproval(id: number, status: 'approved' | 'denied', adminId: number): Promise<void> {
+ 126:     const { data: record, error: recordError } = await this.client.from('attendance_records')
+ 127:       .select('id, employee_id, attendance_date, submitted_by').eq('id', id).single();
+ 128:     if (recordError || !record) throw new Error('Attendance record not found.');
+ 129:     const { error } = await this.client.rpc('update_attendance_approval', { p_attendance_id: id, p_status: status, p_admin_id: adminId });
+ 130:     if (error) throw error;
+ 131:     await this.notifyApprovalAction(record.employee_id, record.submitted_by, record.attendance_date, status, id);
+ 132:   }
+ 133:   async correctAttendance(id: number, type: AttendanceType, adminId: number, note: string, customWage = 0): Promise<void> {
+ 134:     const { data: record, error: recordError } = await this.client.from('attendance_records').select('employee_id, daily_rate').eq('id', id).single();
+ 135:     if (recordError || !record) throw new Error('Attendance record not found.');
+ 136:     const earned = type === 'full_day' ? Number(record.daily_rate) : type === 'half_day' ? Number(record.daily_rate) / 2 : type === 'custom' ? customWage : 0;
+ 137:     if (type === 'custom' && customWage <= 0) throw new Error('Enter a custom wage greater than zero.');
+ 138:     const { error } = await this.client.from('attendance_records').update({ attendance_type: type, earned_amount: earned, approval_status: 'approved', note: note.trim() || null, approved_by: adminId, approved_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', id);
+ 139:     if (error) throw error;
+ 140:     const { error: reconciliationError } = await this.client.rpc('reconcile_attendance_employee', { p_employee_id: record.employee_id });
+ 141:     if (reconciliationError) throw reconciliationError;
+ 142:   }
+ 143:   async processPayment(employeeId: number, amount: number, date: string, method: string, note: string, adminId: number): Promise<void> {
+ 144:     const { error } = await this.client.rpc('process_attendance_payment', { p_employee_id: employeeId, p_amount: amount, p_payment_date: date, p_payment_method: method, p_note: note || null, p_created_by: adminId });
+ 145:     if (error) throw new Error(error.message);
+ 146:     const { data: employee } = await this.client.from('attendance_employees').select('user_id, name').eq('id', employeeId).single();
+ 147:     if (employee?.user_id) await this.notificationService.create(employee.user_id, 'Payment received',
+ 148:       `${employee.name || 'Your'} payment of ₹${Number(amount).toLocaleString('en-IN')} was recorded.`, 'payment', 'payments', employeeId);
+ 149:   }
+ 150:   async loadAllPayments(): Promise<Payment[]> {
+ 151:     const { data, error } = await this.client.from('attendance_payments').select('*').order('payment_date', { ascending: false });
+ 152:     if (error) throw error;
+ 153:     return (data || []) as Payment[];
+ 154:   }
+ 155:   async loadPayments(employeeId: number): Promise<Payment[]> {
+ 156:     const { data, error } = await this.client.from('attendance_payments').select('*').eq('employee_id', employeeId).order('payment_date', { ascending: false });
+ 157:     if (error) throw error;
+ 158:     return (data || []) as Payment[];
+ 159:   }
+ 160:   async reversePayment(paymentId: number, adminId: number): Promise<void> {
+ 161:     const { data: payment } = await this.client.from('attendance_payments').select('employee_id, amount').eq('id', paymentId).single();
+ 162:     const { error } = await this.client.rpc('reverse_attendance_payment', { p_payment_id: paymentId, p_reversed_by: adminId });
+ 163:     if (error) throw error;
+ 164:     if (payment?.employee_id) {
+ 165:       const { data: employee } = await this.client.from('attendance_employees').select('user_id, name').eq('id', payment.employee_id).single();
+ 166:       if (employee?.user_id) await this.notificationService.create(employee.user_id, 'Payment reversed',
+ 167:         `${employee.name || 'Your'} payment of ₹${Number(payment.amount).toLocaleString('en-IN')} was reversed.`, 'payment', 'payments', payment.employee_id);
+ 168:     }
+ 169:   }
+ 170:   async updatePayment(paymentId: number, amount: number, date: string, method: string, note: string, adminId: number): Promise<void> {
+ 171:     const { data: payment } = await this.client.from('attendance_payments').select('employee_id').eq('id', paymentId).single();
+ 172:     const { error } = await this.client.from('attendance_payments').update({ amount, payment_date: date, payment_method: method, note: note.trim() || null, updated_at: new Date().toISOString() }).eq('id', paymentId);
+ 173:     if (error) throw new Error(error.message);
+ 174:     if (payment?.employee_id) {
+ 175:       const { data: employee } = await this.client.from('attendance_employees').select('user_id, name').eq('id', payment.employee_id).single();
+ 176:       if (employee?.user_id) await this.notificationService.create(employee.user_id, 'Payment updated',
+ 177:         `${employee.name || 'Your'} payment was updated to ₹${Number(amount).toLocaleString('en-IN')}.`, 'payment', 'payments', payment.employee_id);
+ 178:     }
+ 179:   }
+ 180:   async submitBulkAttendance(employeeIds: number[], date: string, type: AttendanceType, note: string, customWage: number, adminId: number): Promise<number> {
+ 181:     const { data, error } = await this.client.rpc('submit_bulk_attendance', { p_employee_ids: employeeIds, p_attendance_date: date, p_attendance_type: type, p_note: note || null, p_custom_wage: customWage || 0, p_submitted_by: adminId });
+ 182:     if (error) throw new Error(error.message.includes('BULK_ATTENDANCE_ALREADY_EXISTS') ? 'At least one selected employee already has attendance for this date. Nothing was saved.' : error.message);
+ 183:     return Number(data);
+ 184:   }
+ 185:   async submitAttendanceRange(employeeIds: number[], startDate: string, endDate: string, type: AttendanceType, note: string, customWage: number, userId: number): Promise<number> {
+ 186:     this.assertAttendanceDateAllowed(startDate, userId);
+ 187:     this.assertAttendanceDateAllowed(endDate, userId);
+ 188: 
+ 189:     const { data, error } = await this.client.rpc('submit_attendance_range', { p_employee_ids: employeeIds, p_start_date: startDate, p_end_date: endDate, p_attendance_type: type, p_note: note || null, p_custom_wage: customWage || 0, p_submitted_by: userId });
+ 190:     if (error) throw new Error(error.message.includes('ATTENDANCE_ALREADY_EXISTS_IN_RANGE') ? 'Attendance already exists for at least one selected day. Nothing was saved.' : error.message);
+ 191:     return Number(data);
+ 192:   }
+ 193:   private async notifyAttendanceAction(employeeId: number, actorUserId: number, date: string, type: AttendanceType, attendanceId: number | null): Promise<void> {
+ 194:     const { data: employee } = await this.client.from('attendance_employees').select('user_id, name').eq('id', employeeId).single();
+ 195:     const typeLabel = type === 'full_day' ? 'full-day' : type === 'half_day' ? 'half-day' : type === 'leave' ? 'leave' : 'custom';
+ 196:     const { data: admins } = await this.client.from('users').select('id').eq('role', 'admin').eq('is_active', true);
+ 197:     const adminIds = (admins ?? []).map((u: { id: number }) => u.id).filter(id => id !== actorUserId);
+ 198:     if (adminIds.length) await this.notificationService.notifyUsers(adminIds, 'Attendance submitted',
+ 199:       `${employee?.name || 'An employee'} submitted ${typeLabel} attendance for ${this.formatDate(date)}.`,
+ 200:       'attendance', 'approval', attendanceId);
+ 201:     if (employee?.user_id && employee.user_id !== actorUserId) await this.notificationService.create(employee.user_id, 'Attendance marked',
+ 202:       `Attendance was marked for you for ${this.formatDate(date)}.`, 'attendance', 'attendance', attendanceId);
+ 203:   }
+ 204: 
+ 205:   private async notifyApprovalAction(employeeId: number, submittedBy: number | null, date: string, status: 'approved' | 'denied', attendanceId: number): Promise<void> {
+ 206:     const { data: employee } = await this.client.from('attendance_employees').select('user_id, name').eq('id', employeeId).single();
+ 207:     const recipient = employee?.user_id || submittedBy;
+ 208:     if (!recipient) return;
+ 209:     const label = status === 'approved' ? 'approved' : 'denied';
+ 210:     await this.notificationService.create(recipient, `Attendance ${label}`,
+ 211:       `${employee?.name || 'Attendance'} for ${this.formatDate(date)} was ${label}.`, 'approval', 'attendance', attendanceId);
+ 212:   }
+ 213: 
+ 214:   private formatDate(value: string): string {
+ 215:     return new Date(`${value}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+ 216:   }
+ 217: 
+ 218:   async loadActiveAnnouncement(): Promise<DailyAnnouncement | null> {
+ 219:     const { data, error } = await this.client.from('daily_announcements').select('*').gt('expires_at', new Date().toISOString()).order('published_at', { ascending: false }).limit(1);
+ 220:     if (error) {
+ 221:       // Allows the app to keep working until migration 017 is applied.
+ 222:       if (error.code === '42P01') return null;
+ 223:       throw error;
+ 224:     }
+ 225:     return (data?.[0] ?? null) as DailyAnnouncement | null;
+ 226:   }
+ 227:   async publishDailyAnnouncement(message: string, adminId: number): Promise<void> {
+ 228:     const { error } = await this.client.rpc('publish_daily_announcement', { p_message: message, p_posted_by: adminId });
+ 229:     if (error) throw new Error(error.message);
+ 230:   }
+ 231:   private assertAttendanceDateAllowed(date: string, userId: number): void {
+ 232:     const user = this.getSession();
+ 233: 
+ 234:     if (!user || user.id !== userId) {
+ 235:       throw new Error('Your session is invalid. Please log in again.');
+ 236:     }
+ 237: 
+ 238:     if (date > this.today()) {
+ 239:       throw new Error('Future attendance cannot be marked.');
+ 240:     }
+ 241: 
+ 242:     if (user.role !== 'admin' && date < this.dateDaysAgo(3)) {
+ 243:       throw new Error('Employees can mark attendance only for today or the previous 3 days. Older dates are admin-only.');
+ 244:     }
+ 245:   }
+ 246: 
+ 247:   private today(): string {
+ 248:     const now = new Date();
+ 249:     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+ 250:   }
+ 251: 
+ 252:   private dateDaysAgo(days: number): string {
+ 253:     const now = new Date();
+ 254:     const value = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days);
+ 255:     return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+ 256:   }
+ 257: 
+ 258:   private mapAttendanceRows(rows: unknown[] | null): AttendanceRecord[] {
+ 259:     return (rows || []).map(row => {
+ 260:       const item = row as Record<string, unknown>;
+ 261:       return { ...item, id: Number(item['id'] ?? item['attendance_id']) } as AttendanceRecord;
+ 262:     });
+ 263:   }
+ 264: }
+ 265: 
+
+--- FILE: src\app\services\auth.service.ts ---
+   1: import { Injectable } from '@angular/core';
+   2: import { AttendanceService, SessionUser } from './attendance.service';
+   3: import { User } from '../core/models/user.model';
+   4: 
+   5: @Injectable({ providedIn: 'root' })
+   6: export class AuthService {
+   7:   constructor(private readonly attendance: AttendanceService) {}
+   8:   getCurrentUser(): User | null { const session = this.attendance.getSession(); return session ? this.toUser(session) : null; }
+   9:   isLoggedIn(): boolean { return !!this.getCurrentUser(); }
+  10:   private toUser(session: SessionUser): User { return { id: session.id, username: session.username, displayName: session.name, email: null, isActive: true, createdAt: new Date().toISOString() }; }
+  11: }
+
+--- FILE: src\app\services\firm-finance.service.ts ---
+   1: 
+   2: import { Injectable, inject } from '@angular/core';
+   3: import { SupabaseService } from './supabase.service';
+   4: import { AttendanceService } from './attendance.service';
+   5: 
+   6: export interface FirmFinanceTransaction {
+   7:   id: string;
+   8:   transaction_date: string;
+   9:   transaction_type: string;
+  10:   category: string;
+  11:   amount: number;
+  12:   partner_id?: number | null;
+  13:   employee_id?: number | null;
+  14:   reference_id?: string | null;
+  15:   payment_mode?: string | null;
+  16:   description?: string | null;
+  17:   created_at: string;
+  18:   created_by?: number | null;
+  19:   partner_name?: string | null;
+  20:   employee_name?: string | null;
+  21:   created_by_name?: string | null;
+  22: }
+  23: 
+  24: export interface FirmFinanceDashboard {
+  25:   firm_balance: number;
+  26:   total_money_in: number;
+  27:   total_money_out: number;
+  28:   net_movement: number;
+  29:   transaction_count: number;
+  30: }
+  31: 
+  32: @Injectable({
+  33:   providedIn: 'root'
+  34: })
+  35: export class FirmFinanceService {
+  36: 
+  37:   private readonly supabase = inject(SupabaseService);
+  38: 
+  39:   private readonly attendance = inject(AttendanceService);
+  40:   /**
+  41:    * Retrieves the centralized firm finance dashboard.
+  42:    */
+  43:   async getDashboard(): Promise<FirmFinanceDashboard> {
+  44:     const { data, error } =
+  45:       await this.supabase.client.rpc(
+  46:         'get_firm_finance_dashboard'
+  47:       );
+  48: 
+  49:     if (error) {
+  50:       throw error;
+  51:     }
+  52: 
+  53:     const row = Array.isArray(data)
+  54:       ? data[0]
+  55:       : data;
+  56: 
+  57:     return {
+  58:       firm_balance: Number(row?.firm_balance ?? 0),
+  59:       total_money_in: Number(row?.total_money_in ?? 0),
+  60:       total_money_out: Number(row?.total_money_out ?? 0),
+  61:       net_movement: Number(row?.net_movement ?? 0),
+  62:       transaction_count: Number(row?.transaction_count ?? 0)
+  63:     };
+  64:   }
+  65: 
+  66:   /**
+  67:    * Retrieves the current firm balance.
+  68:    */
+  69:   async getCurrentBalance(): Promise<number> {
+  70:     const dashboard = await this.getDashboard();
+  71:     return dashboard.firm_balance;
+  72:   }
+  73: 
+  74:   /**
+  75:    * Retrieves centralized finance transactions.
+  76:    *
+  77:    * Primary sorting:
+  78:    *   created_at DESC       - latest recorded transaction first
+  79:    *
+  80:    * Secondary sorting:
+  81:    *   transaction_date DESC - latest payment date first
+  82:    *
+  83:    * Final sorting:
+  84:    *   id DESC               - deterministic tie-breaker
+  85:    *
+  86:    * Payment date and recording timestamp remain separate.
+  87:    */
+  88:   async getTransactions(
+  89:     limit = 100,
+  90:     offset = 0
+  91:   ): Promise<FirmFinanceTransaction[]> {
+  92: 
+  93:     const safeLimit = Math.max(
+  94:       1,
+  95:       Math.floor(limit)
+  96:     );
+  97: 
+  98:     const safeOffset = Math.max(
+  99:       0,
+ 100:       Math.floor(offset)
+ 101:     );
+ 102: 
+ 103:     const { data, error } =
+ 104:       await this.supabase.client
+ 105:         .from('firm_finance_transaction_history')
+ 106:         .select('*')
+ 107:         .order('created_at', {
+ 108:           ascending: false,
+ 109:           nullsFirst: false
+ 110:         })
+ 111:         .order('transaction_date', {
+ 112:           ascending: false,
+ 113:           nullsFirst: false
+ 114:         })
+ 115:         .order('id', {
+ 116:           ascending: false
+ 117:         })
+ 118:         .range(
+ 119:           safeOffset,
+ 120:           safeOffset + safeLimit - 1
+ 121:         );
+ 122: 
+ 123:     if (error) {
+ 124:       throw error;
+ 125:     }
+ 126: 
+ 127:     return (data ?? []).map(row => ({
+ 128:       ...row,
+ 129:       amount: Number(row.amount ?? 0),
+ 130:       partner_id: row.partner_id != null
+ 131:         ? Number(row.partner_id)
+ 132:         : null,
+ 133:       employee_id: row.employee_id != null
+ 134:         ? Number(row.employee_id)
+ 135:         : null
+ 136:     })) as FirmFinanceTransaction[];
+ 137:   }
+ 138: 
+ 139:   /**
+ 140:    * Records money received by the firm.
+ 141:    * transactionDate is the actual payment date.
+ 142:    * The database should generate created_at automatically.
+ 143:    */
+ 144:   async recordFirmIncome(params: {
+ 145:     category: string;
+ 146:     amount: number;
+ 147:     transactionDate: string;
+ 148:     paymentMode?: string | null;
+ 149:     description?: string | null;
+ 150:   }): Promise<void> {
+ 151: 
+ 152:     const { error } =
+ 153:       await this.supabase.client.rpc(
+ 154:         'record_firm_money_in',
+ 155:         {
+ 156:           p_category: params.category,
+ 157:           p_amount: params.amount,
+ 158:           p_transaction_date: params.transactionDate,
+ 159:           p_payment_mode:
+ 160:             params.paymentMode || null,
+ 161:           p_description:
+ 162:             params.description || null,
+ 163:           p_created_by: this.attendance.getSession()?.id ?? null
+ 164:         }
+ 165:       );
+ 166: 
+ 167:     if (error) {
+ 168:       throw error;
+ 169:     }
+ 170:   }
+ 171: }
+ 172: 
+
+--- FILE: src\app\services\firm-expense.service.ts ---
+   1: import { Injectable, inject } from '@angular/core';
+   2: import { SupabaseService } from './supabase.service';
+   3: import { AttendanceService } from './attendance.service';
+   4: 
+   5: export interface FirmFinanceCategory {
+   6:   id: number;
+   7:   category_name: string;
+   8:   category_type: string;
+   9:   active: boolean;
+  10:   display_order: number;
+  11: }
+  12: 
+  13: export interface FirmMoneyOutResult {
+  14:   firm_transaction_id: string;
+  15:   firm_balance: number;
+  16: }
+  17: 
+  18: @Injectable({
+  19:   providedIn: 'root'
+  20: })
+  21: export class FirmExpenseService {
+  22:   private readonly supabase = inject(SupabaseService);
+  23: 
+  24:   private readonly attendance = inject(AttendanceService);
+  25:   async getCategories(): Promise<FirmFinanceCategory[]> {
+  26:     const { data, error } = await this.supabase.client
+  27:       .from('firm_finance_categories')
+  28:       .select(`
+  29:         id,
+  30:         category_name,
+  31:         category_type,
+  32:         active,
+  33:         display_order
+  34:       `)
+  35:       .eq('active', true)
+  36:       .eq('category_type', 'expense')
+  37:       .order('display_order', { ascending: true });
+  38: 
+  39:     if (error) {
+  40:       throw error;
+  41:     }
+  42: 
+  43:     return (data ?? []) as FirmFinanceCategory[];
+  44:   }
+  45: 
+  46:   async recordMoneyOut(params: {
+  47:     category: string;
+  48:     amount: number;
+  49:     transactionDate: string;
+  50:     paymentMode: string;
+  51:     description?: string;
+  52:   }): Promise<FirmMoneyOutResult> {
+  53:     const { data, error } = await this.supabase.client.rpc(
+  54:       'record_firm_money_out',
+  55:       {
+  56:         p_category: params.category,
+  57:         p_amount: params.amount,
+  58:         p_transaction_date: params.transactionDate,
+  59:         p_payment_mode: params.paymentMode || null,
+  60:         p_description: params.description || null,
+  61:         p_created_by: this.attendance.getSession()?.id ?? null
+  62:       }
+  63:     );
+  64: 
+  65:     if (error) {
+  66:       throw error;
+  67:     }
+  68: 
+  69:     const result = Array.isArray(data) ? data[0] : data;
+  70: 
+  71:     if (!result) {
+  72:       throw new Error('No response received from firm finance transaction.');
+  73:     }
+  74: 
+  75:     return {
+  76:       firm_transaction_id: result.firm_transaction_id,
+  77:       firm_balance: Number(result.firm_balance ?? 0)
+  78:     };
+  79:   }
+  80: }
+  81: 
+
+--- FILE: src\app\services\partner-finance.service.ts ---
+   1: import { Injectable, inject } from '@angular/core';
+   2: import { SupabaseService } from './supabase.service';
+   3: import { AttendanceService } from './attendance.service';
+   4: 
+   5: export type PartnerFinanceTransactionType =
+   6:   | 'loan_received'
+   7:   | 'expense_paid_by_partner'
+   8:   | 'repayment'
+   9:   | 'adjustment';
+  10: 
+  11: export interface PartnerFinanceTransaction {
+  12:   id: string;
+  13:   partner_id: string;
+  14:   transaction_date: string;
+  15:   transaction_month?: string | null;
+  16:   transaction_type: PartnerFinanceTransactionType;
+  17:   amount: number;
+  18:   description?: string | null;
+  19:   reference_id?: string | null;
+  20:   payment_mode?: string | null;
+  21:   created_at: string;
+  22:   created_by?: string | null;
+  23: }
+  24: 
+  25: export interface PartnerFinanceMonthlyLedger {
+  26:   partner_id: string;
+  27:   partner_name: string;
+  28:   share_percentage: number;
+  29:   role: string;
+  30:   transaction_month: string | null;
+  31:   loan_received: number;
+  32:   partner_expense: number;
+  33:   repayment: number;
+  34:   adjustment: number;
+  35:   net_change: number;
+  36:   opening_balance: number;
+  37:   closing_balance: number;
+  38: }
+  39: 
+  40: @Injectable({
+  41:   providedIn: 'root'
+  42: })
+  43: export class PartnerFinanceService {
+  44: 
+  45:   private readonly supabase = inject(SupabaseService);
+  46: 
+  47:   private readonly attendance = inject(AttendanceService);
+  48:   async getPartnerMonthlyLedger(
+  49:     month?: string
+  50:   ): Promise<PartnerFinanceMonthlyLedger[]> {
+  51: 
+  52:     let query = this.supabase.client
+  53:       .from('partner_finance_monthly_ledger')
+  54:       .select('*')
+  55:       .order('partner_name', {
+  56:         ascending: true
+  57:       });
+  58: 
+  59:     if (month) {
+  60:       query = query.eq(
+  61:         'transaction_month',
+  62:         month
+  63:       );
+  64:     }
+  65: 
+  66:     const { data, error } =
+  67:       await query;
+  68: 
+  69:     if (error) {
+  70:       throw error;
+  71:     }
+  72: 
+  73:     return (data ?? []).map(row => ({
+  74:       partner_id: String(row.partner_id),
+  75:       partner_name: row.partner_name ?? '',
+  76:       share_percentage:
+  77:         Number(row.share_percentage ?? 0),
+  78:       role: row.role ?? '',
+  79:       transaction_month:
+  80:         row.transaction_month,
+  81: 
+  82:       loan_received:
+  83:         Number(row.loan_received ?? 0),
+  84: 
+  85:       partner_expense:
+  86:         Number(row.partner_expense ?? 0),
+  87: 
+  88:       repayment:
+  89:         Number(row.repayment ?? 0),
+  90: 
+  91:       adjustment:
+  92:         Number(row.adjustment ?? 0),
+  93: 
+  94:       net_change:
+  95:         Number(row.net_change ?? 0),
+  96: 
+  97:       opening_balance:
+  98:         Number(row.opening_balance ?? 0),
+  99: 
+ 100:       closing_balance:
+ 101:         Number(row.closing_balance ?? 0)
+ 102:     }));
+ 103:   }
+ 104: 
+ 105:   async getAvailableMonths(): Promise<string[]> {
+ 106: 
+ 107:     const { data, error } =
+ 108:       await this.supabase.client
+ 109:         .from('partner_finance_monthly_ledger')
+ 110:         .select('transaction_month')
+ 111:         .not(
+ 112:           'transaction_month',
+ 113:           'is',
+ 114:           null
+ 115:         );
+ 116: 
+ 117:     if (error) {
+ 118:       throw error;
+ 119:     }
+ 120: 
+ 121:     return [
+ 122:       ...new Set(
+ 123:         (data ?? [])
+ 124:           .map(row => row.transaction_month)
+ 125:           .filter(
+ 126:             (month): month is string =>
+ 127:               typeof month === 'string' &&
+ 128:               month.length > 0
+ 129:           )
+ 130:       )
+ 131:     ].sort((a, b) =>
+ 132:       b.localeCompare(a)
+ 133:     );
+ 134:   }
+ 135: 
+ 136:   async getPartnerTransactions(
+ 137:     partnerId: string
+ 138:   ): Promise<PartnerFinanceTransaction[]> {
+ 139: 
+ 140:     const { data, error } =
+ 141:       await this.supabase.client
+ 142:         .from('partner_finance_transactions')
+ 143:         .select('*')
+ 144:         .eq(
+ 145:           'partner_id',
+ 146:           partnerId
+ 147:         )
+ 148:         .order(
+ 149:           'transaction_date',
+ 150:           {
+ 151:             ascending: false
+ 152:           }
+ 153:         )
+ 154:         .order(
+ 155:           'created_at',
+ 156:           {
+ 157:             ascending: false
+ 158:           }
+ 159:         );
+ 160: 
+ 161:     if (error) {
+ 162:       throw error;
+ 163:     }
+ 164: 
+ 165:     return (data ?? []).map(row => ({
+ 166:       ...row,
+ 167:       amount: Number(row.amount ?? 0)
+ 168:     })) as PartnerFinanceTransaction[];
+ 169:   }
+ 170: 
+ 171:   async repayPartner(params: {
+ 172:     partnerId: number;
+ 173:     amount: number;
+ 174:     transactionDate: string;
+ 175:     paymentMode: string;
+ 176:     description?: string;
+ 177:   }): Promise<{
+ 178:     firmBalance: number;
+ 179:     partnerOutstanding: number;
+ 180:   }> {
+ 181: 
+ 182:     const { data, error } =
+ 183:       await this.supabase.client.rpc(
+ 184:         'repay_partner_from_firm',
+ 185:         {
+ 186:           p_partner_id:
+ 187:             params.partnerId,
+ 188: 
+ 189:           p_amount:
+ 190:             params.amount,
+ 191: 
+ 192:           p_transaction_date:
+ 193:             params.transactionDate,
+ 194: 
+ 195:           p_payment_mode:
+ 196:             params.paymentMode,
+ 197: 
+ 198:           p_description:
+ 199:             params.description || null,
+ 200: 
+ 201:           p_created_by: this.attendance.getSession()?.id ?? null
+ 202:         }
+ 203:       );
+ 204: 
+ 205:     if (error) {
+ 206:       throw error;
+ 207:     }
+ 208: 
+ 209:     const row =
+ 210:       Array.isArray(data)
+ 211:         ? data[0]
+ 212:         : data;
+ 213: 
+ 214:     return {
+ 215:       firmBalance:
+ 216:         Number(row?.firm_balance ?? 0),
+ 217: 
+ 218:       partnerOutstanding:
+ 219:         Number(
+ 220:           row?.partner_outstanding ?? 0
+ 221:         )
+ 222:     };
+ 223:   }
+ 224: 
+ 225:   async recordPartnerPaidFirmExpense(params: {
+ 226:     partnerId: number;
+ 227:     category: string;
+ 228:     amount: number;
+ 229:     transactionDate: string;
+ 230:     paymentMode: string;
+ 231:     description?: string;
+ 232:   }): Promise<number> {
+ 233: 
+ 234:     const { data, error } =
+ 235:       await this.supabase.client.rpc(
+ 236:         'record_partner_paid_firm_expense',
+ 237:         {
+ 238:           p_partner_id:
+ 239:             params.partnerId,
+ 240: 
+ 241:           p_category:
+ 242:             params.category,
+ 243: 
+ 244:           p_amount:
+ 245:             params.amount,
+ 246: 
+ 247:           p_transaction_date:
+ 248:             params.transactionDate,
+ 249: 
+ 250:           p_payment_mode:
+ 251:             params.paymentMode,
+ 252: 
+ 253:           p_description:
+ 254:             params.description || null,
+ 255: 
+ 256:           p_created_by: this.attendance.getSession()?.id ?? null
+ 257:         }
+ 258:       );
+ 259: 
+ 260:     if (error) {
+ 261:       throw error;
+ 262:     }
+ 263: 
+ 264:     const row =
+ 265:       Array.isArray(data)
+ 266:         ? data[0]
+ 267:         : data;
+ 268: 
+ 269:     return Number(
+ 270:       row?.partner_outstanding ?? 0
+ 271:     );
+ 272:   }
+ 273: }
+ 274: 
+
+--- FILE: src\app\services\partner-funding.service.ts ---
+   1: import { Injectable, inject } from '@angular/core';
+   2: import { SupabaseService } from './supabase.service';
+   3: 
+   4: export interface FinancePartner {
+   5:   id: number;
+   6:   partner_name: string;
+   7:   share_percentage: number;
+   8:   role: string;
+   9:   active: boolean;
+  10: }
+  11: 
+  12: export interface PartnerFundingResult {
+  13:   firm_transaction_id: string;
+  14:   partner_transaction_id: number;
+  15:   firm_balance: number | string;
+  16:   partner_outstanding: number | string;
+  17: }
+  18: 
+  19: @Injectable({
+  20:   providedIn: 'root'
+  21: })
+  22: export class PartnerFundingService {
+  23: 
+  24:   private readonly supabase = inject(SupabaseService);
+  25: 
+  26:   async getActivePartners(): Promise<FinancePartner[]> {
+  27:     const { data, error } = await this.supabase.client
+  28:       .from('partner_master')
+  29:       .select('id, partner_name, share_percentage, role, active')
+  30:       .eq('active', true)
+  31:       .order('partner_name');
+  32: 
+  33:     if (error) {
+  34:       throw error;
+  35:     }
+  36: 
+  37:     return (data ?? []) as FinancePartner[];
+  38:   }
+  39: 
+  40:   async addPartnerFunding(params: {
+  41:     partnerId: number;
+  42:     amount: number;
+  43:     transactionDate: string;
+  44:     paymentMode: string;
+  45:     description: string;
+  46:   }): Promise<PartnerFundingResult> {
+  47: 
+  48:     const { data, error } = await this.supabase.client.rpc(
+  49:       'add_partner_funding_to_firm',
+  50:       {
+  51:         p_partner_id: params.partnerId,
+  52:         p_amount: params.amount,
+  53:         p_transaction_date: params.transactionDate,
+  54:         p_payment_mode: params.paymentMode,
+  55:         p_description: params.description || null,
+  56:         p_created_by: null
+  57:       }
+  58:     );
+  59: 
+  60:     if (error) {
+  61:       throw error;
+  62:     }
+  63: 
+  64:     if (!data || data.length === 0) {
+  65:       throw new Error('No result returned from funding transaction.');
+  66:     }
+  67: 
+  68:     return {
+  69:       ...data[0],
+  70:       firm_balance: Number(data[0].firm_balance),
+  71:       partner_outstanding: Number(data[0].partner_outstanding)
+  72:     };
+  73:   }
+  74: }
+
+--- FILE: src\app\features\firm-cash\firm-cash\firm-cash.component.ts ---
+   1: import {
+   2:   Component,
+   3:   EventEmitter,
+   4:   Output,
+   5:   OnInit,
+   6:   ChangeDetectorRef,
+   7:   inject
+   8: } from '@angular/core';
+   9: 
+  10: import {
+  11:   CommonModule
+  12: } from '@angular/common';
+  13: 
+  14: import {
+  15:   FormsModule
+  16: } from '@angular/forms';
+  17: 
+  18: import {
+  19:   FirmFinanceService,
+  20:   FirmFinanceDashboard,
+  21:   FirmFinanceTransaction
+  22: } from '../../../services/firm-finance.service';
+  23: 
+  24: import {
+  25:   FirmExpenseService,
+  26:   FirmFinanceCategory
+  27: } from '../../../services/firm-expense.service';
+  28: 
+  29: import {
+  30:   PartnerFundingService,
+  31:   FinancePartner
+  32: } from '../../../services/partner-funding.service';
+  33: 
+  34: import {
+  35:   SupabaseService
+  36: } from '../../../services/supabase.service';
+  37: 
+  38: @Component({
+  39:   selector: 'app-firm-cash',
+  40:   standalone: true,
+  41:   imports: [
+  42:     CommonModule,
+  43:     FormsModule
+  44:   ],
+  45:   templateUrl: './firm-cash.component.html',
+  46:   styleUrl: './firm-cash.component.scss'
+  47: })
+  48: export class FirmCashComponent implements OnInit {
+  49:   @Output() balanceChanged = new EventEmitter<number>();
+  50: 
+  51:   private readonly finance =
+  52:     inject(FirmFinanceService);
+  53: 
+  54:   private readonly supabase = inject(SupabaseService);
+  55:   private readonly expenses =
+  56:     inject(FirmExpenseService);
+  57: 
+  58:   private readonly funding =
+  59:     inject(PartnerFundingService);
+  60:   private readonly cdr =
+  61:     inject(ChangeDetectorRef);
+  62: 
+  63:   dashboard: FirmFinanceDashboard = {
+  64:     firm_balance: 0,
+  65:     total_money_in: 0,
+  66:     total_money_out: 0,
+  67:     net_movement: 0,
+  68:     transaction_count: 0
+  69:   };
+  70: 
+  71:   transactions:
+  72:     FirmFinanceTransaction[] = [];
+  73: 
+  74:   readonly pageSizeOptions = [10, 25, 50];
+  75:   pageSize = this.pageSizeOptions[0];
+  76:   currentPage = 1;
+  77: 
+  78:   partners:
+  79:     FinancePartner[] = [];
+  80: 
+  81:   incomeCategories:
+  82:     FirmFinanceCategory[] = [];
+  83: 
+  84:   expenseCategories:
+  85:     FirmFinanceCategory[] = [];
+  86: 
+  87:   loading = true;
+  88:   saving = false;
+  89:   errorMessage = '';
+  90:   successMessage = '';
+  91: 
+  92:   modal:
+  93:     'income' |
+  94:     'partner-loan' |
+  95:     'money-out' |
+  96:     null = null;
+  97: 
+  98:   amount: number | null = null;
+  99:   category = '';
+ 100:   partnerId = 0;
+ 101:   transactionDate =
+ 102:     this.getToday();
+ 103: 
+ 104:   paymentMode = 'cash';
+ 105:   description = '';
+ 106: 
+ 107:   ngOnInit(): void {
+ 108:     void this.load();
+ 109:   }
+ 110: 
+ 111:   async load(): Promise<void> {
+ 112: 
+ 113:     this.loading = true;
+ 114:     this.errorMessage = '';
+ 115: 
+ 116:     try {
+ 117: 
+ 118:       const [
+ 119:         dashboard,
+ 120:         partners,
+ 121:         incomeCategories,
+ 122:         expenseCategories
+ 123:       ] = await Promise.all([
+ 124:         this.finance.getDashboard(),
+ 125:         this.funding.getActivePartners(),
+ 126:         this.loadIncomeCategories(),
+ 127:         this.expenses.getCategories()
+ 128:       ]);
+ 129: 
+ 130:       this.dashboard =
+ 131:         dashboard;
+ 132:       this.balanceChanged.emit(dashboard.firm_balance);
+ 133: 
+ 134:       this.currentPage = Math.min(
+ 135:         this.currentPage,
+ 136:         this.pageCount()
+ 137:       );
+ 138:       this.transactions = await this.finance.getTransactions(
+ 139:         this.pageSize,
+ 140:         (this.currentPage - 1) * this.pageSize
+ 141:       );
+ 142: 
+ 143:       this.partners =
+ 144:         partners;
+ 145: 
+ 146:       this.incomeCategories =
+ 147:         incomeCategories;
+ 148: 
+ 149:       this.expenseCategories =
+ 150:         expenseCategories;
+ 151: 
+ 152:       if (
+ 153:         !this.category &&
+ 154:         this.incomeCategories.length
+ 155:       ) {
+ 156:         this.category =
+ 157:           this.incomeCategories[0]
+ 158:             .category_name;
+ 159:       }
+ 160: 
+ 161:     } catch (error) {
+ 162: 
+ 163:       console.error(
+ 164:         '[FirmCash] load error',
+ 165:         error
+ 166:       );
+ 167: 
+ 168:       this.errorMessage =
+ 169:         'Unable to load firm cash data.';
+ 170: 
+ 171:     } finally {
+ 172: 
+ 173:       this.loading = false;
+ 174:       this.cdr.detectChanges();
+ 175:     }
+ 176:   }
+ 177: 
+ 178:   private async loadIncomeCategories():
+ 179:     Promise<FirmFinanceCategory[]> {
+ 180: 
+ 181:     const fallbackCategories: FirmFinanceCategory[] = [
+ 182:       {
+ 183:         id: -1,
+ 184:         category_name: 'Sales / Client Payment',
+ 185:         category_type: 'income',
+ 186:         active: true,
+ 187:         display_order: 10
+ 188:       },
+ 189:       {
+ 190:         id: -2,
+ 191:         category_name: 'Service Income',
+ 192:         category_type: 'income',
+ 193:         active: true,
+ 194:         display_order: 20
+ 195:       },
+ 196:       {
+ 197:         id: -3,
+ 198:         category_name: 'Other Income',
+ 199:         category_type: 'income',
+ 200:         active: true,
+ 201:         display_order: 30
+ 202:       }
+ 203:     ];
+ 204: 
+ 205:     try {
+ 206: 
+ 207:       const { data, error } =
+ 208:         await this.supabase.client
+ 209:           .from('firm_finance_categories')
+ 210:           .select(
+ 211:             'id, category_name, category_type, active, display_order'
+ 212:           )
+ 213:           .eq(
+ 214:             'active',
+ 215:             true
+ 216:           )
+ 217:           .eq(
+ 218:             'category_type',
+ 219:             'income'
+ 220:           )
+ 221:           .order(
+ 222:             'display_order',
+ 223:             {
+ 224:               ascending: true
+ 225:             }
+ 226:           );
+ 227: 
+ 228:       if (error) {
+ 229:         console.warn(
+ 230:           '[FirmCash] Income categories could not be loaded. Using fallback categories.',
+ 231:           error
+ 232:         );
+ 233: 
+ 234:         return fallbackCategories;
+ 235:       }
+ 236: 
+ 237:       const categories =
+ 238:         (data ?? []) as FirmFinanceCategory[];
+ 239: 
+ 240:       if (categories.length === 0) {
+ 241:         console.warn(
+ 242:           '[FirmCash] No income categories found in database. Using fallback categories.'
+ 243:         );
+ 244: 
+ 245:         return fallbackCategories;
+ 246:       }
+ 247: 
+ 248:       return categories;
+ 249: 
+ 250:     } catch (error) {
+ 251: 
+ 252:       console.warn(
+ 253:         '[FirmCash] Income category loading failed. Using fallback categories.',
+ 254:         error
+ 255:       );
+ 256: 
+ 257:       return fallbackCategories;
+ 258:     }
+ 259:   }
+ 260: 
+ 261:   openIncome(): void {
+ 262:     this.resetForm();
+ 263:     this.modal = 'income';
+ 264: 
+ 265:     if (this.incomeCategories.length) {
+ 266:       this.category =
+ 267:         this.incomeCategories[0]
+ 268:           .category_name;
+ 269:     }
+ 270:   }
+ 271: 
+ 272:   openPartnerLoan(): void {
+ 273:     this.resetForm();
+ 274:     this.modal = 'partner-loan';
+ 275:   }
+ 276: 
+ 277:   openMoneyOut(): void {
+ 278:     this.resetForm();
+ 279:     this.modal = 'money-out';
+ 280: 
+ 281:     if (this.expenseCategories.length) {
+ 282:       this.category =
+ 283:         this.expenseCategories[0]
+ 284:           .category_name;
+ 285:     }
+ 286:   }
+ 287: 
+ 288:   closeModal(): void {
+ 289: 
+ 290:     if (this.saving) {
+ 291:       return;
+ 292:     }
+ 293: 
+ 294:     this.modal = null;
+ 295:     this.errorMessage = '';
+ 296:   }
+ 297: 
+ 298:   resetForm(): void {
+ 299:     this.amount = null;
+ 300:     this.category = '';
+[TRUNCATED: 572 total lines]
+
+--- FILE: src\app\features\partner-finance\partner-finance.component.ts ---
+   1: import {
+   2:   Component,
+   3:   OnInit,
+   4:   ChangeDetectorRef,
+   5:   inject
+   6: } from '@angular/core';
+   7: 
+   8: import {
+   9:   CommonModule
+  10: } from '@angular/common';
+  11: 
+  12: import {
+  13:   FormsModule
+  14: } from '@angular/forms';
+  15: 
+  16: import {
+  17:   PartnerFinanceService,
+  18:   PartnerFinanceMonthlyLedger,
+  19:   PartnerFinanceTransaction
+  20: } from '../../services/partner-finance.service';
+  21: 
+  22: import {
+  23:   PartnerFundingService,
+  24:   FinancePartner
+  25: } from '../../services/partner-funding.service';
+  26: 
+  27: @Component({
+  28:   selector: 'app-partner-finance',
+  29:   standalone: true,
+  30:   imports: [
+  31:     CommonModule,
+  32:     FormsModule
+  33:   ],
+  34:   templateUrl: './partner-finance.component.html',
+  35:   styleUrl: './partner-finance.component.scss'
+  36: })
+  37: export class PartnerFinanceComponent
+  38:   implements OnInit {
+  39: 
+  40:   private readonly finance =
+  41:     inject(PartnerFinanceService);
+  42: 
+  43:   private readonly funding =
+  44:     inject(PartnerFundingService);
+  45: 
+  46:   private readonly cdr =
+  47:     inject(ChangeDetectorRef);
+  48: 
+  49:   months: string[] = [];
+  50:   selectedMonth = '';
+  51: 
+  52:   ledger:
+  53:     PartnerFinanceMonthlyLedger[] = [];
+  54: 
+  55:   partners:
+  56:     FinancePartner[] = [];
+  57: 
+  58:   selectedPartnerId = 0;
+  59: 
+  60:   transactions:
+  61:     PartnerFinanceTransaction[] = [];
+  62: 
+  63:   loading = true;
+  64:   transactionsLoading = false;
+  65: 
+  66:   errorMessage = '';
+  67:   successMessage = '';
+  68: 
+  69:   repaymentOpen = false;
+  70:   expenseOpen = false;
+  71: 
+  72:   saving = false;
+  73: 
+  74:   amount: number | null = null;
+  75:   transactionDate =
+  76:     this.getToday();
+  77: 
+  78:   paymentMode = 'bank_transfer';
+  79:   description = '';
+  80: 
+  81:   expenseCategory = '';
+  82:   expensePartnerId = 0;
+  83: 
+  84:   ngOnInit(): void {
+  85:     void this.load();
+  86:   }
+  87: 
+  88:   async load(): Promise<void> {
+  89: 
+  90:     this.loading = true;
+  91:     this.errorMessage = '';
+  92: 
+  93:     try {
+  94: 
+  95:       this.partners =
+  96:         await this.funding.getActivePartners();
+  97: 
+  98:       this.months =
+  99:         await this.finance.getAvailableMonths();
+ 100: 
+ 101:       if (
+ 102:         !this.selectedMonth &&
+ 103:         this.months.length
+ 104:       ) {
+ 105:         this.selectedMonth =
+ 106:           this.months[0];
+ 107:       }
+ 108: 
+ 109:       await this.loadLedger();
+ 110: 
+ 111:       if (
+ 112:         this.selectedPartnerId === 0 &&
+ 113:         this.partners.length
+ 114:       ) {
+ 115:         this.selectedPartnerId =
+ 116:           this.partners[0].id;
+ 117:       }
+ 118: 
+ 119:       await this.loadTransactions();
+ 120: 
+ 121:     } catch (error) {
+ 122: 
+ 123:       console.error(
+ 124:         '[PartnerFinance] load error',
+ 125:         error
+ 126:       );
+ 127: 
+ 128:       this.errorMessage =
+ 129:         'Unable to load partner finance.';
+ 130: 
+ 131:     } finally {
+ 132: 
+ 133:       this.loading = false;
+ 134:       this.cdr.detectChanges();
+ 135:     }
+ 136:   }
+ 137: 
+ 138:   async loadLedger(): Promise<void> {
+ 139: 
+ 140:     if (!this.selectedMonth) {
+ 141:       this.ledger = [];
+ 142:       return;
+ 143:     }
+ 144: 
+ 145:     this.ledger =
+ 146:       await this.finance
+ 147:         .getPartnerMonthlyLedger(
+ 148:           this.selectedMonth
+ 149:         );
+ 150:   }
+ 151: 
+ 152:   async loadTransactions(): Promise<void> {
+ 153: 
+ 154:     if (!this.selectedPartnerId) {
+ 155:       this.transactions = [];
+ 156:       return;
+ 157:     }
+ 158: 
+ 159:     this.transactionsLoading = true;
+ 160: 
+ 161:     try {
+ 162: 
+ 163:       this.transactions =
+ 164:         await this.finance
+ 165:           .getPartnerTransactions(
+ 166:             String(
+ 167:               this.selectedPartnerId
+ 168:             )
+ 169:           );
+ 170: 
+ 171:     } catch (error) {
+ 172: 
+ 173:       console.error(
+ 174:         '[PartnerFinance] transactions error',
+ 175:         error
+ 176:       );
+ 177: 
+ 178:       this.transactions = [];
+ 179: 
+ 180:     } finally {
+ 181: 
+ 182:       this.transactionsLoading = false;
+ 183:       this.cdr.detectChanges();
+ 184:     }
+ 185:   }
+ 186: 
+ 187:   async onMonthChange(
+ 188:     event: Event
+ 189:   ): Promise<void> {
+ 190: 
+ 191:     this.selectedMonth =
+ 192:       (event.target as HTMLSelectElement)
+ 193:         .value;
+ 194: 
+ 195:     try {
+ 196:       await this.loadLedger();
+ 197:     } catch (error) {
+ 198:       console.error(error);
+ 199:       this.errorMessage =
+ 200:         'Unable to load selected month.';
+ 201:     }
+ 202:   }
+ 203: 
+ 204:   async onPartnerChange(): Promise<void> {
+ 205:     await this.loadTransactions();
+ 206:   }
+ 207: 
+ 208:   openRepayment(): void {
+ 209: 
+ 210:     this.amount = null;
+ 211:     this.transactionDate =
+ 212:       this.getToday();
+ 213: 
+ 214:     this.paymentMode =
+ 215:       'bank_transfer';
+ 216: 
+ 217:     this.description = '';
+ 218: 
+ 219:     this.errorMessage = '';
+ 220:     this.successMessage = '';
+ 221: 
+ 222:     this.repaymentOpen = true;
+ 223:   }
+ 224: 
+ 225:   openPartnerExpense(): void {
+ 226: 
+ 227:     this.amount = null;
+ 228:     this.transactionDate =
+ 229:       this.getToday();
+ 230: 
+ 231:     this.paymentMode = 'cash';
+ 232: 
+ 233:     this.description = '';
+ 234:     this.expenseCategory = '';
+ 235: 
+ 236:     this.expensePartnerId =
+ 237:       this.selectedPartnerId;
+ 238: 
+ 239:     this.errorMessage = '';
+ 240:     this.successMessage = '';
+ 241: 
+ 242:     this.expenseOpen = true;
+ 243:   }
+ 244: 
+ 245:   closeDialogs(): void {
+ 246: 
+ 247:     if (this.saving) {
+ 248:       return;
+ 249:     }
+ 250: 
+ 251:     this.repaymentOpen = false;
+ 252:     this.expenseOpen = false;
+ 253:     this.errorMessage = '';
+ 254:   }
+ 255: 
+ 256:   async saveRepayment(): Promise<void> {
+ 257: 
+ 258:     this.errorMessage = '';
+ 259:     this.successMessage = '';
+ 260: 
+ 261:     const value =
+ 262:       Number(this.amount);
+ 263: 
+ 264:     if (!this.selectedPartnerId) {
+ 265:       this.errorMessage =
+ 266:         'Select a partner.';
+ 267:       return;
+ 268:     }
+ 269: 
+ 270:     if (
+ 271:       !Number.isFinite(value) ||
+ 272:       value <= 0
+ 273:     ) {
+ 274:       this.errorMessage =
+ 275:         'Enter a valid repayment amount.';
+ 276:       return;
+ 277:     }
+ 278: 
+ 279:     this.saving = true;
+ 280: 
+ 281:     try {
+ 282: 
+ 283:       await this.finance.repayPartner({
+ 284:         partnerId:
+ 285:           this.selectedPartnerId,
+ 286: 
+ 287:         amount:
+ 288:           value,
+ 289: 
+ 290:         transactionDate:
+ 291:           this.transactionDate,
+ 292: 
+ 293:         paymentMode:
+ 294:           this.paymentMode,
+ 295: 
+ 296:         description:
+ 297:           this.description
+ 298:       });
+ 299: 
+ 300:       this.repaymentOpen = false;
+[TRUNCATED: 525 total lines]
+
+--- FILE: src\app\features\payments\payments\payments.ts ---
+   1: import { CommonModule } from '@angular/common';
+   2: import {
+   3:   Component,
+   4:   EventEmitter,
+   5:   Input,
+   6:   Output,
+   7:   OnInit,
+   8:   inject,
+   9:   signal
+  10: } from '@angular/core';
+  11: import { FormsModule } from '@angular/forms';
+  12: import {
+  13:   AttendanceService,
+  14:   Employee,
+  15:   Payment
+  16: } from '../../../services/attendance.service';
+  17: import { FirmFinanceService } from '../../../services/firm-finance.service';
+  18: 
+  19: @Component({
+  20:   selector: 'app-payments',
+  21:   imports: [CommonModule, FormsModule],
+  22:   templateUrl: './payments.html',
+  23:   styleUrl: './payments.scss'
+  24: })
+  25: export class PaymentsComponent implements OnInit {
+  26:   private readonly attendance = inject(AttendanceService);
+  27:   private readonly firmFinance = inject(FirmFinanceService);
+  28: 
+  29:   @Input() employees: Employee[] = [];
+  30:   @Input() payments: Payment[] = [];
+  31:   @Input() allPayments: Payment[] = [];
+  32: 
+  33:   @Output() refreshRequested = new EventEmitter<void>();
+  34: 
+  35:   readonly selectedEmployee = signal<Employee | null>(null);
+  36: 
+  37:   readonly paymentAmount = signal(0);
+  38: 
+  39:   paymentAmountValue(): number {
+  40:     return Number(this.paymentAmount() || 0);
+  41:   }
+  42: 
+  43:   readonly paymentDate = signal(this.today());
+  44:   readonly paymentMethod = signal('cash');
+  45:   readonly paymentNote = signal('');
+  46: 
+  47:   readonly editingPayment = signal<Payment | null>(null);
+  48:   readonly editPaymentAmount = signal(0);
+  49:   readonly editPaymentDate = signal(this.today());
+  50:   readonly editPaymentMethod = signal('cash');
+  51:   readonly editPaymentNote = signal('');
+  52: 
+  53:   readonly busy = signal(false);
+  54:   readonly error = signal('');
+  55:   readonly message = signal('');
+  56:   readonly firmBalance = signal(0);
+  57:   readonly firmBalanceLoading = signal(false);
+  58: 
+  59:   ngOnInit(): void {
+  60:     void this.loadFirmBalance();
+  61:   }
+  62: 
+  63:   async loadFirmBalance(): Promise<void> {
+  64:     this.firmBalanceLoading.set(true);
+  65: 
+  66:     try {
+  67:       const balance = await this.firmFinance.getCurrentBalance();
+  68:       this.firmBalance.set(Number(balance || 0));
+  69:     } catch (error) {
+  70:       this.error.set(this.readError(error));
+  71:     } finally {
+  72:       this.firmBalanceLoading.set(false);
+  73:     }
+  74:   }
+  75: 
+  76:   selectEmployee(employee: Employee): void {
+  77:     void this.loadFirmBalance();
+  78:     this.selectedEmployee.set(employee);
+  79:     this.error.set('');
+  80:     this.message.set('');
+  81:     void this.loadEmployeePayments(employee);
+  82:   }
+  83: 
+  84:   async loadEmployeePayments(employee: Employee): Promise<void> {
+  85:     try {
+  86:       const payments = await this.attendance.loadPayments(employee.id);
+  87:       this.localPayments.set(payments);
+  88:     } catch (error) {
+  89:       this.error.set(this.readError(error));
+  90:     }
+  91:   }
+  92: 
+  93:   readonly localPayments = signal<Payment[]>([]);
+  94: 
+  95:   openPayment(employee: Employee): void {
+  96:     void this.loadFirmBalance();
+  97:     this.selectedEmployee.set(employee);
+  98:     this.paymentAmount.set(0);
+  99:     this.paymentDate.set(this.today());
+ 100:     this.paymentMethod.set('cash');
+ 101:     this.paymentNote.set('');
+ 102:     this.error.set('');
+ 103:     this.message.set('');
+ 104:     void this.loadEmployeePayments(employee);
+ 105: 
+ 106:     // Make the payment action immediately visible on mobile and desktop.
+ 107:     setTimeout(() => {
+ 108:       document.getElementById('payment-form-panel')?.scrollIntoView({
+ 109:         behavior: 'smooth',
+ 110:         block: 'start'
+ 111:       });
+ 112:     });
+ 113:   }
+ 114: 
+ 115:   async confirmPayment(): Promise<void> {
+ 116:     if (this.busy()) return;
+ 117: 
+ 118:     const employee = this.selectedEmployee();
+ 119:     const user = this.attendance.getSession();
+ 120: 
+ 121:     if (!employee || !user) {
+ 122:       this.error.set('Please select an employee and make sure you are logged in.');
+ 123:       return;
+ 124:     }
+ 125: 
+ 126:     if (this.paymentAmount() <= 0) {
+ 127:       this.error.set('Payment amount must be greater than zero.');
+ 128:       return;
+ 129:     }
+ 130: 
+ 131:     if (!this.paymentDate()) {
+ 132:       this.error.set('Payment date is required.');
+ 133:       return;
+ 134:     }
+ 135: 
+ 136:     if (
+ 137:       !confirm(
+ 138:         `Process ${this.currency(this.paymentAmount())} for ${employee.name}?`
+ 139:       )
+ 140:     ) {
+ 141:       return;
+ 142:     }
+ 143: 
+ 144:     this.busy.set(true);
+ 145:     this.error.set('');
+ 146:     this.message.set('');
+ 147: 
+ 148:     try {
+ 149:       await this.attendance.processPayment(
+ 150:         employee.id,
+ 151:         this.paymentAmount(),
+ 152:         this.paymentDate(),
+ 153:         this.paymentMethod(),
+ 154:         this.paymentNote(),
+ 155:         user.id
+ 156:       );
+ 157: 
+ 158:       await this.loadEmployeePayments(employee);
+ 159: 
+ 160:       this.paymentAmount.set(0);
+ 161:       this.paymentNote.set('');
+ 162: 
+ 163:       this.message.set(
+ 164:         'Payment processed successfully using FIFO allocation.'
+ 165:       );
+ 166: 
+ 167:       this.refreshRequested.emit();
+ 168:     } catch (error) {
+ 169:       this.error.set(this.readError(error));
+ 170:     } finally {
+ 171:       this.busy.set(false);
+ 172:     }
+ 173:   }
+ 174: 
+ 175:   openPaymentEdit(payment: Payment): void {
+ 176:     if (payment.status === 'reversed') return;
+ 177: 
+ 178:     this.editingPayment.set(payment);
+ 179:     this.editPaymentAmount.set(Number(payment.amount));
+ 180:     this.editPaymentDate.set(payment.payment_date);
+ 181:     this.editPaymentMethod.set(payment.payment_method);
+ 182:     this.editPaymentNote.set(payment.note || '');
+ 183:     this.error.set('');
+ 184:     this.message.set('');
+ 185:   }
+ 186: 
+ 187:   closePaymentEdit(): void {
+ 188:     this.editingPayment.set(null);
+ 189:   }
+ 190: 
+ 191:   async savePaymentEdit(): Promise<void> {
+ 192:     if (this.busy()) return;
+ 193: 
+ 194:     const user = this.attendance.getSession();
+ 195:     const payment = this.editingPayment();
+ 196: 
+ 197:     if (!user || !payment) return;
+ 198: 
+ 199:     if (this.editPaymentAmount() <= 0) {
+ 200:       this.error.set('Payment amount must be greater than zero.');
+ 201:       return;
+ 202:     }
+ 203: 
+ 204:     if (
+ 205:       !confirm(
+ 206:         `Update payment to ${this.currency(this.editPaymentAmount())}?`
+ 207:       )
+ 208:     ) {
+ 209:       return;
+ 210:     }
+ 211: 
+ 212:     this.busy.set(true);
+ 213:     this.error.set('');
+ 214:     this.message.set('');
+ 215: 
+ 216:     try {
+ 217:       await this.attendance.updatePayment(
+ 218:         payment.id,
+ 219:         this.editPaymentAmount(),
+ 220:         this.editPaymentDate(),
+ 221:         this.editPaymentMethod(),
+ 222:         this.editPaymentNote(),
+ 223:         user.id
+ 224:       );
+ 225: 
+ 226:       this.closePaymentEdit();
+ 227: 
+ 228:       const employee = this.selectedEmployee();
+ 229: 
+ 230:       if (employee) {
+ 231:         await this.loadEmployeePayments(employee);
+ 232:       }
+ 233: 
+ 234:       this.message.set('Payment updated successfully.');
+ 235:       this.refreshRequested.emit();
+ 236:     } catch (error) {
+ 237:       this.error.set(this.readError(error));
+ 238:     } finally {
+ 239:       this.busy.set(false);
+ 240:     }
+ 241:   }
+ 242: 
+ 243:   async reverse(payment: Payment): Promise<void> {
+ 244:     if (this.busy()) return;
+ 245: 
+ 246:     const user = this.attendance.getSession();
+ 247: 
+ 248:     if (!user || payment.status === 'reversed') return;
+ 249: 
+ 250:     if (
+ 251:       !confirm(
+ 252:         'Reverse this payment? Its allocations will no longer count as paid.'
+ 253:       )
+ 254:     ) {
+ 255:       return;
+ 256:     }
+ 257: 
+ 258:     this.busy.set(true);
+ 259:     this.error.set('');
+ 260:     this.message.set('');
+ 261: 
+ 262:     try {
+ 263:       await this.attendance.reversePayment(payment.id, user.id);
+ 264: 
+ 265:       const employee = this.selectedEmployee();
+ 266: 
+ 267:       if (employee) {
+ 268:         await this.loadEmployeePayments(employee);
+ 269:       }
+ 270: 
+ 271:       this.message.set('Payment reversed successfully.');
+ 272:       this.refreshRequested.emit();
+ 273:     } catch (error) {
+ 274:       this.error.set(this.readError(error));
+ 275:     } finally {
+ 276:       this.busy.set(false);
+ 277:     }
+ 278:   }
+ 279: 
+ 280:   employeeBalance(employee: Employee): number {
+ 281:     const earned = this.allPayments.length
+ 282:       ? this.getEmployeeEarned(employee.id)
+ 283:       : 0;
+ 284: 
+ 285:     const paid = this.allPayments
+ 286:       .filter(
+ 287:         payment =>
+ 288:           payment.employee_id === employee.id &&
+ 289:           payment.status === 'completed'
+ 290:       )
+ 291:       .reduce((sum, payment) => sum + Number(payment.amount), 0);
+ 292: 
+ 293:     return earned - paid;
+ 294:   }
+ 295: 
+ 296:   private getEmployeeEarned(employeeId: number): number {
+ 297:     // Payment allocation is handled by the existing service/database.
+ 298:     // This component does not alter the existing wage calculation.
+ 299:     return 0;
+ 300:   }
+[TRUNCATED: 350 total lines]
+
+--- FILE: src\app\core\models\user.model.ts ---
+   1: export interface User {
+   2:   id: number;
+   3:   username: string;
+   4:   displayName: string;
+   5:   email: string | null;
+   6:   isActive: boolean;
+   7:   createdAt: string;
+   8: }
+
+--- FILE: src\environments\environment.ts ---
+Line 3: [CONFIGURATION SETTING PRESENT; VALUE REDACTED]
+Line 4: [CONFIGURATION SETTING PRESENT; VALUE REDACTED]
+Line 7: [CONFIGURATION SETTING PRESENT; VALUE REDACTED]
+Line 8: [CONFIGURATION SETTING PRESENT; VALUE REDACTED]
+
+--- FILE: package.json ---
+   1: {
+   2:   "name": "attendance-maintenance",
+   3:   "version": "0.0.0",
+   4:   "scripts": {
+   5:     "ng": "ng",
+   6:     "start": "ng serve",
+   7:     "build": "ng build",
+   8:     "watch": "ng build --watch --configuration development",
+   9:     "test": "ng test"
+  10:   },
+  11:   "prettier": {
+  12:     "printWidth": 100,
+  13:     "singleQuote": true,
+  14:     "overrides": [
+  15:       {
+  16:         "files": "*.html",
+  17:         "options": {
+  18:           "parser": "angular"
+  19:         }
+  20:       }
+  21:     ]
+  22:   },
+  23:   "private": true,
+  24:   "packageManager": "npm@9.3.1",
+  25:   "dependencies": {
+  26:     "@angular/common": "^21.0.0",
+  27:     "@angular/compiler": "^21.0.0",
+  28:     "@angular/core": "^21.0.0",
+  29:     "@angular/forms": "^21.0.0",
+  30:     "@angular/platform-browser": "^21.0.0",
+  31:     "@angular/router": "^21.0.0",
+  32:     "@capacitor/android": "^8.5.1",
+  33:     "@capacitor/core": "^8.5.1",
+  34:     "@capacitor/push-notifications": "^8.1.2",
+  35:     "@ionic/angular": "^8.8.14",
+  36:     "@ionic/core": "^8.8.14",
+  37:     "@supabase/supabase-js": "^2.110.0",
+  38:     "bcryptjs": "^3.0.3",
+  39:     "ionicons": "^7.4.0",
+  40:     "rxjs": "~7.8.0",
+  41:     "tslib": "^2.3.0"
+  42:   },
+  43:   "devDependencies": {
+  44:     "@angular/build": "^21.0.1",
+  45:     "@angular/cli": "^21.0.1",
+  46:     "@angular/compiler-cli": "^21.0.0",
+  47:     "@capacitor/cli": "^8.5.1",
+  48:     "typescript": "~5.9.2"
+  49:   }
+  50: }
+
+==========================================================================================
+3. ALL CREATOR, LEDGER, REVERSAL, AND ORDERING REFERENCES
+==========================================================================================
+
+src\app\app.ts:74: this.attendance.getSession()
+    
+    readonly session = signal<SessionUser | null>(
+ >> this.attendance.getSession()
+    );
+    
+    readonly employees = signal<Employee[]>([]);
+
+src\app\features\approvals\approvals\approvals.ts:52: const user = this.attendance.getSession();
+    }
+    
+ >> const user = this.attendance.getSession();
+    
+    if (!user) {
+    this.error.set('Your session has expired. Please log in again.');
+
+src\app\features\attendance\attendance\attendance.ts:24: this.attendance.getSession()
+    
+    readonly session = signal<SessionUser | null>(
+ >> this.attendance.getSession()
+    );
+    
+    readonly employees = signal<Employee[]>([]);
+
+src\app\features\employees\employees\employees.ts:290: this.attendance.getSession();
+    
+    const currentUser =
+ >> this.attendance.getSession();
+    
+    if (!currentUser) {
+    this.error.set(
+
+src\app\features\firm-cash\firm-cash\firm-cash.component.html:18: {{ formatCurrency(dashboard.firm_balance) }}
+    
+    <h2>
+ >> {{ formatCurrency(dashboard.firm_balance) }}
+    </h2>
+    
+    <p>
+
+src\app\features\firm-cash\firm-cash\firm-cash.component.ts:64: firm_balance: 0,
+    
+    dashboard: FirmFinanceDashboard = {
+ >> firm_balance: 0,
+    total_money_in: 0,
+    total_money_out: 0,
+    net_movement: 0,
+
+src\app\features\firm-cash\firm-cash\firm-cash.component.ts:88: saving = false;
+    
+    loading = true;
+ >> saving = false;
+    errorMessage = '';
+    successMessage = '';
+    
+
+src\app\features\firm-cash\firm-cash\firm-cash.component.ts:132: this.balanceChanged.emit(dashboard.firm_balance);
+    this.dashboard =
+    dashboard;
+ >> this.balanceChanged.emit(dashboard.firm_balance);
+    
+    this.currentPage = Math.min(
+    this.currentPage,
+
+src\app\features\firm-cash\firm-cash\firm-cash.component.ts:138: this.transactions = await this.finance.getTransactions(
+    this.pageCount()
+    );
+ >> this.transactions = await this.finance.getTransactions(
+    this.pageSize,
+    (this.currentPage - 1) * this.pageSize
+    );
+
+src\app\features\firm-cash\firm-cash\firm-cash.component.ts:351: this.saving = true;
+    }
+    
+ >> this.saving = true;
+    
+    try {
+    
+
+src\app\features\firm-cash\firm-cash\firm-cash.component.ts:434: this.saving = false;
+    } finally {
+    
+ >> this.saving = false;
+    this.cdr.detectChanges();
+    }
+    }
+
+src\app\features\firm-cash\firm-cash\firm-cash.component.ts:478: this.transactions = await this.finance.getTransactions(
+    
+    try {
+ >> this.transactions = await this.finance.getTransactions(
+    this.pageSize,
+    (this.currentPage - 1) * this.pageSize
+    );
+
+src\app\features\partner-finance\partner-finance.component.ts:72: saving = false;
+    expenseOpen = false;
+    
+ >> saving = false;
+    
+    amount: number | null = null;
+    transactionDate =
+
+src\app\features\partner-finance\partner-finance.component.ts:279: this.saving = true;
+    }
+    
+ >> this.saving = true;
+    
+    try {
+    
+
+src\app\features\partner-finance\partner-finance.component.ts:317: this.saving = false;
+    } finally {
+    
+ >> this.saving = false;
+    this.cdr.detectChanges();
+    }
+    }
+
+src\app\features\partner-finance\partner-finance.component.ts:351: this.saving = true;
+    }
+    
+ >> this.saving = true;
+    
+    try {
+    
+
+src\app\features\partner-finance\partner-finance.component.ts:393: this.saving = false;
+    } finally {
+    
+ >> this.saving = false;
+    this.cdr.detectChanges();
+    }
+    }
+
+src\app\features\payments\payments\payments.html:197: <strong>⚠ Insufficient firm balance</strong>
+    @if (paymentAmountValue() > firmBalance()) {
+    <div class="payment-balance-warning">
+ >> <strong>⚠ Insufficient firm balance</strong>
+    <span>Add {{ currency(paymentAmountValue() - firmBalance()) }} to the firm before making this payment.</span>
+    </div>
+    }
+
+src\app\features\payments\payments\payments.html:263: [class.reversed]="payment.status === 'reversed'"
+    <span
+    class="status"
+ >> [class.reversed]="payment.status === 'reversed'"
+    >
+    {{ payment.status }}
+    </span>
+
+src\app\features\payments\payments\payments.html:284: (click)="reverse(payment)"
+    class="text-button danger-text"
+    [disabled]="busy() || payment.status === 'reversed'"
+ >> (click)="reverse(payment)"
+    >
+    Reverse
+    </button>
+
+src\app\features\payments\payments\payments.ts:119: const user = this.attendance.getSession();
+    
+    const employee = this.selectedEmployee();
+ >> const user = this.attendance.getSession();
+    
+    if (!employee || !user) {
+    this.error.set('Please select an employee and make sure you are logged in.');
+
+src\app\features\payments\payments\payments.ts:149: await this.attendance.processPayment(
+    
+    try {
+ >> await this.attendance.processPayment(
+    employee.id,
+    this.paymentAmount(),
+    this.paymentDate(),
+
+src\app\features\payments\payments\payments.ts:194: const user = this.attendance.getSession();
+    if (this.busy()) return;
+    
+ >> const user = this.attendance.getSession();
+    const payment = this.editingPayment();
+    
+    if (!user || !payment) return;
+
+src\app\features\payments\payments\payments.ts:243: async reverse(payment: Payment): Promise<void> {
+    }
+    
+ >> async reverse(payment: Payment): Promise<void> {
+    if (this.busy()) return;
+    
+    const user = this.attendance.getSession();
+
+src\app\features\payments\payments\payments.ts:246: const user = this.attendance.getSession();
+    if (this.busy()) return;
+    
+ >> const user = this.attendance.getSession();
+    
+    if (!user || payment.status === 'reversed') return;
+    
+
+src\app\features\payments\payments\payments.ts:252: 'Reverse this payment? Its allocations will no longer count as paid.'
+    if (
+    !confirm(
+ >> 'Reverse this payment? Its allocations will no longer count as paid.'
+    )
+    ) {
+    return;
+
+src\app\features\payments\payments\payments.ts:263: await this.attendance.reversePayment(payment.id, user.id);
+    
+    try {
+ >> await this.attendance.reversePayment(payment.id, user.id);
+    
+    const employee = this.selectedEmployee();
+    
+
+src\app\features\profile\profile.component.ts:30: readonly session = inject(AttendanceService).getSession();
+    })
+    export class ProfileComponent {
+ >> readonly session = inject(AttendanceService).getSession();
+    private readonly router = inject(Router);
+    goBack(): void { this.router.navigate(['/']); }
+    }
+
+src\app\services\attendance.service.ts:15: export interface Payment { id: number; employee_id: number; amount: number; payment_date: string; payment_method: string; note: string | null; status: PaymentStatus; created_by: number | null; created_at: string; }
+    export interface Employee { id: number; user_id: number | null; employee_code: string; name: string; mobile: string | null; default_daily_rate: number; joining_date: string; status: 'active' | 'inactive'; }
+    export interface AttendanceRecord { id: number; employee_id: number; attendance_date: string; attendance_type: AttendanceType; daily_rate: number; earned_amount: number; approval_status: ApprovalStatus; note: string | null; approved_by: number | null; approved_by_name: string | null; approved_at?: string | null; submitted_by: number | null; submitted_by_name: string | null; paid_amount: number; outstanding_amount: number; created_at?: string; }
+ >> export interface Payment { id: number; employee_id: number; amount: number; payment_date: string; payment_method: string; note: string | null; status: PaymentStatus; created_by: number | null; created_at: string; }
+    export interface DailyAnnouncement { id: number; message: string; published_at: string; expires_at: string; posted_by: number | null; }
+    
+    @Injectable({ providedIn: 'root' })
+
+src\app\services\attendance.service.ts:21: private readonly sessionKey = 'attendance_maintenance_user';
+    export class AttendanceService {
+    private readonly client: SupabaseClient = createClient(environment.supabase.url, environment.supabase.anonKey);
+ >> private readonly sessionKey = 'attendance_maintenance_user';
+    private readonly notificationService = inject(NotificationService);
+    
+    async login(username: string, password: string): Promise<{ user?: SessionUser; error?: string }> {
+
+src\app\services\attendance.service.ts:26: const { data, error } = await this.client.from('users').select('id, username, password, display_name, role, is_active').or(`username.eq.${identifier},email.eq.${identifier}`).maybeSingle();
+    async login(username: string, password: string): Promise<{ user?: SessionUser; error?: string }> {
+    const identifier = username.trim().toLowerCase();
+ >> const { data, error } = await this.client.from('users').select('id, username, password, display_name, role, is_active').or(`username.eq.${identifier},email.eq.${identifier}`).maybeSingle();
+    if (error || !data || !data.is_active) return { error: 'Invalid username or password.' };
+    const valid = data.password?.startsWith('$2') ? await bcrypt.compare(password, data.password) : data.password === password;
+    if (!valid) return { error: 'Invalid username or password.' };
+
+src\app\services\attendance.service.ts:27: if (error || !data || !data.is_active) return { error: 'Invalid username or password.' };
+    const identifier = username.trim().toLowerCase();
+    const { data, error } = await this.client.from('users').select('id, username, password, display_name, role, is_active').or(`username.eq.${identifier},email.eq.${identifier}`).maybeSingle();
+ >> if (error || !data || !data.is_active) return { error: 'Invalid username or password.' };
+    const valid = data.password?.startsWith('$2') ? await bcrypt.compare(password, data.password) : data.password === password;
+    if (!valid) return { error: 'Invalid username or password.' };
+    const user: SessionUser = { id: data.id, username: data.username, name: data.display_name || data.username, role: data.role === 'admin' ? 'admin' : 'employee' };
+
+src\app\services\attendance.service.ts:28: const valid = data.password?.startsWith('$2') ? await bcrypt.compare(password, data.password) : data.password === password;
+    const { data, error } = await this.client.from('users').select('id, username, password, display_name, role, is_active').or(`username.eq.${identifier},email.eq.${identifier}`).maybeSingle();
+    if (error || !data || !data.is_active) return { error: 'Invalid username or password.' };
+ >> const valid = data.password?.startsWith('$2') ? await bcrypt.compare(password, data.password) : data.password === password;
+    if (!valid) return { error: 'Invalid username or password.' };
+    const user: SessionUser = { id: data.id, username: data.username, name: data.display_name || data.username, role: data.role === 'admin' ? 'admin' : 'employee' };
+    localStorage.setItem(this.sessionKey, JSON.stringify(user));
+
+src\app\services\attendance.service.ts:31: localStorage.setItem(this.sessionKey, JSON.stringify(user));
+    if (!valid) return { error: 'Invalid username or password.' };
+    const user: SessionUser = { id: data.id, username: data.username, name: data.display_name || data.username, role: data.role === 'admin' ? 'admin' : 'employee' };
+ >> localStorage.setItem(this.sessionKey, JSON.stringify(user));
+    return { user };
+    }
+    
+
+src\app\services\attendance.service.ts:35: getSession(): SessionUser | null {
+    }
+    
+ >> getSession(): SessionUser | null {
+    try { return JSON.parse(localStorage.getItem(this.sessionKey) || 'null') as SessionUser | null; } catch { return null; }
+    }
+    logout(): void { localStorage.removeItem(this.sessionKey); }
+
+src\app\services\attendance.service.ts:36: try { return JSON.parse(localStorage.getItem(this.sessionKey) || 'null') as SessionUser | null; } catch { return null; }
+    
+    getSession(): SessionUser | null {
+ >> try { return JSON.parse(localStorage.getItem(this.sessionKey) || 'null') as SessionUser | null; } catch { return null; }
+    }
+    logout(): void { localStorage.removeItem(this.sessionKey); }
+    
+
+src\app\services\attendance.service.ts:38: logout(): void { localStorage.removeItem(this.sessionKey); }
+    try { return JSON.parse(localStorage.getItem(this.sessionKey) || 'null') as SessionUser | null; } catch { return null; }
+    }
+ >> logout(): void { localStorage.removeItem(this.sessionKey); }
+    
+    async loadEmployees(): Promise<Employee[]> {
+    const { data, error } = await this.client.from('attendance_employees').select('*').order('name');
+
+src\app\services\attendance.service.ts:46: const { data, error } = await this.client.from('users').select('id, username, display_name, role').eq('is_active', true).order('username');
+    }
+    async loadUsers(): Promise<UserOption[]> {
+ >> const { data, error } = await this.client.from('users').select('id, username, display_name, role').eq('is_active', true).order('username');
+    if (error) throw error;
+    return (data || []) as UserOption[];
+    }
+
+src\app\services\attendance.service.ts:54: const { data, error } = await this.client.from('users').insert({ username: cleanUsername, password: passwordHash, display_name: displayName.trim(), is_active: true, role: 'employee' }).select('id').single();
+    if (cleanUsername.length < 3 || password.length < 4) throw new Error('Labour username must be at least 3 characters and password at least 4 characters.');
+    const passwordHash = await bcrypt.hash(password, 10);
+ >> const { data, error } = await this.client.from('users').insert({ username: cleanUsername, password: passwordHash, display_name: displayName.trim(), is_active: true, role: 'employee' }).select('id').single();
+    if (error) {
+    if (error.code === '23505') throw new Error('That labour username is already in use. Choose another username.');
+    throw error;
+
+src\app\services\attendance.service.ts:63: const { data, error } = await this.client.from('users').select('password').eq('id', userId).single();
+    async updatePassword(userId: number, currentPassword: string, newPassword: string): Promise<void> {
+    if (newPassword.length < 4) throw new Error('Password must be at least 4 characters.');
+ >> const { data, error } = await this.client.from('users').select('password').eq('id', userId).single();
+    if (error || !data) throw new Error('User account not found.');
+    const valid = data.password?.startsWith('$2') ? await bcrypt.compare(currentPassword, data.password) : data.password === currentPassword;
+    if (!valid) throw new Error('Current password is incorrect.');
+
+src\app\services\attendance.service.ts:65: const valid = data.password?.startsWith('$2') ? await bcrypt.compare(currentPassword, data.password) : data.password === currentPassword;
+    const { data, error } = await this.client.from('users').select('password').eq('id', userId).single();
+    if (error || !data) throw new Error('User account not found.');
+ >> const valid = data.password?.startsWith('$2') ? await bcrypt.compare(currentPassword, data.password) : data.password === currentPassword;
+    if (!valid) throw new Error('Current password is incorrect.');
+    const { error: updateError } = await this.client.from('users').update({ password: await bcrypt.hash(newPassword, 10) }).eq('id', userId);
+    if (updateError) throw updateError;
+
+src\app\services\attendance.service.ts:67: const { error: updateError } = await this.client.from('users').update({ password: await bcrypt.hash(newPassword, 10) }).eq('id', userId);
+    const valid = data.password?.startsWith('$2') ? await bcrypt.compare(currentPassword, data.password) : data.password === currentPassword;
+    if (!valid) throw new Error('Current password is incorrect.');
+ >> const { error: updateError } = await this.client.from('users').update({ password: await bcrypt.hash(newPassword, 10) }).eq('id', userId);
+    if (updateError) throw updateError;
+    }
+    async resetPassword(username: string, newPassword: string): Promise<void> {
+
+src\app\services\attendance.service.ts:72: const { error } = await this.client.from('users').update({ password: await bcrypt.hash(newPassword, 10) }).eq('username', username.trim().toLowerCase()).eq('is_active', true);
+    async resetPassword(username: string, newPassword: string): Promise<void> {
+    if (newPassword.length < 4) throw new Error('Password must be at least 4 characters.');
+ >> const { error } = await this.client.from('users').update({ password: await bcrypt.hash(newPassword, 10) }).eq('username', username.trim().toLowerCase()).eq('is_active', true);
+    if (error) throw error;
+    }
+    async saveEmployee(payload: Partial<Employee>): Promise<void> {
+
+src\app\services\attendance.service.ts:143: async processPayment(employeeId: number, amount: number, date: string, method: string, note: string, adminId: number): Promise<void> {
+    if (reconciliationError) throw reconciliationError;
+    }
+ >> async processPayment(employeeId: number, amount: number, date: string, method: string, note: string, adminId: number): Promise<void> {
+    const { error } = await this.client.rpc('process_attendance_payment', { p_employee_id: employeeId, p_amount: amount, p_payment_date: date, p_payment_method: method, p_note: note || null, p_created_by: adminId });
+    if (error) throw new Error(error.message);
+    const { data: employee } = await this.client.from('attendance_employees').select('user_id, name').eq('id', employeeId).single();
+
+src\app\services\attendance.service.ts:144: const { error } = await this.client.rpc('process_attendance_payment', { p_employee_id: employeeId, p_amount: amount, p_payment_date: date, p_payment_method: method, p_note: note || null, p_created_by: adminId });
+    }
+    async processPayment(employeeId: number, amount: number, date: string, method: string, note: string, adminId: number): Promise<void> {
+ >> const { error } = await this.client.rpc('process_attendance_payment', { p_employee_id: employeeId, p_amount: amount, p_payment_date: date, p_payment_method: method, p_note: note || null, p_created_by: adminId });
+    if (error) throw new Error(error.message);
+    const { data: employee } = await this.client.from('attendance_employees').select('user_id, name').eq('id', employeeId).single();
+    if (employee?.user_id) await this.notificationService.create(employee.user_id, 'Payment received',
+
+src\app\services\attendance.service.ts:160: async reversePayment(paymentId: number, adminId: number): Promise<void> {
+    return (data || []) as Payment[];
+    }
+ >> async reversePayment(paymentId: number, adminId: number): Promise<void> {
+    const { data: payment } = await this.client.from('attendance_payments').select('employee_id, amount').eq('id', paymentId).single();
+    const { error } = await this.client.rpc('reverse_attendance_payment', { p_payment_id: paymentId, p_reversed_by: adminId });
+    if (error) throw error;
+
+src\app\services\attendance.service.ts:162: const { error } = await this.client.rpc('reverse_attendance_payment', { p_payment_id: paymentId, p_reversed_by: adminId });
+    async reversePayment(paymentId: number, adminId: number): Promise<void> {
+    const { data: payment } = await this.client.from('attendance_payments').select('employee_id, amount').eq('id', paymentId).single();
+ >> const { error } = await this.client.rpc('reverse_attendance_payment', { p_payment_id: paymentId, p_reversed_by: adminId });
+    if (error) throw error;
+    if (payment?.employee_id) {
+    const { data: employee } = await this.client.from('attendance_employees').select('user_id, name').eq('id', payment.employee_id).single();
+
+src\app\services\attendance.service.ts:167: `${employee.name || 'Your'} payment of ₹${Number(payment.amount).toLocaleString('en-IN')} was reversed.`, 'payment', 'payments', payment.employee_id);
+    const { data: employee } = await this.client.from('attendance_employees').select('user_id, name').eq('id', payment.employee_id).single();
+    if (employee?.user_id) await this.notificationService.create(employee.user_id, 'Payment reversed',
+ >> `${employee.name || 'Your'} payment of ₹${Number(payment.amount).toLocaleString('en-IN')} was reversed.`, 'payment', 'payments', payment.employee_id);
+    }
+    }
+    async updatePayment(paymentId: number, amount: number, date: string, method: string, note: string, adminId: number): Promise<void> {
+
+src\app\services\attendance.service.ts:196: const { data: admins } = await this.client.from('users').select('id').eq('role', 'admin').eq('is_active', true);
+    const { data: employee } = await this.client.from('attendance_employees').select('user_id, name').eq('id', employeeId).single();
+    const typeLabel = type === 'full_day' ? 'full-day' : type === 'half_day' ? 'half-day' : type === 'leave' ? 'leave' : 'custom';
+ >> const { data: admins } = await this.client.from('users').select('id').eq('role', 'admin').eq('is_active', true);
+    const adminIds = (admins ?? []).map((u: { id: number }) => u.id).filter(id => id !== actorUserId);
+    if (adminIds.length) await this.notificationService.notifyUsers(adminIds, 'Attendance submitted',
+    `${employee?.name || 'An employee'} submitted ${typeLabel} attendance for ${this.formatDate(date)}.`,
+
+src\app\services\attendance.service.ts:232: const user = this.getSession();
+    }
+    private assertAttendanceDateAllowed(date: string, userId: number): void {
+ >> const user = this.getSession();
+    
+    if (!user || user.id !== userId) {
+    throw new Error('Your session is invalid. Please log in again.');
+
+src\app\services\auth.service.ts:8: getCurrentUser(): User | null { const session = this.attendance.getSession(); return session ? this.toUser(session) : null; }
+    export class AuthService {
+    constructor(private readonly attendance: AttendanceService) {}
+ >> getCurrentUser(): User | null { const session = this.attendance.getSession(); return session ? this.toUser(session) : null; }
+    isLoggedIn(): boolean { return !!this.getCurrentUser(); }
+    private toUser(session: SessionUser): User { return { id: session.id, username: session.username, displayName: session.name, email: null, isActive: true, createdAt: new Date().toISOString() }; }
+    }
+
+src\app\services\chat.service.ts:236: .from('users').select('display_name, username').eq('id', row['sender_id']).single();
+    
+    const { data } = await this.supabaseService.client
+ >> .from('users').select('display_name, username').eq('id', row['sender_id']).single();
+    
+    const msg = await this.mapRaw({
+    ...row,
+
+src\app\services\firm-expense.service.ts:15: firm_balance: number;
+    export interface FirmMoneyOutResult {
+    firm_transaction_id: string;
+ >> firm_balance: number;
+    }
+    
+    @Injectable({
+
+src\app\services\firm-expense.service.ts:54: 'record_firm_money_out',
+    }): Promise<FirmMoneyOutResult> {
+    const { data, error } = await this.supabase.client.rpc(
+ >> 'record_firm_money_out',
+    {
+    p_category: params.category,
+    p_amount: params.amount,
+
+src\app\services\firm-expense.service.ts:61: p_created_by: this.attendance.getSession()?.id ?? null
+    p_payment_mode: params.paymentMode || null,
+    p_description: params.description || null,
+ >> p_created_by: this.attendance.getSession()?.id ?? null
+    }
+    );
+    
+
+src\app\services\firm-expense.service.ts:77: firm_balance: Number(result.firm_balance ?? 0)
+    return {
+    firm_transaction_id: result.firm_transaction_id,
+ >> firm_balance: Number(result.firm_balance ?? 0)
+    };
+    }
+    }
+
+src\app\services\firm-finance.service.ts:18: created_by?: number | null;
+    description?: string | null;
+    created_at: string;
+ >> created_by?: number | null;
+    partner_name?: string | null;
+    employee_name?: string | null;
+    created_by_name?: string | null;
+
+src\app\services\firm-finance.service.ts:21: created_by_name?: string | null;
+    partner_name?: string | null;
+    employee_name?: string | null;
+ >> created_by_name?: string | null;
+    }
+    
+    export interface FirmFinanceDashboard {
+
+src\app\services\firm-finance.service.ts:25: firm_balance: number;
+    
+    export interface FirmFinanceDashboard {
+ >> firm_balance: number;
+    total_money_in: number;
+    total_money_out: number;
+    net_movement: number;
+
+src\app\services\firm-finance.service.ts:58: firm_balance: Number(row?.firm_balance ?? 0),
+    
+    return {
+ >> firm_balance: Number(row?.firm_balance ?? 0),
+    total_money_in: Number(row?.total_money_in ?? 0),
+    total_money_out: Number(row?.total_money_out ?? 0),
+    net_movement: Number(row?.net_movement ?? 0),
+
+src\app\services\firm-finance.service.ts:71: return dashboard.firm_balance;
+    async getCurrentBalance(): Promise<number> {
+    const dashboard = await this.getDashboard();
+ >> return dashboard.firm_balance;
+    }
+    
+    /**
+
+src\app\services\firm-finance.service.ts:78: *   created_at DESC       - latest recorded transaction first
+    *
+    * Primary sorting:
+ >> *   created_at DESC       - latest recorded transaction first
+    *
+    * Secondary sorting:
+    *   transaction_date DESC - latest payment date first
+
+src\app\services\firm-finance.service.ts:81: *   transaction_date DESC - latest payment date first
+    *
+    * Secondary sorting:
+ >> *   transaction_date DESC - latest payment date first
+    *
+    * Final sorting:
+    *   id DESC               - deterministic tie-breaker
+
+src\app\services\firm-finance.service.ts:88: async getTransactions(
+    * Payment date and recording timestamp remain separate.
+    */
+ >> async getTransactions(
+    limit = 100,
+    offset = 0
+    ): Promise<FirmFinanceTransaction[]> {
+
+src\app\services\firm-finance.service.ts:154: 'record_firm_money_in',
+    const { error } =
+    await this.supabase.client.rpc(
+ >> 'record_firm_money_in',
+    {
+    p_category: params.category,
+    p_amount: params.amount,
+
+src\app\services\firm-finance.service.ts:163: p_created_by: this.attendance.getSession()?.id ?? null
+    p_description:
+    params.description || null,
+ >> p_created_by: this.attendance.getSession()?.id ?? null
+    }
+    );
+    
+
+src\app\services\partner-finance.service.ts:22: created_by?: string | null;
+    payment_mode?: string | null;
+    created_at: string;
+ >> created_by?: string | null;
+    }
+    
+    export interface PartnerFinanceMonthlyLedger {
+
+src\app\services\partner-finance.service.ts:184: 'repay_partner_from_firm',
+    const { data, error } =
+    await this.supabase.client.rpc(
+ >> 'repay_partner_from_firm',
+    {
+    p_partner_id:
+    params.partnerId,
+
+src\app\services\partner-finance.service.ts:201: p_created_by: this.attendance.getSession()?.id ?? null
+    params.description || null,
+    
+ >> p_created_by: this.attendance.getSession()?.id ?? null
+    }
+    );
+    
+
+src\app\services\partner-finance.service.ts:216: Number(row?.firm_balance ?? 0),
+    return {
+    firmBalance:
+ >> Number(row?.firm_balance ?? 0),
+    
+    partnerOutstanding:
+    Number(
+
+src\app\services\partner-finance.service.ts:220: row?.partner_outstanding ?? 0
+    partnerOutstanding:
+    Number(
+ >> row?.partner_outstanding ?? 0
+    )
+    };
+    }
+
+src\app\services\partner-finance.service.ts:236: 'record_partner_paid_firm_expense',
+    const { data, error } =
+    await this.supabase.client.rpc(
+ >> 'record_partner_paid_firm_expense',
+    {
+    p_partner_id:
+    params.partnerId,
+
+src\app\services\partner-finance.service.ts:256: p_created_by: this.attendance.getSession()?.id ?? null
+    params.description || null,
+    
+ >> p_created_by: this.attendance.getSession()?.id ?? null
+    }
+    );
+    
+
+src\app\services\partner-finance.service.ts:270: row?.partner_outstanding ?? 0
+    
+    return Number(
+ >> row?.partner_outstanding ?? 0
+    );
+    }
+    }
+
+src\app\services\partner-funding.service.ts:15: firm_balance: number | string;
+    firm_transaction_id: string;
+    partner_transaction_id: number;
+ >> firm_balance: number | string;
+    partner_outstanding: number | string;
+    }
+    
+
+src\app\services\partner-funding.service.ts:16: partner_outstanding: number | string;
+    partner_transaction_id: number;
+    firm_balance: number | string;
+ >> partner_outstanding: number | string;
+    }
+    
+    @Injectable({
+
+src\app\services\partner-funding.service.ts:49: 'add_partner_funding_to_firm',
+    
+    const { data, error } = await this.supabase.client.rpc(
+ >> 'add_partner_funding_to_firm',
+    {
+    p_partner_id: params.partnerId,
+    p_amount: params.amount,
+
+src\app\services\partner-funding.service.ts:56: p_created_by: null
+    p_payment_mode: params.paymentMode,
+    p_description: params.description || null,
+ >> p_created_by: null
+    }
+    );
+    
+
+src\app\services\partner-funding.service.ts:70: firm_balance: Number(data[0].firm_balance),
+    return {
+    ...data[0],
+ >> firm_balance: Number(data[0].firm_balance),
+    partner_outstanding: Number(data[0].partner_outstanding)
+    };
+    }
+
+src\app\services\partner-funding.service.ts:71: partner_outstanding: Number(data[0].partner_outstanding)
+    ...data[0],
+    firm_balance: Number(data[0].firm_balance),
+ >> partner_outstanding: Number(data[0].partner_outstanding)
+    };
+    }
+    }
+
+==========================================================================================
+4. SQL BACKUP FUNCTION, VIEW, TABLE, AND SECURITY REFERENCES
+==========================================================================================
+
+supabase-backup\clean_reset.sql:52: ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
+    email        TEXT        UNIQUE
+    );
+ >> ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
+    GRANT SELECT, INSERT, UPDATE ON public.users TO anon, authenticated;
+    
+    -- messages
+
+supabase-backup\clean_reset.sql:53: GRANT SELECT, INSERT, UPDATE ON public.users TO anon, authenticated;
+    );
+    ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
+ >> GRANT SELECT, INSERT, UPDATE ON public.users TO anon, authenticated;
+    
+    -- messages
+    CREATE TABLE public.messages (
+
+supabase-backup\clean_reset.sql:64: ALTER TABLE public.messages DISABLE ROW LEVEL SECURITY;
+    read_at         TIMESTAMPTZ
+    );
+ >> ALTER TABLE public.messages DISABLE ROW LEVEL SECURITY;
+    GRANT SELECT, INSERT, UPDATE ON public.messages TO anon, authenticated;
+    
+    -- conversations
+
+supabase-backup\clean_reset.sql:65: GRANT SELECT, INSERT, UPDATE ON public.messages TO anon, authenticated;
+    );
+    ALTER TABLE public.messages DISABLE ROW LEVEL SECURITY;
+ >> GRANT SELECT, INSERT, UPDATE ON public.messages TO anon, authenticated;
+    
+    -- conversations
+    CREATE TABLE public.conversations (
+
+supabase-backup\clean_reset.sql:77: ALTER TABLE public.conversations DISABLE ROW LEVEL SECURITY;
+    CONSTRAINT uq_conversation  UNIQUE (participant_1, participant_2)
+    );
+ >> ALTER TABLE public.conversations DISABLE ROW LEVEL SECURITY;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.conversations TO anon, authenticated;
+    
+    -- Add FK from messages → conversations
+
+supabase-backup\clean_reset.sql:78: GRANT SELECT, INSERT, UPDATE, DELETE ON public.conversations TO anon, authenticated;
+    );
+    ALTER TABLE public.conversations DISABLE ROW LEVEL SECURITY;
+ >> GRANT SELECT, INSERT, UPDATE, DELETE ON public.conversations TO anon, authenticated;
+    
+    -- Add FK from messages → conversations
+    ALTER TABLE public.messages
+
+supabase-backup\clean_reset.sql:96: ALTER TABLE public.friendships DISABLE ROW LEVEL SECURITY;
+    CONSTRAINT uq_friendship      UNIQUE (requester_id, addressee_id)
+    );
+ >> ALTER TABLE public.friendships DISABLE ROW LEVEL SECURITY;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.friendships TO anon, authenticated;
+    
+    -- password_reset_tokens
+
+supabase-backup\clean_reset.sql:97: GRANT SELECT, INSERT, UPDATE, DELETE ON public.friendships TO anon, authenticated;
+    );
+    ALTER TABLE public.friendships DISABLE ROW LEVEL SECURITY;
+ >> GRANT SELECT, INSERT, UPDATE, DELETE ON public.friendships TO anon, authenticated;
+    
+    -- password_reset_tokens
+    CREATE TABLE public.password_reset_tokens (
+
+supabase-backup\clean_reset.sql:108: ALTER TABLE public.password_reset_tokens DISABLE ROW LEVEL SECURITY;
+    created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+ >> ALTER TABLE public.password_reset_tokens DISABLE ROW LEVEL SECURITY;
+    GRANT SELECT, INSERT, UPDATE ON public.password_reset_tokens TO anon, authenticated;
+    
+    -- device_activity_events
+
+supabase-backup\clean_reset.sql:109: GRANT SELECT, INSERT, UPDATE ON public.password_reset_tokens TO anon, authenticated;
+    );
+    ALTER TABLE public.password_reset_tokens DISABLE ROW LEVEL SECURITY;
+ >> GRANT SELECT, INSERT, UPDATE ON public.password_reset_tokens TO anon, authenticated;
+    
+    -- device_activity_events
+    CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+supabase-backup\clean_reset.sql:134: ALTER TABLE public.device_activity_events DISABLE ROW LEVEL SECURITY;
+    CONSTRAINT uq_device_activity_events_device_event UNIQUE (user_id, device_event_id)
+    );
+ >> ALTER TABLE public.device_activity_events DISABLE ROW LEVEL SECURITY;
+    
+    -- message_reactions
+    CREATE TABLE public.message_reactions (
+
+supabase-backup\clean_reset.sql:146: ALTER TABLE public.message_reactions DISABLE ROW LEVEL SECURITY;
+    );
+    ALTER TABLE public.message_reactions REPLICA IDENTITY FULL;
+ >> ALTER TABLE public.message_reactions DISABLE ROW LEVEL SECURITY;
+    GRANT SELECT, INSERT, DELETE ON public.message_reactions TO anon, authenticated;
+    
+    -- ============================================================
+
+supabase-backup\clean_reset.sql:147: GRANT SELECT, INSERT, DELETE ON public.message_reactions TO anon, authenticated;
+    ALTER TABLE public.message_reactions REPLICA IDENTITY FULL;
+    ALTER TABLE public.message_reactions DISABLE ROW LEVEL SECURITY;
+ >> GRANT SELECT, INSERT, DELETE ON public.message_reactions TO anon, authenticated;
+    
+    -- ============================================================
+    -- STEP 4: Recreate indexes
+
+supabase-backup\clean_reset.sql:180: CREATE OR REPLACE FUNCTION public.authenticate(p_username TEXT, p_password TEXT)
+    
+    -- authenticate
+ >> CREATE OR REPLACE FUNCTION public.authenticate(p_username TEXT, p_password TEXT)
+    RETURNS TABLE (
+    id           BIGINT,
+    username     TEXT,
+
+supabase-backup\clean_reset.sql:189: SECURITY DEFINER
+    )
+    LANGUAGE sql
+ >> SECURITY DEFINER
+    AS $$
+    SELECT id, username, display_name, is_active, created_at
+    FROM   public.users
+
+supabase-backup\clean_reset.sql:199: CREATE OR REPLACE FUNCTION public.get_or_create_conversation(
+    
+    -- get_or_create_conversation
+ >> CREATE OR REPLACE FUNCTION public.get_or_create_conversation(
+    p_user_id  BIGINT,
+    p_other_id BIGINT
+    )
+
+supabase-backup\clean_reset.sql:205: SECURITY DEFINER SET search_path = public
+    RETURNS BIGINT
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    DECLARE
+    v_p1 BIGINT := LEAST(p_user_id, p_other_id);
+
+supabase-backup\clean_reset.sql:221: CREATE OR REPLACE FUNCTION public.send_friend_request(
+    
+    -- send_friend_request
+ >> CREATE OR REPLACE FUNCTION public.send_friend_request(
+    p_requester_id BIGINT,
+    p_addressee_id BIGINT
+    )
+
+supabase-backup\clean_reset.sql:227: SECURITY DEFINER SET search_path = public
+    RETURNS TABLE(id BIGINT, status TEXT)
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    IF p_requester_id = p_addressee_id THEN RAISE EXCEPTION 'SELF_REQUEST'; END IF;
+
+supabase-backup\clean_reset.sql:244: CREATE OR REPLACE FUNCTION public.respond_to_request(
+    
+    -- respond_to_request
+ >> CREATE OR REPLACE FUNCTION public.respond_to_request(
+    p_friendship_id BIGINT,
+    p_user_id       BIGINT,
+    p_action        TEXT
+
+supabase-backup\clean_reset.sql:251: SECURITY DEFINER SET search_path = public
+    RETURNS TABLE(id BIGINT, status TEXT)
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    IF p_action NOT IN ('accepted','declined','blocked') THEN RAISE EXCEPTION 'INVALID_ACTION'; END IF;
+
+supabase-backup\clean_reset.sql:263: CREATE OR REPLACE FUNCTION public.get_conversations(p_user_id BIGINT)
+    
+    -- get_conversations
+ >> CREATE OR REPLACE FUNCTION public.get_conversations(p_user_id BIGINT)
+    RETURNS TABLE(
+    conversation_id    BIGINT,
+    other_user_id      BIGINT,
+
+supabase-backup\clean_reset.sql:275: SECURITY DEFINER SET search_path = public
+    )
+    LANGUAGE sql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    SELECT
+    c.id,
+
+supabase-backup\clean_reset.sql:301: CREATE OR REPLACE FUNCTION public.search_users(p_query TEXT, p_current_user_id BIGINT)
+    
+    -- search_users
+ >> CREATE OR REPLACE FUNCTION public.search_users(p_query TEXT, p_current_user_id BIGINT)
+    RETURNS TABLE(
+    id                BIGINT,
+    username          TEXT,
+
+supabase-backup\clean_reset.sql:310: SECURITY DEFINER SET search_path = public
+    )
+    LANGUAGE sql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    SELECT u.id, u.username, COALESCE(u.display_name, u.username), f.status, f.id
+    FROM users u
+
+supabase-backup\clean_reset.sql:325: CREATE OR REPLACE FUNCTION public.get_pending_requests(p_user_id BIGINT)
+    
+    -- get_pending_requests
+ >> CREATE OR REPLACE FUNCTION public.get_pending_requests(p_user_id BIGINT)
+    RETURNS TABLE(
+    friendship_id BIGINT,
+    requester_id  BIGINT,
+
+supabase-backup\clean_reset.sql:334: SECURITY DEFINER SET search_path = public
+    )
+    LANGUAGE sql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    SELECT f.id, f.requester_id, u.username, COALESCE(u.display_name, u.username), f.created_at
+    FROM friendships f
+
+supabase-backup\clean_reset.sql:344: CREATE OR REPLACE FUNCTION public.get_contacts(p_user_id BIGINT)
+    
+    -- get_contacts
+ >> CREATE OR REPLACE FUNCTION public.get_contacts(p_user_id BIGINT)
+    RETURNS TABLE(
+    friendship_id BIGINT,
+    contact_id    BIGINT,
+
+supabase-backup\clean_reset.sql:352: SECURITY DEFINER SET search_path = public
+    )
+    LANGUAGE sql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    SELECT f.id,
+    CASE WHEN f.requester_id = p_user_id THEN f.addressee_id ELSE f.requester_id END,
+
+supabase-backup\clean_reset.sql:364: CREATE OR REPLACE FUNCTION public.send_dm(
+    
+    -- send_dm
+ >> CREATE OR REPLACE FUNCTION public.send_dm(
+    p_conversation_id BIGINT,
+    p_sender_id       BIGINT,
+    p_message         TEXT
+
+supabase-backup\clean_reset.sql:371: SECURITY DEFINER SET search_path = public
+    RETURNS TABLE(id BIGINT, conversation_id BIGINT, sender_id BIGINT, message TEXT, created_at TIMESTAMPTZ)
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    UPDATE conversations SET last_message_at = NOW() WHERE conversations.id = p_conversation_id;
+
+supabase-backup\clean_reset.sql:383: CREATE OR REPLACE FUNCTION public.toggle_reaction(
+    
+    -- toggle_reaction
+ >> CREATE OR REPLACE FUNCTION public.toggle_reaction(
+    p_message_id BIGINT,
+    p_user_id    BIGINT,
+    p_emoji      TEXT
+
+supabase-backup\clean_reset.sql:390: SECURITY DEFINER SET search_path = public
+    RETURNS TEXT
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    IF EXISTS (
+
+supabase-backup\clean_reset.sql:409: CREATE OR REPLACE FUNCTION public.register_user(
+    
+    -- register_user
+ >> CREATE OR REPLACE FUNCTION public.register_user(
+    p_username     TEXT,
+    p_display_name TEXT,
+    p_email        TEXT,
+
+supabase-backup\clean_reset.sql:424: SECURITY DEFINER SET search_path = public
+    )
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    IF EXISTS (SELECT 1 FROM users WHERE users.username = p_username) THEN
+
+supabase-backup\clean_reset.sql:441: CREATE OR REPLACE FUNCTION public.delete_user_account(p_user_id BIGINT)
+    
+    -- delete_user_account
+ >> CREATE OR REPLACE FUNCTION public.delete_user_account(p_user_id BIGINT)
+    RETURNS VOID
+    LANGUAGE plpgsql
+    SECURITY DEFINER SET search_path = public
+
+supabase-backup\clean_reset.sql:444: SECURITY DEFINER SET search_path = public
+    RETURNS VOID
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    UPDATE users SET is_active = FALSE WHERE users.id = p_user_id;
+
+supabase-backup\clean_reset.sql:452: CREATE OR REPLACE FUNCTION public.update_user_profile(
+    
+    -- update_user_profile
+ >> CREATE OR REPLACE FUNCTION public.update_user_profile(
+    p_user_id      BIGINT,
+    p_display_name TEXT,
+    p_email        TEXT,
+
+supabase-backup\clean_reset.sql:467: SECURITY DEFINER SET search_path = public
+    )
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    IF p_email IS NOT NULL AND EXISTS (
+
+supabase-backup\supabase-setup.sql:38: -- DISABLE Row Level Security (custom auth model)
+    
+    -- ============================================================
+ >> -- DISABLE Row Level Security (custom auth model)
+    -- ============================================================
+    ALTER TABLE public.users    DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.messages DISABLE ROW LEVEL SECURITY;
+
+supabase-backup\supabase-setup.sql:40: ALTER TABLE public.users    DISABLE ROW LEVEL SECURITY;
+    -- DISABLE Row Level Security (custom auth model)
+    -- ============================================================
+ >> ALTER TABLE public.users    DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.messages DISABLE ROW LEVEL SECURITY;
+    
+    -- ============================================================
+
+supabase-backup\supabase-setup.sql:41: ALTER TABLE public.messages DISABLE ROW LEVEL SECURITY;
+    -- ============================================================
+    ALTER TABLE public.users    DISABLE ROW LEVEL SECURITY;
+ >> ALTER TABLE public.messages DISABLE ROW LEVEL SECURITY;
+    
+    -- ============================================================
+    -- ENABLE REALTIME on messages table
+
+supabase-backup\supabase-setup.sql:61: CREATE OR REPLACE FUNCTION public.authenticate(p_username TEXT, p_password TEXT)
+    -- Returns matching user row or empty set on failure.
+    -- ============================================================
+ >> CREATE OR REPLACE FUNCTION public.authenticate(p_username TEXT, p_password TEXT)
+    RETURNS TABLE (
+    id           BIGINT,
+    username     TEXT,
+
+supabase-backup\supabase-setup.sql:70: SECURITY DEFINER
+    )
+    LANGUAGE sql
+ >> SECURITY DEFINER
+    AS $$
+    SELECT id, username, display_name, is_active, created_at
+    FROM   public.users
+
+supabase-backup\migrations\001_auth_upgrade.sql:25: ALTER TABLE public.users                  DISABLE ROW LEVEL SECURITY;
+    
+    -- 4. Disable RLS on all tables (custom auth model — no Supabase Auth)
+ >> ALTER TABLE public.users                  DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.password_reset_tokens DISABLE ROW LEVEL SECURITY;
+    
+    -- ============================================================
+
+supabase-backup\migrations\001_auth_upgrade.sql:26: ALTER TABLE public.password_reset_tokens DISABLE ROW LEVEL SECURITY;
+    -- 4. Disable RLS on all tables (custom auth model — no Supabase Auth)
+    ALTER TABLE public.users                  DISABLE ROW LEVEL SECURITY;
+ >> ALTER TABLE public.password_reset_tokens DISABLE ROW LEVEL SECURITY;
+    
+    -- ============================================================
+    -- 5. GRANT permissions to anon + authenticated roles
+
+supabase-backup\migrations\001_auth_upgrade.sql:29: -- 5. GRANT permissions to anon + authenticated roles
+    
+    -- ============================================================
+ >> -- 5. GRANT permissions to anon + authenticated roles
+    --    Required for the Supabase JS client (anon key) to
+    --    INSERT / UPDATE rows without a service role key.
+    -- ============================================================
+
+supabase-backup\migrations\001_auth_upgrade.sql:33: GRANT SELECT, INSERT, UPDATE ON public.users                  TO anon, authenticated;
+    --    INSERT / UPDATE rows without a service role key.
+    -- ============================================================
+ >> GRANT SELECT, INSERT, UPDATE ON public.users                  TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.messages               TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.password_reset_tokens  TO anon, authenticated;
+    
+
+supabase-backup\migrations\001_auth_upgrade.sql:34: GRANT SELECT, INSERT, UPDATE ON public.messages               TO anon, authenticated;
+    -- ============================================================
+    GRANT SELECT, INSERT, UPDATE ON public.users                  TO anon, authenticated;
+ >> GRANT SELECT, INSERT, UPDATE ON public.messages               TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.password_reset_tokens  TO anon, authenticated;
+    
+    -- 6. Auto-cleanup expired/used tokens (run daily via pg_cron or manually)
+
+supabase-backup\migrations\001_auth_upgrade.sql:35: GRANT SELECT, INSERT, UPDATE ON public.password_reset_tokens  TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.users                  TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.messages               TO anon, authenticated;
+ >> GRANT SELECT, INSERT, UPDATE ON public.password_reset_tokens  TO anon, authenticated;
+    
+    -- 6. Auto-cleanup expired/used tokens (run daily via pg_cron or manually)
+    -- DELETE FROM public.password_reset_tokens WHERE expires_at < NOW() OR used = TRUE;
+
+supabase-backup\migrations\002_dm_chat.sql:51: ALTER TABLE public.users         DISABLE ROW LEVEL SECURITY;
+    
+    -- 7. Disable RLS
+ >> ALTER TABLE public.users         DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.conversations DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.friendships   DISABLE ROW LEVEL SECURITY;
+    
+
+supabase-backup\migrations\002_dm_chat.sql:52: ALTER TABLE public.conversations DISABLE ROW LEVEL SECURITY;
+    -- 7. Disable RLS
+    ALTER TABLE public.users         DISABLE ROW LEVEL SECURITY;
+ >> ALTER TABLE public.conversations DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.friendships   DISABLE ROW LEVEL SECURITY;
+    
+    -- 8. Grants
+
+supabase-backup\migrations\002_dm_chat.sql:53: ALTER TABLE public.friendships   DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.users         DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.conversations DISABLE ROW LEVEL SECURITY;
+ >> ALTER TABLE public.friendships   DISABLE ROW LEVEL SECURITY;
+    
+    -- 8. Grants
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.conversations TO anon, authenticated;
+
+supabase-backup\migrations\002_dm_chat.sql:56: GRANT SELECT, INSERT, UPDATE, DELETE ON public.conversations TO anon, authenticated;
+    
+    -- 8. Grants
+ >> GRANT SELECT, INSERT, UPDATE, DELETE ON public.conversations TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.friendships   TO anon, authenticated;
+    
+    -- 9. Enable Realtime on new tables
+
+supabase-backup\migrations\002_dm_chat.sql:57: GRANT SELECT, INSERT, UPDATE, DELETE ON public.friendships   TO anon, authenticated;
+    -- 8. Grants
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.conversations TO anon, authenticated;
+ >> GRANT SELECT, INSERT, UPDATE, DELETE ON public.friendships   TO anon, authenticated;
+    
+    -- 9. Enable Realtime on new tables
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
+
+supabase-backup\migrations\002_dm_chat.sql:64: -- RPC FUNCTIONS (all SECURITY DEFINER to bypass anon limits)
+    
+    -- ============================================================
+ >> -- RPC FUNCTIONS (all SECURITY DEFINER to bypass anon limits)
+    -- ============================================================
+    
+    -- Get or create a conversation between two users
+
+supabase-backup\migrations\002_dm_chat.sql:68: CREATE OR REPLACE FUNCTION public.get_or_create_conversation(
+    
+    -- Get or create a conversation between two users
+ >> CREATE OR REPLACE FUNCTION public.get_or_create_conversation(
+    p_user_id  BIGINT,
+    p_other_id BIGINT
+    )
+
+supabase-backup\migrations\002_dm_chat.sql:74: SECURITY DEFINER SET search_path = public
+    RETURNS BIGINT
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    DECLARE
+    v_p1 BIGINT := LEAST(p_user_id, p_other_id);
+
+supabase-backup\migrations\002_dm_chat.sql:90: CREATE OR REPLACE FUNCTION public.send_friend_request(
+    
+    -- Send a friend request
+ >> CREATE OR REPLACE FUNCTION public.send_friend_request(
+    p_requester_id BIGINT,
+    p_addressee_id BIGINT
+    )
+
+supabase-backup\migrations\002_dm_chat.sql:96: SECURITY DEFINER SET search_path = public
+    RETURNS TABLE(id BIGINT, status TEXT)
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    IF p_requester_id = p_addressee_id THEN RAISE EXCEPTION 'SELF_REQUEST'; END IF;
+
+supabase-backup\migrations\002_dm_chat.sql:113: CREATE OR REPLACE FUNCTION public.respond_to_request(
+    
+    -- Respond to a friend request (accept / decline / block)
+ >> CREATE OR REPLACE FUNCTION public.respond_to_request(
+    p_friendship_id BIGINT,
+    p_user_id       BIGINT,
+    p_action        TEXT
+
+supabase-backup\migrations\002_dm_chat.sql:120: SECURITY DEFINER SET search_path = public
+    RETURNS TABLE(id BIGINT, status TEXT)
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    IF p_action NOT IN ('accepted','declined','blocked') THEN RAISE EXCEPTION 'INVALID_ACTION'; END IF;
+
+supabase-backup\migrations\002_dm_chat.sql:132: CREATE OR REPLACE FUNCTION public.get_conversations(p_user_id BIGINT)
+    
+    -- Get all conversations for a user (with last message + unread count)
+ >> CREATE OR REPLACE FUNCTION public.get_conversations(p_user_id BIGINT)
+    RETURNS TABLE(
+    conversation_id    BIGINT,
+    other_user_id      BIGINT,
+
+supabase-backup\migrations\002_dm_chat.sql:144: SECURITY DEFINER SET search_path = public
+    )
+    LANGUAGE sql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    SELECT
+    c.id,
+
+supabase-backup\migrations\002_dm_chat.sql:170: CREATE OR REPLACE FUNCTION public.search_users(p_query TEXT, p_current_user_id BIGINT)
+    
+    -- Search users (returns friendship status with current user)
+ >> CREATE OR REPLACE FUNCTION public.search_users(p_query TEXT, p_current_user_id BIGINT)
+    RETURNS TABLE(
+    id                BIGINT,
+    username          TEXT,
+
+supabase-backup\migrations\002_dm_chat.sql:179: SECURITY DEFINER SET search_path = public
+    )
+    LANGUAGE sql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    SELECT u.id, u.username, COALESCE(u.display_name, u.username), f.status, f.id
+    FROM users u
+
+supabase-backup\migrations\002_dm_chat.sql:194: CREATE OR REPLACE FUNCTION public.get_pending_requests(p_user_id BIGINT)
+    
+    -- Get incoming pending friend requests
+ >> CREATE OR REPLACE FUNCTION public.get_pending_requests(p_user_id BIGINT)
+    RETURNS TABLE(
+    friendship_id BIGINT,
+    requester_id  BIGINT,
+
+supabase-backup\migrations\002_dm_chat.sql:203: SECURITY DEFINER SET search_path = public
+    )
+    LANGUAGE sql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    SELECT f.id, f.requester_id, u.username, COALESCE(u.display_name, u.username), f.created_at
+    FROM friendships f
+
+supabase-backup\migrations\002_dm_chat.sql:213: CREATE OR REPLACE FUNCTION public.get_contacts(p_user_id BIGINT)
+    
+    -- Get accepted contacts
+ >> CREATE OR REPLACE FUNCTION public.get_contacts(p_user_id BIGINT)
+    RETURNS TABLE(
+    friendship_id BIGINT,
+    contact_id    BIGINT,
+
+supabase-backup\migrations\002_dm_chat.sql:221: SECURITY DEFINER SET search_path = public
+    )
+    LANGUAGE sql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    SELECT f.id,
+    CASE WHEN f.requester_id = p_user_id THEN f.addressee_id ELSE f.requester_id END,
+
+supabase-backup\migrations\002_dm_chat.sql:232: -- Send a message within a conversation (SECURITY DEFINER for anon write)
+    $$;
+    
+ >> -- Send a message within a conversation (SECURITY DEFINER for anon write)
+    CREATE OR REPLACE FUNCTION public.send_dm(
+    p_conversation_id BIGINT,
+    p_sender_id       BIGINT,
+
+supabase-backup\migrations\002_dm_chat.sql:233: CREATE OR REPLACE FUNCTION public.send_dm(
+    
+    -- Send a message within a conversation (SECURITY DEFINER for anon write)
+ >> CREATE OR REPLACE FUNCTION public.send_dm(
+    p_conversation_id BIGINT,
+    p_sender_id       BIGINT,
+    p_message         TEXT
+
+supabase-backup\migrations\002_dm_chat.sql:240: SECURITY DEFINER SET search_path = public
+    RETURNS TABLE(id BIGINT, conversation_id BIGINT, sender_id BIGINT, message TEXT, created_at TIMESTAMPTZ)
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    -- Update last_message_at on the conversation
+
+supabase-backup\migrations\003_device_activity_events.sql:31: alter table public.device_activity_events disable row level security;
+    -- This project currently uses custom client-side authentication and disables RLS on its app tables.
+    -- Keep this setting only until uploads are moved behind an authenticated Edge Function.
+ >> alter table public.device_activity_events disable row level security;
+
+supabase-backup\migrations\004_message_reactions.sql:20: ALTER TABLE public.message_reactions DISABLE ROW LEVEL SECURITY;
+    
+    -- 3. Disable RLS (custom auth model)
+ >> ALTER TABLE public.message_reactions DISABLE ROW LEVEL SECURITY;
+    
+    -- 4. Grants
+    GRANT SELECT, INSERT, DELETE ON public.message_reactions TO anon, authenticated;
+
+supabase-backup\migrations\004_message_reactions.sql:23: GRANT SELECT, INSERT, DELETE ON public.message_reactions TO anon, authenticated;
+    
+    -- 4. Grants
+ >> GRANT SELECT, INSERT, DELETE ON public.message_reactions TO anon, authenticated;
+    
+    -- 5. Index
+    CREATE INDEX IF NOT EXISTS idx_reactions_message_id ON public.message_reactions (message_id);
+
+supabase-backup\migrations\004_message_reactions.sql:34: CREATE OR REPLACE FUNCTION public.toggle_reaction(
+    
+    -- 7. toggle_reaction: adds if absent, removes if present
+ >> CREATE OR REPLACE FUNCTION public.toggle_reaction(
+    p_message_id BIGINT,
+    p_user_id    BIGINT,
+    p_emoji      TEXT
+
+supabase-backup\migrations\004_message_reactions.sql:41: SECURITY DEFINER SET search_path = public
+    RETURNS TEXT   -- 'added' | 'removed'
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    IF EXISTS (
+
+supabase-backup\migrations\005_register_user_rpc.sql:10: CREATE OR REPLACE FUNCTION public.register_user(
+    -- can surface a specific error message.
+    DROP FUNCTION IF EXISTS public.register_user(TEXT, TEXT, TEXT, TEXT) CASCADE;
+ >> CREATE OR REPLACE FUNCTION public.register_user(
+    p_username     TEXT,
+    p_display_name TEXT,
+    p_email        TEXT,
+
+supabase-backup\migrations\005_register_user_rpc.sql:25: SECURITY DEFINER SET search_path = public
+    )
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    -- Username uniqueness check
+
+supabase-backup\migrations\005_register_user_rpc.sql:54: CREATE OR REPLACE FUNCTION public.delete_user_account(p_user_id BIGINT)
+    -- preserving message history.
+    DROP FUNCTION IF EXISTS public.delete_user_account(BIGINT) CASCADE;
+ >> CREATE OR REPLACE FUNCTION public.delete_user_account(p_user_id BIGINT)
+    RETURNS VOID
+    LANGUAGE plpgsql
+    SECURITY DEFINER SET search_path = public
+
+supabase-backup\migrations\005_register_user_rpc.sql:57: SECURITY DEFINER SET search_path = public
+    RETURNS VOID
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    UPDATE users SET is_active = FALSE WHERE users.id = p_user_id;
+
+supabase-backup\migrations\005_register_user_rpc.sql:67: CREATE OR REPLACE FUNCTION public.update_user_profile(
+    -- Returns the updated row. Raises EMAIL_TAKEN on conflict.
+    DROP FUNCTION IF EXISTS public.update_user_profile(BIGINT, TEXT, TEXT, TEXT) CASCADE;
+ >> CREATE OR REPLACE FUNCTION public.update_user_profile(
+    p_user_id      BIGINT,
+    p_display_name TEXT,
+    p_email        TEXT,
+
+supabase-backup\migrations\005_register_user_rpc.sql:82: SECURITY DEFINER SET search_path = public
+    )
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    -- Email uniqueness check (exclude current user)
+
+supabase-backup\migrations\006_disable_rls_all_tables.sql:7: ALTER TABLE public.users                  DISABLE ROW LEVEL SECURITY;
+    -- Run in: Supabase Dashboard → SQL Editor → New Query
+    -- ============================================================
+ >> ALTER TABLE public.users                  DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.messages               DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.conversations          DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.friendships            DISABLE ROW LEVEL SECURITY;
+
+supabase-backup\migrations\006_disable_rls_all_tables.sql:8: ALTER TABLE public.messages               DISABLE ROW LEVEL SECURITY;
+    -- ============================================================
+    ALTER TABLE public.users                  DISABLE ROW LEVEL SECURITY;
+ >> ALTER TABLE public.messages               DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.conversations          DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.friendships            DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.message_reactions      DISABLE ROW LEVEL SECURITY;
+
+supabase-backup\migrations\006_disable_rls_all_tables.sql:9: ALTER TABLE public.conversations          DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.users                  DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.messages               DISABLE ROW LEVEL SECURITY;
+ >> ALTER TABLE public.conversations          DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.friendships            DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.message_reactions      DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.password_reset_tokens  DISABLE ROW LEVEL SECURITY;
+
+supabase-backup\migrations\006_disable_rls_all_tables.sql:10: ALTER TABLE public.friendships            DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.messages               DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.conversations          DISABLE ROW LEVEL SECURITY;
+ >> ALTER TABLE public.friendships            DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.message_reactions      DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.password_reset_tokens  DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.device_activity_events DISABLE ROW LEVEL SECURITY;
+
+supabase-backup\migrations\006_disable_rls_all_tables.sql:11: ALTER TABLE public.message_reactions      DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.conversations          DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.friendships            DISABLE ROW LEVEL SECURITY;
+ >> ALTER TABLE public.message_reactions      DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.password_reset_tokens  DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.device_activity_events DISABLE ROW LEVEL SECURITY;
+
+supabase-backup\migrations\006_disable_rls_all_tables.sql:12: ALTER TABLE public.password_reset_tokens  DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.friendships            DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.message_reactions      DISABLE ROW LEVEL SECURITY;
+ >> ALTER TABLE public.password_reset_tokens  DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.device_activity_events DISABLE ROW LEVEL SECURITY;
+
+supabase-backup\migrations\006_disable_rls_all_tables.sql:13: ALTER TABLE public.device_activity_events DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.message_reactions      DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.password_reset_tokens  DISABLE ROW LEVEL SECURITY;
+ >> ALTER TABLE public.device_activity_events DISABLE ROW LEVEL SECURITY;
+
+supabase-backup\migrations\007_device_tokens.sql:18: ALTER TABLE public.device_tokens DISABLE ROW LEVEL SECURITY;
+    
+    -- RLS off (consistent with rest of app)
+ >> ALTER TABLE public.device_tokens DISABLE ROW LEVEL SECURITY;
+    
+    -- Grants
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.device_tokens TO anon, authenticated;
+
+supabase-backup\migrations\007_device_tokens.sql:21: GRANT SELECT, INSERT, UPDATE, DELETE ON public.device_tokens TO anon, authenticated;
+    
+    -- Grants
+ >> GRANT SELECT, INSERT, UPDATE, DELETE ON public.device_tokens TO anon, authenticated;
+    
+    -- RPC: upsert a device token for a user
+    CREATE OR REPLACE FUNCTION public.register_device_token(
+
+supabase-backup\migrations\007_device_tokens.sql:24: CREATE OR REPLACE FUNCTION public.register_device_token(
+    
+    -- RPC: upsert a device token for a user
+ >> CREATE OR REPLACE FUNCTION public.register_device_token(
+    p_user_id  BIGINT,
+    p_token    TEXT,
+    p_platform TEXT DEFAULT 'android'
+
+supabase-backup\migrations\007_device_tokens.sql:31: SECURITY DEFINER SET search_path = public
+    RETURNS VOID
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    INSERT INTO device_tokens (user_id, token, platform, updated_at)
+
+supabase-backup\migrations\007_device_tokens.sql:42: CREATE OR REPLACE FUNCTION public.remove_device_token(
+    
+    -- RPC: remove a device token on logout
+ >> CREATE OR REPLACE FUNCTION public.remove_device_token(
+    p_user_id BIGINT,
+    p_token   TEXT
+    )
+
+supabase-backup\migrations\007_device_tokens.sql:48: SECURITY DEFINER SET search_path = public
+    RETURNS VOID
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    DELETE FROM device_tokens WHERE user_id = p_user_id AND token = p_token;
+
+supabase-backup\migrations\008_attendance_maintenance.sql:55: CREATE TABLE IF NOT EXISTS public.attendance_payments (
+    );
+    
+ >> CREATE TABLE IF NOT EXISTS public.attendance_payments (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    employee_id BIGINT NOT NULL REFERENCES public.attendance_employees(id) ON DELETE RESTRICT,
+    amount NUMERIC(12,2) NOT NULL CHECK (amount > 0),
+
+supabase-backup\migrations\008_attendance_maintenance.sql:71: payment_id BIGINT NOT NULL REFERENCES public.attendance_payments(id) ON DELETE RESTRICT,
+    CREATE TABLE IF NOT EXISTS public.payment_allocations (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ >> payment_id BIGINT NOT NULL REFERENCES public.attendance_payments(id) ON DELETE RESTRICT,
+    attendance_id BIGINT NOT NULL REFERENCES public.attendance_records(id) ON DELETE RESTRICT,
+    allocated_amount NUMERIC(12,2) NOT NULL CHECK (allocated_amount > 0),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+supabase-backup\migrations\008_attendance_maintenance.sql:82: CREATE INDEX IF NOT EXISTS idx_attendance_payments_employee_date
+    CREATE INDEX IF NOT EXISTS idx_attendance_records_pending
+    ON public.attendance_records (approval_status) WHERE approval_status = 'pending';
+ >> CREATE INDEX IF NOT EXISTS idx_attendance_payments_employee_date
+    ON public.attendance_payments (employee_id, payment_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_payment_allocations_attendance
+    ON public.payment_allocations (attendance_id);
+
+supabase-backup\migrations\008_attendance_maintenance.sql:83: ON public.attendance_payments (employee_id, payment_date DESC);
+    ON public.attendance_records (approval_status) WHERE approval_status = 'pending';
+    CREATE INDEX IF NOT EXISTS idx_attendance_payments_employee_date
+ >> ON public.attendance_payments (employee_id, payment_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_payment_allocations_attendance
+    ON public.payment_allocations (attendance_id);
+    
+
+supabase-backup\migrations\008_attendance_maintenance.sql:87: ALTER TABLE public.attendance_employees DISABLE ROW LEVEL SECURITY;
+    ON public.payment_allocations (attendance_id);
+    
+ >> ALTER TABLE public.attendance_employees DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.attendance_records DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.attendance_payments DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.payment_allocations DISABLE ROW LEVEL SECURITY;
+
+supabase-backup\migrations\008_attendance_maintenance.sql:88: ALTER TABLE public.attendance_records DISABLE ROW LEVEL SECURITY;
+    
+    ALTER TABLE public.attendance_employees DISABLE ROW LEVEL SECURITY;
+ >> ALTER TABLE public.attendance_records DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.attendance_payments DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.payment_allocations DISABLE ROW LEVEL SECURITY;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.attendance_employees TO anon, authenticated;
+
+supabase-backup\migrations\008_attendance_maintenance.sql:89: ALTER TABLE public.attendance_payments DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.attendance_employees DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.attendance_records DISABLE ROW LEVEL SECURITY;
+ >> ALTER TABLE public.attendance_payments DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.payment_allocations DISABLE ROW LEVEL SECURITY;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.attendance_employees TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_records TO anon, authenticated;
+
+supabase-backup\migrations\008_attendance_maintenance.sql:90: ALTER TABLE public.payment_allocations DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.attendance_records DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.attendance_payments DISABLE ROW LEVEL SECURITY;
+ >> ALTER TABLE public.payment_allocations DISABLE ROW LEVEL SECURITY;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.attendance_employees TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_records TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_payments TO anon, authenticated;
+
+supabase-backup\migrations\008_attendance_maintenance.sql:91: GRANT SELECT, INSERT, UPDATE, DELETE ON public.attendance_employees TO anon, authenticated;
+    ALTER TABLE public.attendance_payments DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.payment_allocations DISABLE ROW LEVEL SECURITY;
+ >> GRANT SELECT, INSERT, UPDATE, DELETE ON public.attendance_employees TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_records TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_payments TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.payment_allocations TO anon, authenticated;
+
+supabase-backup\migrations\008_attendance_maintenance.sql:92: GRANT SELECT, INSERT, UPDATE ON public.attendance_records TO anon, authenticated;
+    ALTER TABLE public.payment_allocations DISABLE ROW LEVEL SECURITY;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.attendance_employees TO anon, authenticated;
+ >> GRANT SELECT, INSERT, UPDATE ON public.attendance_records TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_payments TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.payment_allocations TO anon, authenticated;
+    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+
+supabase-backup\migrations\008_attendance_maintenance.sql:93: GRANT SELECT, INSERT, UPDATE ON public.attendance_payments TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.attendance_employees TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_records TO anon, authenticated;
+ >> GRANT SELECT, INSERT, UPDATE ON public.attendance_payments TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.payment_allocations TO anon, authenticated;
+    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+    
+
+supabase-backup\migrations\008_attendance_maintenance.sql:94: GRANT SELECT, INSERT, UPDATE ON public.payment_allocations TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_records TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_payments TO anon, authenticated;
+ >> GRANT SELECT, INSERT, UPDATE ON public.payment_allocations TO anon, authenticated;
+    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+    
+    CREATE OR REPLACE FUNCTION public.process_attendance_payment(
+
+supabase-backup\migrations\008_attendance_maintenance.sql:95: GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_payments TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.payment_allocations TO anon, authenticated;
+ >> GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+    
+    CREATE OR REPLACE FUNCTION public.process_attendance_payment(
+    p_employee_id BIGINT,
+
+supabase-backup\migrations\008_attendance_maintenance.sql:97: CREATE OR REPLACE FUNCTION public.process_attendance_payment(
+    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+    
+ >> CREATE OR REPLACE FUNCTION public.process_attendance_payment(
+    p_employee_id BIGINT,
+    p_amount NUMERIC,
+    p_payment_date DATE,
+
+supabase-backup\migrations\008_attendance_maintenance.sql:107: SECURITY DEFINER SET search_path = public
+    RETURNS BIGINT
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    DECLARE
+    v_payment_id BIGINT;
+
+supabase-backup\migrations\008_attendance_maintenance.sql:127: JOIN attendance_payments ap ON ap.id = pa.payment_id
+    SELECT SUM(pa.allocated_amount)
+    FROM payment_allocations pa
+ >> JOIN attendance_payments ap ON ap.id = pa.payment_id
+    WHERE ap.employee_id = p_employee_id AND ap.status = 'completed'
+    ), 0)
+    INTO v_outstanding
+
+supabase-backup\migrations\008_attendance_maintenance.sql:137: INSERT INTO attendance_payments(employee_id, amount, payment_date, payment_method, note, created_by)
+    IF v_remaining > v_outstanding THEN RAISE EXCEPTION 'PAYMENT_EXCEEDS_OUTSTANDING'; END IF;
+    
+ >> INSERT INTO attendance_payments(employee_id, amount, payment_date, payment_method, note, created_by)
+    VALUES (p_employee_id, v_remaining, COALESCE(p_payment_date, CURRENT_DATE), COALESCE(p_payment_method, 'cash'), p_note, p_created_by)
+    RETURNING id INTO v_payment_id;
+    
+
+supabase-backup\migrations\008_attendance_maintenance.sql:144: JOIN attendance_payments ap ON ap.id = pa.payment_id
+    SELECT ar.id, ar.earned_amount,
+    COALESCE((SELECT SUM(pa.allocated_amount) FROM payment_allocations pa
+ >> JOIN attendance_payments ap ON ap.id = pa.payment_id
+    WHERE pa.attendance_id = ar.id AND ap.status = 'completed'), 0) AS paid
+    FROM attendance_records ar
+    WHERE ar.employee_id = p_employee_id AND ar.approval_status = 'approved'
+
+supabase-backup\migrations\008_attendance_maintenance.sql:165: CREATE OR REPLACE FUNCTION public.reverse_attendance_payment(p_payment_id BIGINT, p_reversed_by BIGINT)
+    $$;
+    
+ >> CREATE OR REPLACE FUNCTION public.reverse_attendance_payment(p_payment_id BIGINT, p_reversed_by BIGINT)
+    RETURNS VOID
+    LANGUAGE plpgsql
+    SECURITY DEFINER SET search_path = public
+
+supabase-backup\migrations\008_attendance_maintenance.sql:168: SECURITY DEFINER SET search_path = public
+    RETURNS VOID
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    UPDATE attendance_payments
+
+supabase-backup\migrations\008_attendance_maintenance.sql:171: UPDATE attendance_payments
+    AS $$
+    BEGIN
+ >> UPDATE attendance_payments
+    SET status = 'reversed', reversed_at = NOW(), reversed_by = p_reversed_by
+    WHERE id = p_payment_id AND status = 'completed';
+    IF NOT FOUND THEN RAISE EXCEPTION 'PAYMENT_NOT_FOUND_OR_ALREADY_REVERSED'; END IF;
+
+supabase-backup\migrations\008_attendance_maintenance.sql:178: GRANT EXECUTE ON FUNCTION public.process_attendance_payment(BIGINT, NUMERIC, DATE, TEXT, TEXT, BIGINT) TO anon, authenticated;
+    $$;
+    
+ >> GRANT EXECUTE ON FUNCTION public.process_attendance_payment(BIGINT, NUMERIC, DATE, TEXT, TEXT, BIGINT) TO anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.reverse_attendance_payment(BIGINT, BIGINT) TO anon, authenticated;
+    
+    CREATE OR REPLACE VIEW public.attendance_payment_summary AS
+
+supabase-backup\migrations\008_attendance_maintenance.sql:179: GRANT EXECUTE ON FUNCTION public.reverse_attendance_payment(BIGINT, BIGINT) TO anon, authenticated;
+    
+    GRANT EXECUTE ON FUNCTION public.process_attendance_payment(BIGINT, NUMERIC, DATE, TEXT, TEXT, BIGINT) TO anon, authenticated;
+ >> GRANT EXECUTE ON FUNCTION public.reverse_attendance_payment(BIGINT, BIGINT) TO anon, authenticated;
+    
+    CREATE OR REPLACE VIEW public.attendance_payment_summary AS
+    SELECT
+
+supabase-backup\migrations\008_attendance_maintenance.sql:200: LEFT JOIN attendance_payments ap ON ap.id = pa.payment_id
+    FROM attendance_records ar
+    LEFT JOIN payment_allocations pa ON pa.attendance_id = ar.id
+ >> LEFT JOIN attendance_payments ap ON ap.id = pa.payment_id
+    GROUP BY ar.id;
+    GRANT SELECT ON public.attendance_payment_summary TO anon, authenticated;
+
+supabase-backup\migrations\008_attendance_maintenance.sql:202: GRANT SELECT ON public.attendance_payment_summary TO anon, authenticated;
+    LEFT JOIN attendance_payments ap ON ap.id = pa.payment_id
+    GROUP BY ar.id;
+ >> GRANT SELECT ON public.attendance_payment_summary TO anon, authenticated;
+
+supabase-backup\migrations\010_attendance_write_repair.sql:5: ALTER TABLE public.attendance_employees DISABLE ROW LEVEL SECURITY;
+    -- must not require an auth.uid() policy.
+    
+ >> ALTER TABLE public.attendance_employees DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.attendance_records DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.attendance_payments DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.payment_allocations DISABLE ROW LEVEL SECURITY;
+
+supabase-backup\migrations\010_attendance_write_repair.sql:6: ALTER TABLE public.attendance_records DISABLE ROW LEVEL SECURITY;
+    
+    ALTER TABLE public.attendance_employees DISABLE ROW LEVEL SECURITY;
+ >> ALTER TABLE public.attendance_records DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.attendance_payments DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.payment_allocations DISABLE ROW LEVEL SECURITY;
+    
+
+supabase-backup\migrations\010_attendance_write_repair.sql:7: ALTER TABLE public.attendance_payments DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.attendance_employees DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.attendance_records DISABLE ROW LEVEL SECURITY;
+ >> ALTER TABLE public.attendance_payments DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.payment_allocations DISABLE ROW LEVEL SECURITY;
+    
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.attendance_employees TO anon, authenticated;
+
+supabase-backup\migrations\010_attendance_write_repair.sql:8: ALTER TABLE public.payment_allocations DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.attendance_records DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.attendance_payments DISABLE ROW LEVEL SECURITY;
+ >> ALTER TABLE public.payment_allocations DISABLE ROW LEVEL SECURITY;
+    
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.attendance_employees TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_records TO anon, authenticated;
+
+supabase-backup\migrations\010_attendance_write_repair.sql:10: GRANT SELECT, INSERT, UPDATE, DELETE ON public.attendance_employees TO anon, authenticated;
+    ALTER TABLE public.payment_allocations DISABLE ROW LEVEL SECURITY;
+    
+ >> GRANT SELECT, INSERT, UPDATE, DELETE ON public.attendance_employees TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_records TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_payments TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.payment_allocations TO anon, authenticated;
+
+supabase-backup\migrations\010_attendance_write_repair.sql:11: GRANT SELECT, INSERT, UPDATE ON public.attendance_records TO anon, authenticated;
+    
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.attendance_employees TO anon, authenticated;
+ >> GRANT SELECT, INSERT, UPDATE ON public.attendance_records TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_payments TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.payment_allocations TO anon, authenticated;
+    
+
+supabase-backup\migrations\010_attendance_write_repair.sql:12: GRANT SELECT, INSERT, UPDATE ON public.attendance_payments TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.attendance_employees TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_records TO anon, authenticated;
+ >> GRANT SELECT, INSERT, UPDATE ON public.attendance_payments TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.payment_allocations TO anon, authenticated;
+    
+    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+
+supabase-backup\migrations\010_attendance_write_repair.sql:13: GRANT SELECT, INSERT, UPDATE ON public.payment_allocations TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_records TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.attendance_payments TO anon, authenticated;
+ >> GRANT SELECT, INSERT, UPDATE ON public.payment_allocations TO anon, authenticated;
+    
+    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+    
+
+supabase-backup\migrations\010_attendance_write_repair.sql:15: GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+    GRANT SELECT, INSERT, UPDATE ON public.payment_allocations TO anon, authenticated;
+    
+ >> GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+    
+    SELECT relname AS table_name, relrowsecurity AS row_level_security_enabled
+    FROM pg_class
+
+supabase-backup\migrations\010_attendance_write_repair.sql:20: AND relname IN ('attendance_employees', 'attendance_records', 'attendance_payments', 'payment_allocations')
+    FROM pg_class
+    WHERE relnamespace = 'public'::regnamespace
+ >> AND relname IN ('attendance_employees', 'attendance_records', 'attendance_payments', 'payment_allocations')
+    ORDER BY relname;
+
+supabase-backup\migrations\011_denied_attendance_totals_repair.sql:23: LEFT JOIN public.attendance_payments ap ON ap.id = pa.payment_id
+    FROM public.attendance_records ar
+    LEFT JOIN public.payment_allocations pa ON pa.attendance_id = ar.id
+ >> LEFT JOIN public.attendance_payments ap ON ap.id = pa.payment_id
+    GROUP BY ar.id;
+    
+    GRANT SELECT ON public.attendance_payment_summary TO anon, authenticated;
+
+supabase-backup\migrations\011_denied_attendance_totals_repair.sql:26: GRANT SELECT ON public.attendance_payment_summary TO anon, authenticated;
+    GROUP BY ar.id;
+    
+ >> GRANT SELECT ON public.attendance_payment_summary TO anon, authenticated;
+    
+    SELECT attendance_id, approval_status, earned_amount, paid_amount, outstanding_amount
+    FROM public.attendance_payment_summary
+
+supabase-backup\migrations\012_attendance_admins_and_details.sql:47: LEFT JOIN public.attendance_payments ap ON ap.id = pa.payment_id
+    FROM public.attendance_records ar
+    LEFT JOIN public.payment_allocations pa ON pa.attendance_id = ar.id
+ >> LEFT JOIN public.attendance_payments ap ON ap.id = pa.payment_id
+    LEFT JOIN public.users approver ON approver.id = ar.approved_by
+    GROUP BY ar.id, approver.display_name;
+    
+
+supabase-backup\migrations\012_attendance_admins_and_details.sql:51: GRANT SELECT ON public.attendance_payment_summary TO anon, authenticated;
+    GROUP BY ar.id, approver.display_name;
+    
+ >> GRANT SELECT ON public.attendance_payment_summary TO anon, authenticated;
+    
+    SELECT id, username, display_name, role, is_active
+    FROM public.users
+
+supabase-backup\migrations\013_attendance_view_type_repair.sql:28: LEFT JOIN public.attendance_payments ap ON ap.id = pa.payment_id
+    FROM public.attendance_records ar
+    LEFT JOIN public.payment_allocations pa ON pa.attendance_id = ar.id
+ >> LEFT JOIN public.attendance_payments ap ON ap.id = pa.payment_id
+    LEFT JOIN public.users approver ON approver.id = ar.approved_by
+    GROUP BY ar.id, approver.display_name;
+    
+
+supabase-backup\migrations\013_attendance_view_type_repair.sql:32: GRANT SELECT ON public.attendance_payment_summary TO anon, authenticated;
+    GROUP BY ar.id, approver.display_name;
+    
+ >> GRANT SELECT ON public.attendance_payment_summary TO anon, authenticated;
+    
+    SELECT attendance_id, approval_status, note, approved_by_name, earned_amount, paid_amount, outstanding_amount
+    FROM public.attendance_payment_summary
+
+supabase-backup\migrations\015_attendance_report_details.sql:23: LEFT JOIN public.attendance_payments ap ON ap.id = pa.payment_id
+    FROM public.attendance_records ar
+    LEFT JOIN public.payment_allocations pa ON pa.attendance_id = ar.id
+ >> LEFT JOIN public.attendance_payments ap ON ap.id = pa.payment_id
+    LEFT JOIN public.users approver ON approver.id = ar.approved_by
+    GROUP BY ar.id, approver.display_name;
+    
+
+supabase-backup\migrations\015_attendance_report_details.sql:27: GRANT SELECT ON public.attendance_payment_summary TO anon, authenticated;
+    GROUP BY ar.id, approver.display_name;
+    
+ >> GRANT SELECT ON public.attendance_payment_summary TO anon, authenticated;
+
+supabase-backup\migrations\016_attendance_auto_friends.sql:11: CREATE OR REPLACE FUNCTION public.auto_accept_attendance_friendship()
+    ON CONFLICT (requester_id, addressee_id) DO UPDATE SET status = 'accepted', updated_at = NOW();
+    
+ >> CREATE OR REPLACE FUNCTION public.auto_accept_attendance_friendship()
+    RETURNS TRIGGER
+    LANGUAGE plpgsql
+    SECURITY DEFINER SET search_path = public
+
+supabase-backup\migrations\016_attendance_auto_friends.sql:14: SECURITY DEFINER SET search_path = public
+    RETURNS TRIGGER
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER SET search_path = public
+    AS $$
+    BEGIN
+    IF NEW.user_id IS NOT NULL THEN
+
+supabase-backup\migrations\016_attendance_auto_friends.sql:33: GRANT EXECUTE ON FUNCTION public.auto_accept_attendance_friendship() TO anon, authenticated;
+    FOR EACH ROW EXECUTE FUNCTION public.auto_accept_attendance_friendship();
+    
+ >> GRANT EXECUTE ON FUNCTION public.auto_accept_attendance_friendship() TO anon, authenticated;
+
+supabase-backup\migrations\017_daily_announcements.sql:14: ALTER TABLE public.daily_announcements DISABLE ROW LEVEL SECURITY;
+    ON public.daily_announcements (expires_at DESC);
+    
+ >> ALTER TABLE public.daily_announcements DISABLE ROW LEVEL SECURITY;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.daily_announcements TO anon, authenticated;
+    
+    CREATE OR REPLACE FUNCTION public.publish_daily_announcement(
+
+supabase-backup\migrations\017_daily_announcements.sql:15: GRANT SELECT, INSERT, UPDATE, DELETE ON public.daily_announcements TO anon, authenticated;
+    
+    ALTER TABLE public.daily_announcements DISABLE ROW LEVEL SECURITY;
+ >> GRANT SELECT, INSERT, UPDATE, DELETE ON public.daily_announcements TO anon, authenticated;
+    
+    CREATE OR REPLACE FUNCTION public.publish_daily_announcement(
+    p_message TEXT,
+
+supabase-backup\migrations\017_daily_announcements.sql:17: CREATE OR REPLACE FUNCTION public.publish_daily_announcement(
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.daily_announcements TO anon, authenticated;
+    
+ >> CREATE OR REPLACE FUNCTION public.publish_daily_announcement(
+    p_message TEXT,
+    p_posted_by BIGINT
+    )
+
+supabase-backup\migrations\017_daily_announcements.sql:23: SECURITY DEFINER
+    RETURNS public.daily_announcements
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER
+    SET search_path = public
+    AS $$
+    DECLARE
+
+supabase-backup\migrations\017_daily_announcements.sql:61: GRANT EXECUTE ON FUNCTION public.publish_daily_announcement(TEXT, BIGINT) TO anon, authenticated;
+    $$;
+    
+ >> GRANT EXECUTE ON FUNCTION public.publish_daily_announcement(TEXT, BIGINT) TO anon, authenticated;
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:4: CREATE OR REPLACE FUNCTION public.reconcile_attendance_employee(p_employee_id BIGINT)
+    -- Run after migration 017.
+    
+ >> CREATE OR REPLACE FUNCTION public.reconcile_attendance_employee(p_employee_id BIGINT)
+    RETURNS VOID
+    LANGUAGE plpgsql
+    SECURITY DEFINER
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:7: SECURITY DEFINER
+    RETURNS VOID
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER
+    SET search_path = public
+    AS $$
+    DECLARE
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:19: USING public.attendance_payments ap
+    -- Rebuild FIFO allocations so an earlier advance automatically covers later approved work.
+    DELETE FROM public.payment_allocations pa
+ >> USING public.attendance_payments ap
+    WHERE pa.payment_id = ap.id AND ap.employee_id = p_employee_id;
+    
+    FOR v_record IN
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:31: FROM public.attendance_payments
+    FOR v_payment IN
+    SELECT id, amount
+ >> FROM public.attendance_payments
+    WHERE employee_id = p_employee_id AND status = 'completed'
+    ORDER BY payment_date, id
+    LOOP
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:51: CREATE OR REPLACE FUNCTION public.process_attendance_payment(
+    $$;
+    
+ >> CREATE OR REPLACE FUNCTION public.process_attendance_payment(
+    p_employee_id BIGINT,
+    p_amount NUMERIC,
+    p_payment_date DATE,
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:61: SECURITY DEFINER
+    RETURNS BIGINT
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER
+    SET search_path = public
+    AS $$
+    DECLARE
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:71: INSERT INTO public.attendance_payments(employee_id, amount, payment_date, payment_method, note, created_by)
+    IF NOT FOUND THEN RAISE EXCEPTION 'EMPLOYEE_NOT_FOUND'; END IF;
+    
+ >> INSERT INTO public.attendance_payments(employee_id, amount, payment_date, payment_method, note, created_by)
+    VALUES (p_employee_id, ROUND(p_amount, 2), COALESCE(p_payment_date, CURRENT_DATE), COALESCE(p_payment_method, 'cash'), p_note, p_created_by)
+    RETURNING id INTO v_payment_id;
+    
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:80: CREATE OR REPLACE FUNCTION public.reverse_attendance_payment(p_payment_id BIGINT, p_reversed_by BIGINT)
+    $$;
+    
+ >> CREATE OR REPLACE FUNCTION public.reverse_attendance_payment(p_payment_id BIGINT, p_reversed_by BIGINT)
+    RETURNS VOID
+    LANGUAGE plpgsql
+    SECURITY DEFINER
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:83: SECURITY DEFINER
+    RETURNS VOID
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER
+    SET search_path = public
+    AS $$
+    DECLARE v_employee_id BIGINT;
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:88: UPDATE public.attendance_payments
+    DECLARE v_employee_id BIGINT;
+    BEGIN
+ >> UPDATE public.attendance_payments
+    SET status = 'reversed', reversed_at = NOW(), reversed_by = p_reversed_by
+    WHERE id = p_payment_id AND status = 'completed'
+    RETURNING employee_id INTO v_employee_id;
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:97: CREATE OR REPLACE FUNCTION public.update_attendance_approval(
+    $$;
+    
+ >> CREATE OR REPLACE FUNCTION public.update_attendance_approval(
+    p_attendance_id BIGINT,
+    p_status TEXT,
+    p_admin_id BIGINT
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:104: SECURITY DEFINER
+    RETURNS VOID
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER
+    SET search_path = public
+    AS $$
+    DECLARE v_employee_id BIGINT;
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:119: CREATE OR REPLACE FUNCTION public.submit_bulk_attendance(
+    $$;
+    
+ >> CREATE OR REPLACE FUNCTION public.submit_bulk_attendance(
+    p_employee_ids BIGINT[],
+    p_attendance_date DATE,
+    p_attendance_type TEXT,
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:129: SECURITY DEFINER
+    RETURNS INTEGER
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER
+    SET search_path = public
+    AS $$
+    DECLARE v_count INTEGER;
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:156: GRANT EXECUTE ON FUNCTION public.reconcile_attendance_employee(BIGINT) TO anon, authenticated;
+    $$;
+    
+ >> GRANT EXECUTE ON FUNCTION public.reconcile_attendance_employee(BIGINT) TO anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.process_attendance_payment(BIGINT, NUMERIC, DATE, TEXT, TEXT, BIGINT) TO anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.reverse_attendance_payment(BIGINT, BIGINT) TO anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.update_attendance_approval(BIGINT, TEXT, BIGINT) TO anon, authenticated;
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:157: GRANT EXECUTE ON FUNCTION public.process_attendance_payment(BIGINT, NUMERIC, DATE, TEXT, TEXT, BIGINT) TO anon, authenticated;
+    
+    GRANT EXECUTE ON FUNCTION public.reconcile_attendance_employee(BIGINT) TO anon, authenticated;
+ >> GRANT EXECUTE ON FUNCTION public.process_attendance_payment(BIGINT, NUMERIC, DATE, TEXT, TEXT, BIGINT) TO anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.reverse_attendance_payment(BIGINT, BIGINT) TO anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.update_attendance_approval(BIGINT, TEXT, BIGINT) TO anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.submit_bulk_attendance(BIGINT[], DATE, TEXT, TEXT, NUMERIC, BIGINT) TO anon, authenticated;
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:158: GRANT EXECUTE ON FUNCTION public.reverse_attendance_payment(BIGINT, BIGINT) TO anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.reconcile_attendance_employee(BIGINT) TO anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.process_attendance_payment(BIGINT, NUMERIC, DATE, TEXT, TEXT, BIGINT) TO anon, authenticated;
+ >> GRANT EXECUTE ON FUNCTION public.reverse_attendance_payment(BIGINT, BIGINT) TO anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.update_attendance_approval(BIGINT, TEXT, BIGINT) TO anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.submit_bulk_attendance(BIGINT[], DATE, TEXT, TEXT, NUMERIC, BIGINT) TO anon, authenticated;
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:159: GRANT EXECUTE ON FUNCTION public.update_attendance_approval(BIGINT, TEXT, BIGINT) TO anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.process_attendance_payment(BIGINT, NUMERIC, DATE, TEXT, TEXT, BIGINT) TO anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.reverse_attendance_payment(BIGINT, BIGINT) TO anon, authenticated;
+ >> GRANT EXECUTE ON FUNCTION public.update_attendance_approval(BIGINT, TEXT, BIGINT) TO anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.submit_bulk_attendance(BIGINT[], DATE, TEXT, TEXT, NUMERIC, BIGINT) TO anon, authenticated;
+
+supabase-backup\migrations\018_bulk_attendance_and_advances.sql:160: GRANT EXECUTE ON FUNCTION public.submit_bulk_attendance(BIGINT[], DATE, TEXT, TEXT, NUMERIC, BIGINT) TO anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.reverse_attendance_payment(BIGINT, BIGINT) TO anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.update_attendance_approval(BIGINT, TEXT, BIGINT) TO anon, authenticated;
+ >> GRANT EXECUTE ON FUNCTION public.submit_bulk_attendance(BIGINT[], DATE, TEXT, TEXT, NUMERIC, BIGINT) TO anon, authenticated;
+
+supabase-backup\migrations\019_missed_attendance_range.sql:4: CREATE OR REPLACE FUNCTION public.submit_attendance_range(
+    -- Run after migration 018.
+    
+ >> CREATE OR REPLACE FUNCTION public.submit_attendance_range(
+    p_employee_ids BIGINT[],
+    p_start_date DATE,
+    p_end_date DATE,
+
+supabase-backup\migrations\019_missed_attendance_range.sql:15: SECURITY DEFINER
+    RETURNS INTEGER
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER
+    SET search_path = public
+    AS $$
+    DECLARE
+
+supabase-backup\migrations\019_missed_attendance_range.sql:61: GRANT EXECUTE ON FUNCTION public.submit_attendance_range(BIGINT[], DATE, DATE, TEXT, TEXT, NUMERIC, BIGINT) TO anon, authenticated;
+    $$;
+    
+ >> GRANT EXECUTE ON FUNCTION public.submit_attendance_range(BIGINT[], DATE, DATE, TEXT, TEXT, NUMERIC, BIGINT) TO anon, authenticated;
+
+supabase-backup\migrations\020_finance_foundation.sql:101: -- during this foundation phase. Existing attendance_payments
+    --
+    -- Employee wage payments are intentionally NOT inserted here
+ >> -- during this foundation phase. Existing attendance_payments
+    -- remain the source of truth for employee wage payments.
+    --
+    -- ============================================================
+
+supabase-backup\migrations\020_finance_foundation.sql:388: ALTER TABLE public.finance_accounts DISABLE ROW LEVEL SECURITY;
+    -- ============================================================
+    
+ >> ALTER TABLE public.finance_accounts DISABLE ROW LEVEL SECURITY;
+    
+    ALTER TABLE public.finance_partners DISABLE ROW LEVEL SECURITY;
+    
+
+supabase-backup\migrations\020_finance_foundation.sql:390: ALTER TABLE public.finance_partners DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.finance_accounts DISABLE ROW LEVEL SECURITY;
+    
+ >> ALTER TABLE public.finance_partners DISABLE ROW LEVEL SECURITY;
+    
+    ALTER TABLE public.finance_transactions DISABLE ROW LEVEL SECURITY;
+    
+
+supabase-backup\migrations\020_finance_foundation.sql:392: ALTER TABLE public.finance_transactions DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.finance_partners DISABLE ROW LEVEL SECURITY;
+    
+ >> ALTER TABLE public.finance_transactions DISABLE ROW LEVEL SECURITY;
+    
+    GRANT SELECT, INSERT, UPDATE, DELETE
+    ON public.finance_accounts
+
+supabase-backup\migrations\020_finance_foundation_ready.sql:101: -- during this foundation phase. Existing attendance_payments
+    --
+    -- Employee wage payments are intentionally NOT inserted here
+ >> -- during this foundation phase. Existing attendance_payments
+    -- remain the source of truth for employee wage payments.
+    --
+    -- ============================================================
+
+supabase-backup\migrations\020_finance_foundation_ready.sql:388: ALTER TABLE public.finance_accounts DISABLE ROW LEVEL SECURITY;
+    -- ============================================================
+    
+ >> ALTER TABLE public.finance_accounts DISABLE ROW LEVEL SECURITY;
+    
+    ALTER TABLE public.finance_partners DISABLE ROW LEVEL SECURITY;
+    
+
+supabase-backup\migrations\020_finance_foundation_ready.sql:390: ALTER TABLE public.finance_partners DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.finance_accounts DISABLE ROW LEVEL SECURITY;
+    
+ >> ALTER TABLE public.finance_partners DISABLE ROW LEVEL SECURITY;
+    
+    ALTER TABLE public.finance_transactions DISABLE ROW LEVEL SECURITY;
+    
+
+supabase-backup\migrations\020_finance_foundation_ready.sql:392: ALTER TABLE public.finance_transactions DISABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.finance_partners DISABLE ROW LEVEL SECURITY;
+    
+ >> ALTER TABLE public.finance_transactions DISABLE ROW LEVEL SECURITY;
+    
+    GRANT SELECT, INSERT, UPDATE, DELETE
+    ON public.finance_accounts
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:27: AND t.relname = 'firm_finance_transactions'
+    ON n.oid = t.relnamespace
+    WHERE n.nspname = 'public'
+ >> AND t.relname = 'firm_finance_transactions'
+    AND c.conname = 'firm_finance_transaction_type_check'
+    ) THEN
+    
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:31: ALTER TABLE public.firm_finance_transactions
+    ) THEN
+    
+ >> ALTER TABLE public.firm_finance_transactions
+    DROP CONSTRAINT firm_finance_transaction_type_check;
+    
+    END IF;
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:36: ALTER TABLE public.firm_finance_transactions
+    END IF;
+    
+ >> ALTER TABLE public.firm_finance_transactions
+    ADD CONSTRAINT firm_finance_transaction_type_check
+    CHECK (
+    transaction_type IN (
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:54: public.firm_finance_transactions
+    
+    AUTHORITATIVE FIRM CASH:
+ >> public.firm_finance_transactions
+    
+    Rules:
+    
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:87: CREATE OR REPLACE FUNCTION public.record_partner_paid_firm_expense(
+    -- ------------------------------------------------------------
+    
+ >> CREATE OR REPLACE FUNCTION public.record_partner_paid_firm_expense(
+    p_partner_id BIGINT,
+    p_category TEXT,
+    p_amount NUMERIC,
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:102: SECURITY DEFINER
+    )
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER
+    SET search_path = public
+    AS $function$
+    
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:133: LOCK TABLE public.firm_finance_transactions
+    END IF;
+    
+ >> LOCK TABLE public.firm_finance_transactions
+    IN SHARE ROW EXCLUSIVE MODE;
+    
+    -- This is a FIRM EXPENSE but NOT a cash-out.
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:139: INSERT INTO public.firm_finance_transactions
+    -- Therefore it must not reduce available firm cash.
+    
+ >> INSERT INTO public.firm_finance_transactions
+    (
+    transaction_date,
+    transaction_type,
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:173: INSERT INTO public.partner_finance_transactions
+    INTO v_firm_transaction_id;
+    
+ >> INSERT INTO public.partner_finance_transactions
+    (
+    partner_id,
+    transaction_date,
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:220: FROM public.partner_finance_transactions
+    )
+    INTO v_partner_outstanding
+ >> FROM public.partner_finance_transactions
+    WHERE partner_id = p_partner_id;
+    
+    RETURN QUERY
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:237: CREATE OR REPLACE FUNCTION public.repay_partner_from_firm(
+    -- ------------------------------------------------------------
+    
+ >> CREATE OR REPLACE FUNCTION public.repay_partner_from_firm(
+    p_partner_id BIGINT,
+    p_amount NUMERIC,
+    p_transaction_date DATE DEFAULT CURRENT_DATE,
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:252: SECURITY DEFINER
+    )
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER
+    SET search_path = public
+    AS $function$
+    
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:292: LOCK TABLE public.firm_finance_transactions
+    END IF;
+    
+ >> LOCK TABLE public.firm_finance_transactions
+    IN SHARE ROW EXCLUSIVE MODE;
+    
+    SELECT COALESCE(
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:310: FROM public.firm_finance_transactions;
+    )
+    INTO v_firm_balance
+ >> FROM public.firm_finance_transactions;
+    
+    SELECT COALESCE(
+    SUM(
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:331: FROM public.partner_finance_transactions
+    )
+    INTO v_partner_outstanding
+ >> FROM public.partner_finance_transactions
+    WHERE partner_id = p_partner_id;
+    
+    IF p_amount > v_firm_balance THEN
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:360: INSERT INTO public.firm_finance_transactions
+    END IF;
+    
+ >> INSERT INTO public.firm_finance_transactions
+    (
+    transaction_date,
+    transaction_type,
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:394: INSERT INTO public.partner_finance_transactions
+    INTO v_firm_transaction_id;
+    
+ >> INSERT INTO public.partner_finance_transactions
+    (
+    partner_id,
+    transaction_date,
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:437: FROM public.firm_finance_transactions;
+    )
+    INTO v_firm_balance
+ >> FROM public.firm_finance_transactions;
+    
+    SELECT COALESCE(
+    SUM(
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:458: FROM public.partner_finance_transactions
+    )
+    INTO v_partner_outstanding
+ >> FROM public.partner_finance_transactions
+    WHERE partner_id = p_partner_id;
+    
+    RETURN QUERY
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:476: CREATE OR REPLACE FUNCTION public.get_firm_finance_dashboard()
+    -- ------------------------------------------------------------
+    
+ >> CREATE OR REPLACE FUNCTION public.get_firm_finance_dashboard()
+    RETURNS TABLE (
+    firm_balance NUMERIC,
+    total_money_in NUMERIC,
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:485: SECURITY DEFINER
+    )
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER
+    SET search_path = public
+    AS $function$
+    BEGIN
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:546: FROM public.firm_finance_transactions;
+    COUNT(*)::BIGINT AS transaction_count
+    
+ >> FROM public.firm_finance_transactions;
+    
+    END;
+    $function$;
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:556: CREATE OR REPLACE FUNCTION public.record_firm_money_in(
+    -- ------------------------------------------------------------
+    
+ >> CREATE OR REPLACE FUNCTION public.record_firm_money_in(
+    p_category TEXT,
+    p_amount NUMERIC,
+    p_transaction_date DATE DEFAULT CURRENT_DATE,
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:569: SECURITY DEFINER
+    )
+    LANGUAGE plpgsql
+ >> SECURITY DEFINER
+    SET search_path = public
+    AS $function$
+    
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:586: LOCK TABLE public.firm_finance_transactions
+    END IF;
+    
+ >> LOCK TABLE public.firm_finance_transactions
+    IN SHARE ROW EXCLUSIVE MODE;
+    
+    INSERT INTO public.firm_finance_transactions
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:589: INSERT INTO public.firm_finance_transactions
+    IN SHARE ROW EXCLUSIVE MODE;
+    
+ >> INSERT INTO public.firm_finance_transactions
+    (
+    transaction_date,
+    transaction_type,
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:635: FROM public.firm_finance_transactions;
+    )
+    INTO v_balance
+ >> FROM public.firm_finance_transactions;
+    
+    RETURN QUERY
+    SELECT v_id, v_balance;
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:651: GRANT EXECUTE ON FUNCTION public.record_firm_money_in(
+    TO authenticated;
+    
+ >> GRANT EXECUTE ON FUNCTION public.record_firm_money_in(
+    TEXT,
+    NUMERIC,
+    DATE,
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:661: GRANT EXECUTE ON FUNCTION public.record_partner_paid_firm_expense(
+    TO authenticated;
+    
+ >> GRANT EXECUTE ON FUNCTION public.record_partner_paid_firm_expense(
+    BIGINT,
+    TEXT,
+    NUMERIC,
+
+supabase-backup\migrations\021_finance_cash_partner_atomic.sql:672: GRANT EXECUTE ON FUNCTION public.repay_partner_from_firm(
+    TO authenticated;
+    
+ >> GRANT EXECUTE ON FUNCTION public.repay_partner_from_firm(
+    BIGINT,
+    NUMERIC,
+    DATE,
+
+supabase-backup\migrations\021_monthly_finance_foundation.sql:10: ALTER TABLE public.partner_finance_transactions
+    -- ============================================================
+    
+ >> ALTER TABLE public.partner_finance_transactions
+    ADD COLUMN IF NOT EXISTS transaction_month date
+    GENERATED ALWAYS AS (
+    transaction_date
+
+supabase-backup\migrations\021_monthly_finance_foundation.sql:19: idx_partner_finance_transactions_month
+    
+    CREATE INDEX IF NOT EXISTS
+ >> idx_partner_finance_transactions_month
+    ON public.partner_finance_transactions(
+    transaction_month,
+    transaction_date DESC
+
+supabase-backup\migrations\021_monthly_finance_foundation.sql:20: ON public.partner_finance_transactions(
+    CREATE INDEX IF NOT EXISTS
+    idx_partner_finance_transactions_month
+ >> ON public.partner_finance_transactions(
+    transaction_month,
+    transaction_date DESC
+    );
+
+supabase-backup\migrations\021_monthly_finance_foundation.sql:27: idx_partner_finance_transactions_partner_month
+    
+    CREATE INDEX IF NOT EXISTS
+ >> idx_partner_finance_transactions_partner_month
+    ON public.partner_finance_transactions(
+    partner_id,
+    transaction_month,
+
+supabase-backup\migrations\021_monthly_finance_foundation.sql:28: ON public.partner_finance_transactions(
+    CREATE INDEX IF NOT EXISTS
+    idx_partner_finance_transactions_partner_month
+ >> ON public.partner_finance_transactions(
+    partner_id,
+    transaction_month,
+    transaction_date DESC
+
+supabase-backup\migrations\021_monthly_finance_foundation.sql:112: LEFT JOIN public.partner_finance_transactions t
+    FROM public.partner_master p
+    
+ >> LEFT JOIN public.partner_finance_transactions t
+    ON t.partner_id = p.id
+    
+    GROUP BY
+
+supabase-backup\migrations\022_partner_monthly_running_balance.sql:78: FROM public.partner_finance_transactions
+    )::numeric(14,2) AS net_change
+    
+ >> FROM public.partner_finance_transactions
+    
+    GROUP BY
+    partner_id,
+
+==========================================================================================
+5. ROUTING, LOGIN, AND SESSION REFERENCES
+==========================================================================================
+
+src\app\app.html:60: (click)="logout()"
+    type="button"
+    class="icon-button"
+ >> (click)="logout()"
+    aria-label="Sign out"
+    title="Sign out"
+    >&#8618;</button>
+
+src\app\app.ts:20: AttendanceService,
+    import {
+    AttendanceRecord,
+ >> AttendanceService,
+    DailyAnnouncement,
+    Employee,
+    Payment,
+
+src\app\app.ts:63: private readonly attendance = inject(AttendanceService);
+    })
+    export class App implements OnInit {
+ >> private readonly attendance = inject(AttendanceService);
+    private readonly router = inject(Router);
+    private readonly notifications = inject(NotificationService);
+    
+
+src\app\app.ts:74: this.attendance.getSession()
+    
+    readonly session = signal<SessionUser | null>(
+ >> this.attendance.getSession()
+    );
+    
+    readonly employees = signal<Employee[]>([]);
+
+src\app\app.ts:249: logout(): void {
+    }
+    
+ >> logout(): void {
+    this.notifications.unsubscribe();
+    this.notifications.notifications.set([]);
+    this.notifications.unreadCount.set(0);
+
+src\app\app.ts:255: this.attendance.logout();
+    this.notifications.initializedUserId.set(null);
+    
+ >> this.attendance.logout();
+    
+    this.session.set(null);
+    this.tab.set('overview');
+
+src\app\features\approvals\approvals\approvals.ts:5: AttendanceService,
+    import {
+    AttendanceRecord,
+ >> AttendanceService,
+    Employee
+    } from '../../../services/attendance.service';
+    
+
+src\app\features\approvals\approvals\approvals.ts:16: private readonly attendance = inject(AttendanceService);
+    })
+    export class ApprovalsComponent {
+ >> private readonly attendance = inject(AttendanceService);
+    
+    @Input() records: AttendanceRecord[] = [];
+    @Input() employees: Employee[] = [];
+
+src\app\features\approvals\approvals\approvals.ts:52: const user = this.attendance.getSession();
+    }
+    
+ >> const user = this.attendance.getSession();
+    
+    if (!user) {
+    this.error.set('Your session has expired. Please log in again.');
+
+src\app\features\attendance\attendance\attendance.ts:7: AttendanceService,
+    import {
+    AttendanceRecord,
+ >> AttendanceService,
+    AttendanceType,
+    Employee,
+    Payment,
+
+src\app\features\attendance\attendance\attendance.ts:21: private readonly attendance = inject(AttendanceService);
+    })
+    export class AttendanceComponent implements OnInit {
+ >> private readonly attendance = inject(AttendanceService);
+    
+    readonly session = signal<SessionUser | null>(
+    this.attendance.getSession()
+
+src\app\features\attendance\attendance\attendance.ts:24: this.attendance.getSession()
+    
+    readonly session = signal<SessionUser | null>(
+ >> this.attendance.getSession()
+    );
+    
+    readonly employees = signal<Employee[]>([]);
+
+src\app\features\auth\login\login.html:20: <form (ngSubmit)="login()">
+    </p>
+    
+ >> <form (ngSubmit)="login()">
+    
+    <label>
+    Username or email
+
+src\app\features\auth\login\login.ts:5: AttendanceService,
+    import { FormsModule } from '@angular/forms';
+    import {
+ >> AttendanceService,
+    SessionUser
+    } from '../../../services/attendance.service';
+    
+
+src\app\features\auth\login\login.ts:16: private readonly attendance = inject(AttendanceService);
+    })
+    export class LoginComponent {
+ >> private readonly attendance = inject(AttendanceService);
+    
+    @Output() loggedIn = new EventEmitter<SessionUser>();
+    @Output() forgotPassword = new EventEmitter<void>();
+
+src\app\features\auth\login\login.ts:26: async login(): Promise<void> {
+    readonly error = signal('');
+    
+ >> async login(): Promise<void> {
+    if (this.busy()) return;
+    
+    const username = this.username().trim();
+
+src\app\features\auth\login\login.ts:41: const result = await this.attendance.login(username, password);
+    
+    try {
+ >> const result = await this.attendance.login(username, password);
+    
+    if (result.error || !result.user) {
+    this.error.set(result.error || 'Invalid username or password.');
+
+src\app\features\call\call.component.ts:9: import { AuthService } from '../../services/auth.service';
+    import { Router, ActivatedRoute } from '@angular/router';
+    import { CallService } from '../../services/call.service';
+ >> import { AuthService } from '../../services/auth.service';
+    import { ChatService } from '../../services/chat.service';
+    import { CallMediaType } from '../../core/models/call.model';
+    
+
+src\app\features\call\call.component.ts:26: private readonly authService = inject(AuthService);
+    
+    private readonly callService = inject(CallService);
+ >> private readonly authService = inject(AuthService);
+    private readonly chatService = inject(ChatService);
+    private readonly router      = inject(Router);
+    private readonly route       = inject(ActivatedRoute);
+
+src\app\features\call\call.component.ts:83: const user = this.authService.getCurrentUser();
+    async ngOnInit(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) return;
+ >> const user = this.authService.getCurrentUser();
+    const convId = Number(this.route.snapshot.paramMap.get('id'));
+    if (!user || !convId) { this.router.navigate(['/chats']); return; }
+    this.conversationId = convId;
+
+src\app\features\call\call.component.ts:152: const user = this.authService.getCurrentUser();
+    
+    async endCall(): Promise<void> {
+ >> const user = this.authService.getCurrentUser();
+    if (user && this.conversationId > 0) {
+    await this.chatService.sendCallLog(this.conversationId, user.id, this.duration(), this.mediaType());
+    }
+
+src\app\features\chat\chat.component.ts:10: import { AuthService } from '../../services/auth.service';
+    import { Router, ActivatedRoute } from '@angular/router';
+    import { ChatService } from '../../services/chat.service';
+ >> import { AuthService } from '../../services/auth.service';
+    import { ConversationService } from '../../services/conversation.service';
+    import { Message, ReplyTo } from '../../core/models/message.model';
+    import { CallMediaType } from '../../core/models/call.model';
+
+src\app\features\chat\chat.component.ts:39: readonly authService = inject(AuthService);
+    
+    readonly chatService = inject(ChatService);
+ >> readonly authService = inject(AuthService);
+    private readonly convService = inject(ConversationService);
+    private readonly router     = inject(Router);
+    private readonly route      = inject(ActivatedRoute);
+
+src\app\features\chat\chat.component.ts:45: readonly currentUser     = computed(() => this.authService.getCurrentUser());
+    private readonly platformId = inject(PLATFORM_ID);
+    
+ >> readonly currentUser     = computed(() => this.authService.getCurrentUser());
+    readonly messages        = this.chatService.messages;
+    readonly isLoading       = this.chatService.isLoading;
+    readonly error           = this.chatService.error;
+
+src\app\features\conversations\conversations.component.ts:4: import { AuthService } from '../../services/auth.service';
+    import { Router, RouterLink } from '@angular/router';
+    import { CommonModule } from '@angular/common';
+ >> import { AuthService } from '../../services/auth.service';
+    import { ConversationService } from '../../services/conversation.service';
+    import { FriendshipService } from '../../services/friendship.service';
+    import { NotificationService } from '../../services/notification.service';
+
+src\app\features\conversations\conversations.component.ts:21: private readonly auth        = inject(AuthService);
+    })
+    export class ConversationsComponent implements OnInit, OnDestroy {
+ >> private readonly auth        = inject(AuthService);
+    private readonly convService = inject(ConversationService);
+    private readonly friendSvc   = inject(FriendshipService);
+    private readonly router      = inject(Router);
+
+src\app\features\conversations\conversations.component.ts:27: readonly currentUser   = computed(() => this.auth.getCurrentUser());
+    private readonly notifSvc    = inject(NotificationService);
+    
+ >> readonly currentUser   = computed(() => this.auth.getCurrentUser());
+    readonly conversations = this.convService.conversations;
+    readonly isLoading     = this.convService.isLoading;
+    readonly pendingCount  = this.friendSvc.pendingCount;
+
+src\app\features\employees\employees\employees.ts:14: AttendanceService,
+    import {
+    AttendanceRecord,
+ >> AttendanceService,
+    Employee,
+    Payment,
+    UserOption
+
+src\app\features\employees\employees\employees.ts:68: private readonly attendance: AttendanceService,
+    
+    constructor(
+ >> private readonly attendance: AttendanceService,
+    private readonly conversationService: ConversationService,
+    private readonly router: Router
+    ) {}
+
+src\app\features\employees\employees\employees.ts:290: this.attendance.getSession();
+    
+    const currentUser =
+ >> this.attendance.getSession();
+    
+    if (!currentUser) {
+    this.error.set(
+
+src\app\features\employees\employees\employees.ts:404: .createEmployeeLogin(
+    userId =
+    await this.attendance
+ >> .createEmployeeLogin(
+    value.mobile.trim(),
+    value.mobile.trim(),
+    value.name.trim()
+
+src\app\features\payments\payments\payments.ts:13: AttendanceService,
+    import { FormsModule } from '@angular/forms';
+    import {
+ >> AttendanceService,
+    Employee,
+    Payment
+    } from '../../../services/attendance.service';
+
+src\app\features\payments\payments\payments.ts:26: private readonly attendance = inject(AttendanceService);
+    })
+    export class PaymentsComponent implements OnInit {
+ >> private readonly attendance = inject(AttendanceService);
+    private readonly firmFinance = inject(FirmFinanceService);
+    
+    @Input() employees: Employee[] = [];
+
+src\app\features\payments\payments\payments.ts:119: const user = this.attendance.getSession();
+    
+    const employee = this.selectedEmployee();
+ >> const user = this.attendance.getSession();
+    
+    if (!employee || !user) {
+    this.error.set('Please select an employee and make sure you are logged in.');
+
+src\app\features\payments\payments\payments.ts:194: const user = this.attendance.getSession();
+    if (this.busy()) return;
+    
+ >> const user = this.attendance.getSession();
+    const payment = this.editingPayment();
+    
+    if (!user || !payment) return;
+
+src\app\features\payments\payments\payments.ts:246: const user = this.attendance.getSession();
+    if (this.busy()) return;
+    
+ >> const user = this.attendance.getSession();
+    
+    if (!user || payment.status === 'reversed') return;
+    
+
+src\app\features\people\people.component.ts:5: import { AuthService } from '../../services/auth.service';
+    import { CommonModule } from '@angular/common';
+    import { FormsModule } from '@angular/forms';
+ >> import { AuthService } from '../../services/auth.service';
+    import { FriendshipService } from '../../services/friendship.service';
+    import { ConversationService } from '../../services/conversation.service';
+    import { IonIcon, IonSpinner } from '@ionic/angular/standalone';
+
+src\app\features\people\people.component.ts:26: private readonly auth        = inject(AuthService);
+    })
+    export class PeopleComponent implements OnInit, OnDestroy {
+ >> private readonly auth        = inject(AuthService);
+    private readonly friendSvc   = inject(FriendshipService);
+    private readonly convService = inject(ConversationService);
+    private readonly router      = inject(Router);
+
+src\app\features\people\people.component.ts:31: readonly currentUser    = computed(() => this.auth.getCurrentUser());
+    private readonly router      = inject(Router);
+    
+ >> readonly currentUser    = computed(() => this.auth.getCurrentUser());
+    readonly pendingCount   = this.friendSvc.pendingCount;
+    readonly pendingRequests= this.friendSvc.pendingRequests;
+    readonly contacts       = this.friendSvc.contacts;
+
+src\app\features\profile\profile.component.ts:4: import { AttendanceService } from '../../services/attendance.service';
+    import { Router, RouterLink } from '@angular/router';
+    import { CommonModule } from '@angular/common';
+ >> import { AttendanceService } from '../../services/attendance.service';
+    
+    @Component({
+    selector: 'app-profile',
+
+src\app\features\profile\profile.component.ts:30: readonly session = inject(AttendanceService).getSession();
+    })
+    export class ProfileComponent {
+ >> readonly session = inject(AttendanceService).getSession();
+    private readonly router = inject(Router);
+    goBack(): void { this.router.navigate(['/']); }
+    }
+
+src\app\services\attendance.service.ts:19: export class AttendanceService {
+    
+    @Injectable({ providedIn: 'root' })
+ >> export class AttendanceService {
+    private readonly client: SupabaseClient = createClient(environment.supabase.url, environment.supabase.anonKey);
+    private readonly sessionKey = 'attendance_maintenance_user';
+    private readonly notificationService = inject(NotificationService);
+
+src\app\services\attendance.service.ts:21: private readonly sessionKey = 'attendance_maintenance_user';
+    export class AttendanceService {
+    private readonly client: SupabaseClient = createClient(environment.supabase.url, environment.supabase.anonKey);
+ >> private readonly sessionKey = 'attendance_maintenance_user';
+    private readonly notificationService = inject(NotificationService);
+    
+    async login(username: string, password: string): Promise<{ user?: SessionUser; error?: string }> {
+
+src\app\services\attendance.service.ts:24: async login(username: string, password: string): Promise<{ user?: SessionUser; error?: string }> {
+    private readonly notificationService = inject(NotificationService);
+    
+ >> async login(username: string, password: string): Promise<{ user?: SessionUser; error?: string }> {
+    const identifier = username.trim().toLowerCase();
+    const { data, error } = await this.client.from('users').select('id, username, password, display_name, role, is_active').or(`username.eq.${identifier},email.eq.${identifier}`).maybeSingle();
+    if (error || !data || !data.is_active) return { error: 'Invalid username or password.' };
+
+src\app\services\attendance.service.ts:35: getSession(): SessionUser | null {
+    }
+    
+ >> getSession(): SessionUser | null {
+    try { return JSON.parse(localStorage.getItem(this.sessionKey) || 'null') as SessionUser | null; } catch { return null; }
+    }
+    logout(): void { localStorage.removeItem(this.sessionKey); }
+
+src\app\services\attendance.service.ts:38: logout(): void { localStorage.removeItem(this.sessionKey); }
+    try { return JSON.parse(localStorage.getItem(this.sessionKey) || 'null') as SessionUser | null; } catch { return null; }
+    }
+ >> logout(): void { localStorage.removeItem(this.sessionKey); }
+    
+    async loadEmployees(): Promise<Employee[]> {
+    const { data, error } = await this.client.from('attendance_employees').select('*').order('name');
+
+src\app\services\attendance.service.ts:50: async createEmployeeLogin(username: string, password: string, displayName: string): Promise<number> {
+    return (data || []) as UserOption[];
+    }
+ >> async createEmployeeLogin(username: string, password: string, displayName: string): Promise<number> {
+    const cleanUsername = username.trim().toLowerCase();
+    if (cleanUsername.length < 3 || password.length < 4) throw new Error('Labour username must be at least 3 characters and password at least 4 characters.');
+    const passwordHash = await bcrypt.hash(password, 10);
+
+src\app\services\attendance.service.ts:232: const user = this.getSession();
+    }
+    private assertAttendanceDateAllowed(date: string, userId: number): void {
+ >> const user = this.getSession();
+    
+    if (!user || user.id !== userId) {
+    throw new Error('Your session is invalid. Please log in again.');
+
+src\app\services\auth.service.ts:2: import { AttendanceService, SessionUser } from './attendance.service';
+    import { Injectable } from '@angular/core';
+ >> import { AttendanceService, SessionUser } from './attendance.service';
+    import { User } from '../core/models/user.model';
+    
+    @Injectable({ providedIn: 'root' })
+
+src\app\services\auth.service.ts:6: export class AuthService {
+    
+    @Injectable({ providedIn: 'root' })
+ >> export class AuthService {
+    constructor(private readonly attendance: AttendanceService) {}
+    getCurrentUser(): User | null { const session = this.attendance.getSession(); return session ? this.toUser(session) : null; }
+    isLoggedIn(): boolean { return !!this.getCurrentUser(); }
+
+src\app\services\auth.service.ts:7: constructor(private readonly attendance: AttendanceService) {}
+    @Injectable({ providedIn: 'root' })
+    export class AuthService {
+ >> constructor(private readonly attendance: AttendanceService) {}
+    getCurrentUser(): User | null { const session = this.attendance.getSession(); return session ? this.toUser(session) : null; }
+    isLoggedIn(): boolean { return !!this.getCurrentUser(); }
+    private toUser(session: SessionUser): User { return { id: session.id, username: session.username, displayName: session.name, email: null, isActive: true, createdAt: new Date().toISOString() }; }
+
+src\app\services\auth.service.ts:8: getCurrentUser(): User | null { const session = this.attendance.getSession(); return session ? this.toUser(session) : null; }
+    export class AuthService {
+    constructor(private readonly attendance: AttendanceService) {}
+ >> getCurrentUser(): User | null { const session = this.attendance.getSession(); return session ? this.toUser(session) : null; }
+    isLoggedIn(): boolean { return !!this.getCurrentUser(); }
+    private toUser(session: SessionUser): User { return { id: session.id, username: session.username, displayName: session.name, email: null, isActive: true, createdAt: new Date().toISOString() }; }
+    }
+
+src\app\services\auth.service.ts:9: isLoggedIn(): boolean { return !!this.getCurrentUser(); }
+    constructor(private readonly attendance: AttendanceService) {}
+    getCurrentUser(): User | null { const session = this.attendance.getSession(); return session ? this.toUser(session) : null; }
+ >> isLoggedIn(): boolean { return !!this.getCurrentUser(); }
+    private toUser(session: SessionUser): User { return { id: session.id, username: session.username, displayName: session.name, email: null, isActive: true, createdAt: new Date().toISOString() }; }
+    }
+
+src\app\services\firm-expense.service.ts:3: import { AttendanceService } from './attendance.service';
+    import { Injectable, inject } from '@angular/core';
+    import { SupabaseService } from './supabase.service';
+ >> import { AttendanceService } from './attendance.service';
+    
+    export interface FirmFinanceCategory {
+    id: number;
+
+src\app\services\firm-expense.service.ts:24: private readonly attendance = inject(AttendanceService);
+    private readonly supabase = inject(SupabaseService);
+    
+ >> private readonly attendance = inject(AttendanceService);
+    async getCategories(): Promise<FirmFinanceCategory[]> {
+    const { data, error } = await this.supabase.client
+    .from('firm_finance_categories')
+
+src\app\services\firm-expense.service.ts:61: p_created_by: this.attendance.getSession()?.id ?? null
+    p_payment_mode: params.paymentMode || null,
+    p_description: params.description || null,
+ >> p_created_by: this.attendance.getSession()?.id ?? null
+    }
+    );
+    
+
+src\app\services\firm-finance.service.ts:4: import { AttendanceService } from './attendance.service';
+    import { Injectable, inject } from '@angular/core';
+    import { SupabaseService } from './supabase.service';
+ >> import { AttendanceService } from './attendance.service';
+    
+    export interface FirmFinanceTransaction {
+    id: string;
+
+src\app\services\firm-finance.service.ts:39: private readonly attendance = inject(AttendanceService);
+    private readonly supabase = inject(SupabaseService);
+    
+ >> private readonly attendance = inject(AttendanceService);
+    /**
+    * Retrieves the centralized firm finance dashboard.
+    */
+
+src\app\services\firm-finance.service.ts:163: p_created_by: this.attendance.getSession()?.id ?? null
+    p_description:
+    params.description || null,
+ >> p_created_by: this.attendance.getSession()?.id ?? null
+    }
+    );
+    
+
+src\app\services\partner-finance.service.ts:3: import { AttendanceService } from './attendance.service';
+    import { Injectable, inject } from '@angular/core';
+    import { SupabaseService } from './supabase.service';
+ >> import { AttendanceService } from './attendance.service';
+    
+    export type PartnerFinanceTransactionType =
+    | 'loan_received'
+
+src\app\services\partner-finance.service.ts:47: private readonly attendance = inject(AttendanceService);
+    private readonly supabase = inject(SupabaseService);
+    
+ >> private readonly attendance = inject(AttendanceService);
+    async getPartnerMonthlyLedger(
+    month?: string
+    ): Promise<PartnerFinanceMonthlyLedger[]> {
+
+src\app\services\partner-finance.service.ts:201: p_created_by: this.attendance.getSession()?.id ?? null
+    params.description || null,
+    
+ >> p_created_by: this.attendance.getSession()?.id ?? null
+    }
+    );
+    
+
+src\app\services\partner-finance.service.ts:256: p_created_by: this.attendance.getSession()?.id ?? null
+    params.description || null,
+    
+ >> p_created_by: this.attendance.getSession()?.id ?? null
+    }
+    );
+    
+
+==========================================================================================
+6. ANGULAR AND NODE VERSIONS
+==========================================================================================
+Node: v24.20.0
+npm: 10.9.3
+NG: 
+NG: [31m     _                      _                 ____ _     ___[39m
+NG: [31m    / \   _ __   __ _ _   _| | __ _ _ __     / ___| |   |_ _|[39m
+NG: [31m   / Γû│ \ | '_ \ / _` | | | | |/ _` | '__|   | |   | |    | |[39m
+NG: [31m  / ___ \| | | | (_| | |_| | | (_| | |      | |___| |___ | |[39m
+NG: [31m /_/   \_\_| |_|\__, |\__,_|_|\__,_|_|       \____|_____|___|[39m
+NG: [31m                |___/[39m
+NG: [31m    [39m
+NG: 
+NG: [1mAngular CLI       [22m: [36m21.2.21[39m
+NG: [1mAngular           [22m: [36m21.2.21[39m
+NG: [1mNode.js           [22m: [36m24.20.0[39m
+NG: [1mPackage Manager   [22m: [36mnpm 9.3.1[39m
+NG: [1mOperating System  [22m: [36mwin32 x64[39m
+NG: 
+NG: ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö¼ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö¼ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ
+NG: Γöé Package                   Γöé Installed Version Γöé Requested Version Γöé
+NG: Γö£ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö╝ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓö╝ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöñ
+NG: Γöé @angular/build            Γöé [36m21.2.21[39m           Γöé ^21.0.1           Γöé
+NG: Γöé @angular/cli              Γöé [36m21.2.21[39m           Γöé ^21.0.1           Γöé
+NG: Γöé @angular/common           Γöé [36m21.2.21[39m           Γöé ^21.0.0           Γöé
+NG: Γöé @angular/compiler         Γöé [36m21.2.21[39m           Γöé ^21.0.0           Γöé
+NG: Γöé @angular/compiler-cli     Γöé [36m21.2.21[39m           Γöé ^21.0.0           Γöé
+NG: Γöé @angular/core             Γöé [36m21.2.21[39m           Γöé ^21.0.0           Γöé
+NG: Γöé @angular/forms            Γöé [36m21.2.21[39m           Γöé ^21.0.0           Γöé
+
+==========================================================================================
+7. AUDIT LIMITATIONS
+==========================================================================================
+This report inspects local files and the supplied SQL backup only.
+It does not query the live Supabase database.
+It does not include environment configuration values.
+It does not change source files or create financial transactions.
