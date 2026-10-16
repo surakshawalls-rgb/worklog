@@ -1,4 +1,4 @@
-﻿<section class="firm-cash">
+<section class="firm-cash">
 
   <div class="cash-hero">
 
@@ -150,6 +150,7 @@
               <th>Type</th>
               <th>Category</th>
               <th>Person</th>
+              <th>Created By</th>
               <th>Mode</th>
               <th>Description</th>
               <th>Amount</th>
@@ -190,6 +191,10 @@
                     transaction.employee_name ||
                     '—'
                   }}
+                </td>
+
+                <td>
+                  {{ transaction.created_by_name || '—' }}
                 </td>
 
                 <td>

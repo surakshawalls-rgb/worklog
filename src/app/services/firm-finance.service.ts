@@ -1,6 +1,7 @@
 ﻿
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import { AttendanceService } from './attendance.service';
 
 export interface FirmFinanceTransaction {
   id: string;
@@ -35,6 +36,7 @@ export class FirmFinanceService {
 
   private readonly supabase = inject(SupabaseService);
 
+  private readonly attendance = inject(AttendanceService);
   /**
    * Retrieves the centralized firm finance dashboard.
    */
@@ -158,7 +160,7 @@ export class FirmFinanceService {
             params.paymentMode || null,
           p_description:
             params.description || null,
-          p_created_by: null
+          p_created_by: this.attendance.getSession()?.id ?? null
         }
       );
 
@@ -167,3 +169,4 @@ export class FirmFinanceService {
     }
   }
 }
+

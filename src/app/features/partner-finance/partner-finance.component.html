@@ -214,6 +214,10 @@
         Loading passbook...
       </div>
 
+    } @else if (transactionsError) {
+      <div class="empty-state">
+        Unable to load passbook: {{ transactionsError }}
+      </div>
     } @else if (transactions.length === 0) {
 
       <div class="empty-state">
@@ -506,3 +510,4 @@
   }
 
 </section>
+

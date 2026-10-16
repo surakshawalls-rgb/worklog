@@ -23,6 +23,7 @@ import {
   PartnerFundingService,
   FinancePartner
 } from '../../services/partner-funding.service';
+import { AttendanceService } from '../../services/attendance.service';
 
 @Component({
   selector: 'app-partner-finance',
@@ -43,6 +44,8 @@ export class PartnerFinanceComponent
   private readonly funding =
     inject(PartnerFundingService);
 
+  private readonly attendance = inject(AttendanceService);
+
   private readonly cdr =
     inject(ChangeDetectorRef);
 
@@ -62,6 +65,7 @@ export class PartnerFinanceComponent
 
   loading = true;
   transactionsLoading = false;
+  transactionsError = '';
 
   errorMessage = '';
   successMessage = '';
@@ -108,12 +112,35 @@ export class PartnerFinanceComponent
 
       await this.loadLedger();
 
-      if (
-        this.selectedPartnerId === 0 &&
-        this.partners.length
-      ) {
-        this.selectedPartnerId =
-          this.partners[0].id;
+      if (this.selectedPartnerId === 0 && this.partners.length) {
+        const user = this.attendance.getSession();
+
+        if (user) {
+          const normalize = (value: unknown): string =>
+            String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+          const username = normalize(user.username);
+          const userName = normalize(user.name);
+
+          let expectedPartnerName = '';
+
+          if (username === '9506629814') {
+            expectedPartnerName = 'pradeepvishwakarma';
+          } else if (username === '8090272727') {
+            expectedPartnerName = 'praveenpandey';
+          }
+
+          const matchingPartner = this.partners.find(partner => {
+            const partnerName = normalize(partner.partner_name);
+
+            return expectedPartnerName
+              ? partnerName === expectedPartnerName
+              : partnerName === userName || partnerName === username;
+          });
+
+          // Do not silently select the first partner if there is no match.
+          this.selectedPartnerId = matchingPartner?.id ?? 0;
+        }
       }
 
       await this.loadTransactions();
@@ -157,6 +184,7 @@ export class PartnerFinanceComponent
     }
 
     this.transactionsLoading = true;
+    this.transactionsError = '';
 
     try {
 
@@ -176,6 +204,8 @@ export class PartnerFinanceComponent
       );
 
       this.transactions = [];
+      this.transactionsError = (error as { message?: string })?.message
+        || 'Unable to load partner transactions. Please try again.';
 
     } finally {
 
@@ -522,4 +552,7 @@ export class PartnerFinanceComponent
       .slice(0, 10);
   }
 }
+
+
+
 

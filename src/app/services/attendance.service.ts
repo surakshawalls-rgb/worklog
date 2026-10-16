@@ -19,23 +19,34 @@ export interface DailyAnnouncement { id: number; message: string; published_at: 
 export class AttendanceService {
   private readonly client: SupabaseClient = createClient(environment.supabase.url, environment.supabase.anonKey);
   private readonly sessionKey = 'attendance_maintenance_user';
+  private readonly tokenKey = 'attendance_maintenance_token';
   private readonly notificationService = inject(NotificationService);
 
   async login(username: string, password: string): Promise<{ user?: SessionUser; error?: string }> {
     const identifier = username.trim().toLowerCase();
-    const { data, error } = await this.client.from('users').select('id, username, password, display_name, role, is_active').or(`username.eq.${identifier},email.eq.${identifier}`).maybeSingle();
-    if (error || !data || !data.is_active) return { error: 'Invalid username or password.' };
-    const valid = data.password?.startsWith('$2') ? await bcrypt.compare(password, data.password) : data.password === password;
-    if (!valid) return { error: 'Invalid username or password.' };
-    const user: SessionUser = { id: data.id, username: data.username, name: data.display_name || data.username, role: data.role === 'admin' ? 'admin' : 'employee' };
+    if (!identifier || !password) return { error: 'Invalid username or password.' };
+
+    const { data, error } = await this.client.functions.invoke('partner-finance-passbook', {
+      body: { action: 'login', username: identifier, password }
+    });
+
+    if (error || !data?.user || !data?.token) {
+      return { error: data?.error || 'Invalid username or password.' };
+    }
+
+    const user = data.user as SessionUser;
     localStorage.setItem(this.sessionKey, JSON.stringify(user));
+    localStorage.setItem(this.tokenKey, String(data.token));
     return { user };
   }
 
   getSession(): SessionUser | null {
     try { return JSON.parse(localStorage.getItem(this.sessionKey) || 'null') as SessionUser | null; } catch { return null; }
   }
-  logout(): void { localStorage.removeItem(this.sessionKey); }
+  logout(): void {
+    localStorage.removeItem(this.sessionKey);
+    localStorage.removeItem(this.tokenKey);
+  }
 
   async loadEmployees(): Promise<Employee[]> {
     const { data, error } = await this.client.from('attendance_employees').select('*').order('name');
@@ -262,4 +273,5 @@ export class AttendanceService {
     });
   }
 }
+
 

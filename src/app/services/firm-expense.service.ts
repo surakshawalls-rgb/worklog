@@ -1,5 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+﻿import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import { AttendanceService } from './attendance.service';
 
 export interface FirmFinanceCategory {
   id: number;
@@ -20,6 +21,7 @@ export interface FirmMoneyOutResult {
 export class FirmExpenseService {
   private readonly supabase = inject(SupabaseService);
 
+  private readonly attendance = inject(AttendanceService);
   async getCategories(): Promise<FirmFinanceCategory[]> {
     const { data, error } = await this.supabase.client
       .from('firm_finance_categories')
@@ -56,7 +58,7 @@ export class FirmExpenseService {
         p_transaction_date: params.transactionDate,
         p_payment_mode: params.paymentMode || null,
         p_description: params.description || null,
-        p_created_by: null
+        p_created_by: this.attendance.getSession()?.id ?? null
       }
     );
 
@@ -76,3 +78,4 @@ export class FirmExpenseService {
     };
   }
 }
+

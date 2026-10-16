@@ -1,5 +1,6 @@
 ﻿import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import { AttendanceService } from './attendance.service';
 
 export type PartnerFinanceTransactionType =
   | 'loan_received'
@@ -43,6 +44,7 @@ export class PartnerFinanceService {
 
   private readonly supabase = inject(SupabaseService);
 
+  private readonly attendance = inject(AttendanceService);
   async getPartnerMonthlyLedger(
     month?: string
   ): Promise<PartnerFinanceMonthlyLedger[]> {
@@ -134,33 +136,28 @@ export class PartnerFinanceService {
   async getPartnerTransactions(
     partnerId: string
   ): Promise<PartnerFinanceTransaction[]> {
-
-    const { data, error } =
-      await this.supabase.client
-        .from('partner_finance_transactions')
-        .select('*')
-        .eq(
-          'partner_id',
-          partnerId
-        )
-        .order(
-          'transaction_date',
-          {
-            ascending: false
-          }
-        )
-        .order(
-          'created_at',
-          {
-            ascending: false
-          }
-        );
-
-    if (error) {
-      throw error;
+    const token = localStorage.getItem('attendance_maintenance_token');
+    if (!token) {
+      throw new Error('Your session token is missing. Please log out and sign in again.');
     }
 
-    return (data ?? []).map(row => ({
+    const { data, error } = await this.supabase.client.functions.invoke(
+      'partner-finance-passbook',
+      {
+        body: { action: 'transactions', partner_id: partnerId },
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+    if (error) {
+      throw new Error(`Unable to load partner passbook: ${error.message}`);
+    }
+
+    if (!data || !Array.isArray(data.data)) {
+      throw new Error(data?.error || 'The passbook service returned an invalid response.');
+    }
+
+    return data.data.map((row: PartnerFinanceTransaction) => ({
       ...row,
       amount: Number(row.amount ?? 0)
     })) as PartnerFinanceTransaction[];
@@ -196,8 +193,7 @@ export class PartnerFinanceService {
           p_description:
             params.description || null,
 
-          p_created_by:
-            null
+          p_created_by: this.attendance.getSession()?.id ?? null
         }
       );
 
@@ -252,8 +248,7 @@ export class PartnerFinanceService {
           p_description:
             params.description || null,
 
-          p_created_by:
-            null
+          p_created_by: this.attendance.getSession()?.id ?? null
         }
       );
 
@@ -271,3 +266,5 @@ export class PartnerFinanceService {
     );
   }
 }
+
+

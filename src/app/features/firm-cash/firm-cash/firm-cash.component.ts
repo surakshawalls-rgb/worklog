@@ -35,6 +35,10 @@ import {
   SupabaseService
 } from '../../../services/supabase.service';
 
+import {
+  AttendanceService
+} from '../../../services/attendance.service';
+
 @Component({
   selector: 'app-firm-cash',
   standalone: true,
@@ -57,6 +61,9 @@ export class FirmCashComponent implements OnInit {
 
   private readonly funding =
     inject(PartnerFundingService);
+  private readonly attendance =
+    inject(AttendanceService);
+
   private readonly cdr =
     inject(ChangeDetectorRef);
 
@@ -271,6 +278,46 @@ export class FirmCashComponent implements OnInit {
 
   openPartnerLoan(): void {
     this.resetForm();
+
+    const user = this.attendance.getSession();
+
+    if (user && this.partners.length > 0) {
+      const normalize = (value: unknown): string =>
+        String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      const username = normalize(user.username);
+      const userName = normalize(user.name);
+
+      // Prefer an explicit login-to-partner mapping for the known partner accounts.
+      let expectedPartnerName = '';
+
+      if (username === '9506629814') {
+        expectedPartnerName = 'pradeepvishwakarma';
+      } else if (username === '8090272727') {
+        expectedPartnerName = 'praveenpandey';
+      }
+
+      const matchingPartner = this.partners.find(partner => {
+        const partnerName = normalize(partner.partner_name);
+
+        return expectedPartnerName
+          ? partnerName === expectedPartnerName
+          : partnerName === userName || partnerName === username;
+      });
+
+      if (matchingPartner) {
+        this.partnerId = matchingPartner.id;
+      } else {
+        console.warn('[Partner Loan] No matching partner for current session.', {
+          username,
+          userName,
+          availablePartners: this.partners.map(p => p.partner_name)
+        });
+      }
+    } else {
+      console.warn('[Partner Loan] Session or active partner list is unavailable.');
+    }
+
     this.modal = 'partner-loan';
   }
 
@@ -568,5 +615,8 @@ export class FirmCashComponent implements OnInit {
       .slice(0, 10);
   }
 }
+
+
+
 
 

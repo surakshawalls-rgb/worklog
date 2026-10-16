@@ -1,6 +1,6 @@
 ﻿import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
-
+import { AttendanceService } from './attendance.service';
 export interface FinancePartner {
   id: number;
   partner_name: string;
@@ -22,6 +22,7 @@ export interface PartnerFundingResult {
 export class PartnerFundingService {
 
   private readonly supabase = inject(SupabaseService);
+  private readonly attendance = inject(AttendanceService);
 
   async getActivePartners(): Promise<FinancePartner[]> {
     const { data, error } = await this.supabase.client
@@ -53,7 +54,7 @@ export class PartnerFundingService {
         p_transaction_date: params.transactionDate,
         p_payment_mode: params.paymentMode,
         p_description: params.description || null,
-        p_created_by: null
+        p_created_by: this.attendance.getSession()?.id ?? null
       }
     );
 
@@ -72,3 +73,7 @@ export class PartnerFundingService {
     };
   }
 }
+
+
+
+
