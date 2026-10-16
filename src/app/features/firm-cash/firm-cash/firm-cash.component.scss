@@ -1,4 +1,4 @@
-﻿:host {
+:host {
   display: block;
 }
 
@@ -876,5 +876,35 @@
 
   .metric-card {
     min-height: 64px;
+  }
+}
+
+
+/* Mobile landscape: show all Recent Activity columns */
+@media screen and (max-width: 950px) and (orientation: landscape) {
+  :host {
+    display: block;
+    min-width: 0;
+  }
+
+  :host table {
+    width: 100%;
+    min-width: 760px;
+    table-layout: auto;
+  }
+
+  :host table th,
+  :host table td {
+    display: table-cell !important;
+    padding: 8px 7px;
+    font-size: 12px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  :host table th:last-child,
+  :host table td:last-child {
+    white-space: nowrap;
+    text-align: right;
   }
 }
